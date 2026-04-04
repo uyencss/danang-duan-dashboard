@@ -3,7 +3,9 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { MapPin, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Target, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/export-excel";
 
 interface CVStat {
     id: string;
@@ -35,8 +37,34 @@ export function CVManagementTable({ data }: { data: CVStat[] }) {
         return "bg-slate-50 text-slate-400 border-slate-100";
     };
 
+    const handleExport = () => {
+        const exportData = data.map(cv => ({
+            "Tên Chuyên Viên": cv.name,
+            "Đội/Tổ": cv.team,
+            "Tỷ lệ Chuyển đổi (%)": parseFloat(cv.conversionRate.toFixed(1)),
+            "Doanh Thu Tháng (VNĐ)": cv.monthlyRev,
+            "Hợp Đồng Tháng": cv.monthlyContracts,
+            "Tiếp Cận Tháng": cv.monthlyOutreach,
+            "Hạng Tháng": cv.rankMonth,
+            "Doanh Thu Quý (VNĐ)": cv.quarterlyRev,
+            "Hợp Đồng Quý": cv.quarterlyContracts,
+            "Hạng Quý": cv.rankQuarter,
+            "Doanh Thu Năm (VNĐ)": cv.yearlyRev,
+            "Hợp Đồng Năm": cv.yearlyContracts,
+            "Tổng Tiếp Cận Năm": cv.totalOutreach,
+            "Hạng Năm": cv.rankYear
+        }));
+        exportToExcel(exportData, "BaoCao_QuanLy_CV");
+    };
+
     return (
         <Card className="border-none shadow-2xl shadow-slate-200/50 overflow-hidden rounded-3xl bg-white/70 backdrop-blur-xl">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white/50">
+                <span className="text-sm font-bold text-slate-500">Hiển thị {data.length} nhân sự (Chuyên viên)</span>
+                <Button onClick={handleExport} variant="outline" size="sm" className="h-8 gap-2 font-bold text-purple-600 border-purple-200 hover:bg-purple-50 bg-white">
+                    <Download className="size-3" /> Xuất Excel
+                </Button>
+            </div>
             <div className="overflow-x-auto">
                 <Table className="min-w-[1700px]">
                     <TableHeader className="bg-slate-50/50">

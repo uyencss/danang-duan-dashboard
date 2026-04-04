@@ -92,15 +92,15 @@ export function NhanSuDashboardClient({ initialData }: { initialData: AnalyticsD
                     <CardContent>
                         <div className="h-[300px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={initialData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                <BarChart data={initialData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 'bold', fill: '#6b7280' }} />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} interval={0} height={100} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#6b7280', angle: -45, textAnchor: 'end', dy: 10 }} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
                                     <Tooltip 
                                         cursor={{ fill: 'rgba(0,0,0,0.02)' }}
                                         contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
                                     />
-                                    <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                     <Bar dataKey="revenue" name="Doanh Thu" fill="#2563eb" radius={[6, 6, 0, 0]} barSize={40} />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -119,15 +119,15 @@ export function NhanSuDashboardClient({ initialData }: { initialData: AnalyticsD
                     <CardContent>
                         <div className="h-[300px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={initialData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                <BarChart data={initialData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 'bold', fill: '#6b7280' }} />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} interval={0} height={100} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#6b7280', angle: -45, textAnchor: 'end', dy: 10 }} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} allowDecimals={false} />
                                     <Tooltip 
                                         cursor={{ fill: 'rgba(0,0,0,0.02)' }}
                                         contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
                                     />
-                                    <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                     <Bar dataKey="contracts" name="Hợp Đồng" fill="#9333ea" radius={[6, 6, 0, 0]} barSize={40} />
                                 </BarChart>
                             </ResponsiveContainer>

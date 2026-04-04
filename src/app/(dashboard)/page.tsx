@@ -1,6 +1,7 @@
-import { getDashboardOverview, getAMPerformance } from "./dashboard-actions";
+import { getDashboardOverview, getAMPerformance, getHoanThanhKeHoachData } from "./dashboard-actions";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { StatusPieChart } from "@/components/dashboard/status-pie-chart";
+import { HoanThanhKeHoachClient } from "./hoan-thanh-ke-hoach-client";
 import {
   Package2,
   DollarSign,
@@ -27,6 +28,7 @@ export const metadata = {
 export default async function DashboardPage() {
   const result = await getDashboardOverview();
   const amPerf = await getAMPerformance();
+  const planData = await getHoanThanhKeHoachData();
 
   if (result.error || !result.stats || !result.statusCounts) {
     return (
@@ -252,7 +254,9 @@ export default async function DashboardPage() {
       </section>
 
       {/* Alarm Section */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <section className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <HoanThanhKeHoachClient projects={(planData as any).projects || []} kpis={(planData as any).kpis || []} />
+
         {/* Bottom 5 AM */}
         <div className="bg-white p-8 rounded-xl border border-red-100 shadow-sm flex flex-col h-full overflow-hidden">
           <div className="flex items-center justify-between mb-6">
@@ -262,26 +266,62 @@ export default async function DashboardPage() {
               <Flame className="size-4 text-red-500 animate-pulse" />
             </h4>
           </div>
-          <div className="space-y-6">
-            {(amPerf as any).bottomAM?.map((am: any, i: number) => {
-              const maxVal = (amPerf as any).bottomAM[0]?.totalRevenue || 1; // It should be sorted asc, so 0 index is lowest? No, the user wants "Top 5 lowest" meaning the 5 with lowest revenue. I sorted asc, so am[0] is lowest.
-              // For bar length, we want them relative to the "best of the bottom"? Or just use a fixed max.
-              // Actually, l'll use the same pct logic for consistency if possible.
-              const maxInGroup = Math.max(...(amPerf as any).bottomAM.map((a: any) => a.totalRevenue), 1);
-              const pct = Math.max(5, (am.totalRevenue / maxInGroup) * 100);
-              return (
-                <div key={i} className="space-y-2">
-                  <div className="flex justify-between text-xs font-bold text-[#191c1e]">
-                    <span className="truncate pr-4">{am.name}</span>
-                    <span className="text-red-600 font-black">{am.totalRevenue.toLocaleString()} Tr</span>
-                  </div>
-                  <div className="h-2.5 w-full bg-red-50 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-red-400 to-red-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          
+          <Tabs defaultValue="signed" className="flex-1 flex flex-col">
+             <TabsList className="bg-red-50 border border-red-100 p-1 rounded-full mb-6 w-full gap-1 grid grid-cols-2 shadow-inner">
+                <TabsTrigger value="signed" className="rounded-full text-[10px] font-black uppercase tracking-wider py-2 data-[state=active]:bg-red-600 data-[state=active]:text-white transition-all shadow-none text-red-600">Dự án Đã ký</TabsTrigger>
+                <TabsTrigger value="others" className="rounded-full text-[10px] font-black uppercase tracking-wider py-2 data-[state=active]:bg-red-600 data-[state=active]:text-white transition-all shadow-none text-red-600">Trạng thái khác</TabsTrigger>
+             </TabsList>
+
+             <div className="flex-1 overflow-y-auto pr-1">
+               <TabsContent value="signed" className="space-y-6 pt-2 m-0 mt-0 focus-visible:outline-none">
+                  {(amPerf as any).bottomAMSigned?.map((am: any, i: number) => {
+                    const maxInGroup = Math.max(...(amPerf as any).bottomAMSigned.map((a: any) => a.signedRevenue), 1);
+                    const pct = Math.max(5, (am.signedRevenue / maxInGroup) * 100);
+                    return (
+                      <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
+                        <div className="flex justify-between text-xs font-bold text-[#191c1e]">
+                          <span className="truncate pr-4">{am.name}</span>
+                          <span className="text-red-600 font-black">{am.signedRevenue.toLocaleString()} Tr</span>
+                        </div>
+                        <div className="h-2.5 w-full bg-red-50 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-red-400 to-red-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {(!(amPerf as any).bottomAMSigned || (amPerf as any).bottomAMSigned.length === 0) && (
+                    <div className="text-center py-12 flex flex-col items-center justify-center text-red-300/50">
+                      <TrendingUp className="size-8 mb-2 opacity-50" />
+                      <p className="text-sm font-medium italic">Chưa có dữ liệu.</p>
+                    </div>
+                  )}
+               </TabsContent>
+               <TabsContent value="others" className="space-y-6 pt-2 m-0 focus-visible:outline-none">
+                  {(amPerf as any).bottomAMOthers?.map((am: any, i: number) => {
+                    const maxInGroup = Math.max(...(amPerf as any).bottomAMOthers.map((a: any) => a.otherRevenue), 1);
+                    const pct = Math.max(5, (am.otherRevenue / maxInGroup) * 100);
+                    return (
+                      <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
+                        <div className="flex justify-between text-xs font-bold text-[#191c1e]">
+                          <span className="truncate pr-4">{am.name}</span>
+                          <span className="text-red-600 font-black">{am.otherRevenue.toLocaleString()} Tr</span>
+                        </div>
+                        <div className="h-2.5 w-full bg-red-50 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-red-400 to-red-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {(!(amPerf as any).bottomAMOthers || (amPerf as any).bottomAMOthers.length === 0) && (
+                    <div className="text-center py-12 flex flex-col items-center justify-center text-red-300/50">
+                      <TrendingUp className="size-8 mb-2 opacity-50" />
+                      <p className="text-sm font-medium italic">Chưa có dữ liệu.</p>
+                    </div>
+                  )}
+               </TabsContent>
+             </div>
+          </Tabs>
         </div>
 
         {/* Bottom 5 CV */}
@@ -293,23 +333,62 @@ export default async function DashboardPage() {
               <Flame className="size-4 text-orange-500 animate-pulse" />
             </h4>
           </div>
-          <div className="space-y-6">
-            {(amPerf as any).bottomCV?.map((cv: any, i: number) => {
-              const maxInGroup = Math.max(...(amPerf as any).bottomCV.map((a: any) => a.totalRevenue), 1);
-              const pct = Math.max(5, (cv.totalRevenue / maxInGroup) * 100);
-              return (
-                <div key={i} className="space-y-2">
-                  <div className="flex justify-between text-xs font-bold text-[#191c1e]">
-                    <span className="truncate pr-4">{cv.name}</span>
-                    <span className="text-orange-600 font-black">{cv.totalRevenue.toLocaleString()} Tr</span>
-                  </div>
-                  <div className="h-2.5 w-full bg-orange-50 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          
+          <Tabs defaultValue="signed" className="flex-1 flex flex-col">
+             <TabsList className="bg-orange-50 border border-orange-100 p-1 rounded-full mb-6 w-full gap-1 grid grid-cols-2 shadow-inner">
+                <TabsTrigger value="signed" className="rounded-full text-[10px] font-black uppercase tracking-wider py-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white transition-all shadow-none text-orange-600">Dự án Đã ký</TabsTrigger>
+                <TabsTrigger value="others" className="rounded-full text-[10px] font-black uppercase tracking-wider py-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white transition-all shadow-none text-orange-600">Trạng thái khác</TabsTrigger>
+             </TabsList>
+
+             <div className="flex-1 overflow-y-auto pr-1">
+               <TabsContent value="signed" className="space-y-6 pt-2 m-0 mt-0 focus-visible:outline-none">
+                  {(amPerf as any).bottomCVSigned?.map((cv: any, i: number) => {
+                    const maxInGroup = Math.max(...(amPerf as any).bottomCVSigned.map((a: any) => a.signedRevenue), 1);
+                    const pct = Math.max(5, (cv.signedRevenue / maxInGroup) * 100);
+                    return (
+                      <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
+                        <div className="flex justify-between text-xs font-bold text-[#191c1e]">
+                          <span className="truncate pr-4">{cv.name}</span>
+                          <span className="text-orange-600 font-black">{cv.signedRevenue.toLocaleString()} Tr</span>
+                        </div>
+                        <div className="h-2.5 w-full bg-orange-50 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {(!(amPerf as any).bottomCVSigned || (amPerf as any).bottomCVSigned.length === 0) && (
+                    <div className="text-center py-12 flex flex-col items-center justify-center text-orange-300/50">
+                      <TrendingUp className="size-8 mb-2 opacity-50" />
+                      <p className="text-sm font-medium italic">Chưa có dữ liệu.</p>
+                    </div>
+                  )}
+               </TabsContent>
+               <TabsContent value="others" className="space-y-6 pt-2 m-0 focus-visible:outline-none">
+                  {(amPerf as any).bottomCVOthers?.map((cv: any, i: number) => {
+                    const maxInGroup = Math.max(...(amPerf as any).bottomCVOthers.map((a: any) => a.otherRevenue), 1);
+                    const pct = Math.max(5, (cv.otherRevenue / maxInGroup) * 100);
+                    return (
+                      <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
+                        <div className="flex justify-between text-xs font-bold text-[#191c1e]">
+                          <span className="truncate pr-4">{cv.name}</span>
+                          <span className="text-orange-600 font-black">{cv.otherRevenue.toLocaleString()} Tr</span>
+                        </div>
+                        <div className="h-2.5 w-full bg-orange-50 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {(!(amPerf as any).bottomCVOthers || (amPerf as any).bottomCVOthers.length === 0) && (
+                    <div className="text-center py-12 flex flex-col items-center justify-center text-orange-300/50">
+                      <TrendingUp className="size-8 mb-2 opacity-50" />
+                      <p className="text-sm font-medium italic">Chưa có dữ liệu.</p>
+                    </div>
+                  )}
+               </TabsContent>
+             </div>
+          </Tabs>
         </div>
       </section>
 

@@ -3,8 +3,19 @@ import { getDiaBanAnalytics } from "../dashboard-actions";
 import { AlertCircle } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 
-export default async function DiaBanPage() {
-    const res = await getDiaBanAnalytics();
+export default async function DiaBanPage({ searchParams }: { searchParams: Promise<{ type?: string, year?: string, value?: string }> }) {
+    const params = await searchParams;
+    let filterArgs: any = { type: 'all' };
+
+    if (params.type === 'nam' && params.year) {
+        filterArgs = { type: 'nam', year: Number(params.year) };
+    } else if (params.type === 'quy' && params.year && params.value) {
+        filterArgs = { type: 'quy', year: Number(params.year), quarter: Number(params.value) };
+    } else if (params.type === 'thang' && params.year && params.value) {
+        filterArgs = { type: 'thang', year: Number(params.year), month: Number(params.value) };
+    }
+
+    const res = await getDiaBanAnalytics(filterArgs);
 
     if (res.error || !res.diaBanData || !res.topStaffData) {
         return (

@@ -23,6 +23,7 @@ import {
   Filter,
   X,
   ChevronDown,
+  Download,
 } from "lucide-react";
 import * as React from "react";
 import Link from "next/link";
@@ -33,6 +34,7 @@ import { QuickUpdateModal } from "@/components/du-an/quick-update-modal";
 import { ProjectFormDialog } from "@/components/du-an/project-form-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { exportToExcel } from "@/lib/export-excel";
 
 const LINH_VUC_COLORS: Record<string, string> = {
   CHINH_PHU: "bg-blue-50 text-blue-600 border-blue-100",
@@ -231,10 +233,30 @@ export function ProjectsTable({ data }: { data: any[] }) {
     initialState: { pagination: { pageSize: 10 } },
   });
 
+  const handleExport = () => {
+    const exportData = table.getFilteredRowModel().rows.map(row => {
+        const p = row.original as any;
+        return {
+            "Tên Dự Án": p.tenDuAn,
+            "Khách Hàng": p.khachHang?.ten || "",
+            "Lĩnh Vực": LINH_VUC_LABELS[p.linhVuc] || p.linhVuc,
+            "Sản Phẩm": p.sanPham?.tenChiTiet || "",
+            "AM": p.am?.name || "",
+            "Chuyên Viên": p.chuyenVien?.name || "",
+            "Trạng Thái": STATUS_STYLES[p.trangThaiHienTai]?.label || p.trangThaiHienTai,
+            "Tổng DT Dự Kiến": p.tongDoanhThuDuKien,
+            "Doanh Thu Theo Tháng": p.doanhThuTheoThang,
+            "Ghi Chú": p.ghiChu || "",
+            "Ngày CSKH Cuối": p.ngayChamsocCuoiCung ? new Date(p.ngayChamsocCuoiCung).toLocaleDateString("vi-VN") : "Chưa CSKH"
+        };
+    });
+    exportToExcel(exportData, "DanhSachDuAn_CRM");
+  };
+
   return (
     <div className="w-full space-y-4">
       {/* Filter Bar */}
-      <div className="bg-[#f2f4f6] p-2 rounded-2xl flex flex-wrap gap-2 items-center">
+      <div className="bg-[#f2f4f6] p-2 rounded-2xl flex flex-wrap gap-2 items-center justify-between">
         <div className="flex-1 flex gap-2 overflow-x-auto px-2 py-1 min-w-0">
           <div className="relative min-w-[280px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
@@ -246,9 +268,14 @@ export function ProjectsTable({ data }: { data: any[] }) {
             />
           </div>
         </div>
-        <span className="text-xs text-slate-500 font-medium px-3">
-          {data.length} dự án
-        </span>
+        <div className="flex items-center gap-4 px-2">
+            <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
+            {data.length} dự án
+            </span>
+            <Button onClick={handleExport} variant="outline" size="sm" className="h-9 gap-2 font-bold text-[#0058bc] border-[#0058bc]/20 bg-white shadow-sm hover:bg-[#0058bc]/5">
+                <Download className="size-4" /> Xuất Excel
+            </Button>
+        </div>
       </div>
 
       {/* Table Container */}

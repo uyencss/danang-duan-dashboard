@@ -3,7 +3,9 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { MapPin, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Target, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/export-excel";
 
 interface AMStat {
     id: string;
@@ -35,8 +37,34 @@ export function AMManagementTable({ data }: { data: AMStat[] }) {
         return "bg-slate-50 text-slate-400 border-slate-100";
     };
 
+    const handleExport = () => {
+        const exportData = data.map(am => ({
+            "Tên AM": am.name,
+            "Đội/Tổ": am.team,
+            "Tỷ lệ Chuyển đổi (%)": parseFloat(am.conversionRate.toFixed(1)),
+            "Doanh Thu Tháng (VNĐ)": am.monthlyRev,
+            "Hợp Đồng Tháng": am.monthlyContracts,
+            "Tiếp Cận Tháng": am.monthlyOutreach,
+            "Hạng Tháng": am.rankMonth,
+            "Doanh Thu Quý (VNĐ)": am.quarterlyRev,
+            "Hợp Đồng Quý": am.quarterlyContracts,
+            "Hạng Quý": am.rankQuarter,
+            "Doanh Thu Năm (VNĐ)": am.yearlyRev,
+            "Hợp Đồng Năm": am.yearlyContracts,
+            "Tổng Tiếp Cận Năm": am.totalOutreach,
+            "Hạng Năm": am.rankYear
+        }));
+        exportToExcel(exportData, "BaoCao_QuanLy_AM");
+    };
+
     return (
         <Card className="border-none shadow-2xl shadow-slate-200/50 overflow-hidden rounded-3xl bg-white/70 backdrop-blur-xl">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white/50">
+                <span className="text-sm font-bold text-slate-500">Hiển thị {data.length} nhân sự (AM)</span>
+                <Button onClick={handleExport} variant="outline" size="sm" className="h-8 gap-2 font-bold text-[#0058bc] border-[#0058bc]/20 bg-white">
+                    <Download className="size-3" /> Xuất Excel
+                </Button>
+            </div>
             <div className="overflow-x-auto">
                 <Table className="min-w-[1700px]">
                     <TableHeader className="bg-slate-50/50">

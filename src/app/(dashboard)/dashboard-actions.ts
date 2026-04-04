@@ -135,9 +135,22 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
             const hasMonthly = (proj as any).doanhThuTheoThang && (proj as any).doanhThuTheoThang > 0;
 
             let projRevValue = 0;
-            if (hasMonthly) {
-                projRevValue = contextMonth * (proj as any).doanhThuTheoThang!;
-            } else if (hasTotal) {
+            let monthsPassed = 1;
+            const pThang = (proj as any).thang || 1;
+            const pNam = (proj as any).nam || currentYear;
+
+            if (pNam === currentYear) {
+                monthsPassed = contextMonth - pThang + 1;
+            } else if (pNam < currentYear) {
+                monthsPassed = (12 - pThang + 1) + contextMonth;
+            }
+            if (monthsPassed < 1) monthsPassed = 1;
+
+            if (hasTotal && hasMonthly) {
+                projRevValue = monthsPassed * (proj as any).doanhThuTheoThang!;
+            } else if (hasMonthly && !hasTotal) {
+                projRevValue = monthsPassed * (proj as any).doanhThuTheoThang!;
+            } else if (hasTotal && !hasMonthly) {
                 projRevValue = proj.tongDoanhThuDuKien;
             }
 
@@ -190,11 +203,18 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
             .slice(0, 5);
  
         // Lowest Revenue rankings (Bottom 5)
-        const bottomAM = [...amAnalytics]
-            .sort((a, b) => a.totalRevenue - b.totalRevenue)
+        const bottomAMSigned = [...amAnalytics]
+            .sort((a, b) => a.signedRevenue - b.signedRevenue)
             .slice(0, 5);
-        const bottomCV = [...cvAnalytics]
-            .sort((a, b) => a.totalRevenue - b.totalRevenue)
+        const bottomAMOthers = [...amAnalytics]
+            .sort((a, b) => a.otherRevenue - b.otherRevenue)
+            .slice(0, 5);
+
+        const bottomCVSigned = [...cvAnalytics]
+            .sort((a, b) => a.signedRevenue - b.signedRevenue)
+            .slice(0, 5);
+        const bottomCVOthers = [...cvAnalytics]
+            .sort((a, b) => a.otherRevenue - b.otherRevenue)
             .slice(0, 5);
 
         return { 
@@ -203,8 +223,10 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
             topAMOthers,
             topCVSigned,
             topCVOthers,
-            bottomAM,
-            bottomCV
+            bottomAMSigned,
+            bottomAMOthers,
+            bottomCVSigned,
+            bottomCVOthers
         };
     } catch (error: any) {
         console.error("getAMPerformance Error:", error);
@@ -297,7 +319,7 @@ export async function getKPITimeSeries(granularity: 'thang' | 'quy' | 'nam' = 't
     }
 }
 
-export async function getDiaBanAnalytics() {
+export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' | 'thang', year?: number, quarter?: number, month?: number }) {
     try {
         const sessionRes = await (auth.api as any).getSession({
             headers: await headers()
@@ -312,10 +334,32 @@ export async function getDiaBanAnalytics() {
             select: { id: true, name: true, diaBan: true }
         });
 
+        let projectFilter: any = {};
+        const now = new Date();
+        const currentYear = 2026;
+        let contextMonth = now.getFullYear() === currentYear ? now.getMonth() + 1 : 12;
+
+        if (filter?.type === 'nam' && filter.year) {
+            projectFilter.nam = filter.year;
+            if (filter.year !== currentYear) contextMonth = 12;
+        } else if (filter?.type === 'quy' && filter.year && filter.quarter) {
+            projectFilter.nam = filter.year;
+            projectFilter.quy = filter.quarter;
+            contextMonth = filter.quarter * 3;
+        } else if (filter?.type === 'thang' && filter.year && filter.month) {
+            projectFilter.nam = filter.year;
+            projectFilter.thang = filter.month;
+            contextMonth = filter.month;
+        }
+
         const projects = await (prisma.duAn as any).findMany({
+            where: projectFilter,
             select: {
                 id: true,
                 tongDoanhThuDuKien: true,
+                doanhThuTheoThang: true,
+                thang: true,
+                nam: true,
                 trangThaiHienTai: true,
                 amId: true,
                 amHoTroId: true,
@@ -330,6 +374,32 @@ export async function getDiaBanAnalytics() {
 
         projects.forEach((p: any) => {
             const project = p as any;
+            
+            const hasTotal = project.tongDoanhThuDuKien && project.tongDoanhThuDuKien > 0;
+            const hasMonthly = project.doanhThuTheoThang && project.doanhThuTheoThang > 0;
+
+            let projRevValue = 0;
+            let monthsPassed = 1;
+            const pThang = project.thang || 1;
+            const pNam = project.nam || currentYear;
+
+            if (pNam === currentYear) {
+                monthsPassed = contextMonth - pThang + 1;
+            } else if (pNam < currentYear) {
+                monthsPassed = (12 - pThang + 1) + contextMonth;
+            }
+            if (monthsPassed < 1) monthsPassed = 1;
+
+            if (hasTotal && hasMonthly) {
+                projRevValue = monthsPassed * (project.doanhThuTheoThang || 0);
+            } else if (hasMonthly && !hasTotal) {
+                projRevValue = monthsPassed * (project.doanhThuTheoThang || 0);
+            } else if (hasTotal && !hasMonthly) {
+                projRevValue = project.tongDoanhThuDuKien;
+            }
+
+            const isSigned = project.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG;
+
             const involvedIds = Array.from(new Set([
                 project.amId, 
                 project.amHoTroId, 
@@ -344,12 +414,17 @@ export async function getDiaBanAnalytics() {
                 if (staff) {
                     const diaBan = staff.diaBan || "Chưa phân công";
                     if (!staffMap.has(staff.id)) {
-                        staffMap.set(staff.id, { id: staff.id, name: staff.name, diaBan: diaBan, revenue: 0, contracts: 0, totalProjects: 0 });
+                        staffMap.set(staff.id, { id: staff.id, name: staff.name, diaBan: diaBan, revenue: 0, signedRevenue: 0, otherRevenue: 0, contracts: 0, totalProjects: 0 });
                     }
                     const st = staffMap.get(staff.id);
                     st.totalProjects += 1;
-                    st.revenue += p.tongDoanhThuDuKien;
-                    if (p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG) st.contracts += 1;
+                    st.revenue += projRevValue;
+                    if (isSigned) {
+                        st.contracts += 1;
+                        st.signedRevenue += projRevValue;
+                    } else {
+                        st.otherRevenue += projRevValue;
+                    }
                 }
             });
 
@@ -359,12 +434,17 @@ export async function getDiaBanAnalytics() {
             const diaBan = primaryStaff?.diaBan || "Chưa phân công";
 
             if (!diaBanMap.has(diaBan)) {
-                diaBanMap.set(diaBan, { name: diaBan, revenue: 0, projects: 0, contracts: 0, staffCount: new Set() });
+                diaBanMap.set(diaBan, { name: diaBan, revenue: 0, signedRevenue: 0, otherRevenue: 0, projects: 0, contracts: 0, staffCount: new Set() });
             }
             const dbRef = diaBanMap.get(diaBan);
             dbRef.projects += 1;
-            dbRef.revenue += p.tongDoanhThuDuKien;
-            if (p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG) dbRef.contracts += 1;
+            dbRef.revenue += projRevValue;
+            if (isSigned) {
+                dbRef.contracts += 1;
+                dbRef.signedRevenue += projRevValue;
+            } else {
+                dbRef.otherRevenue += projRevValue;
+            }
             
             // Record all distinct staff seen in this Dia Ban
             involvedIds.forEach(id => {
@@ -394,4 +474,22 @@ export async function getDiaBanAnalytics() {
     }
 }
 
-
+export async function getHoanThanhKeHoachData() {
+    try {
+        const kpis = await (prisma.chiTieuKpi as any).findMany({ where: { nam: 2026 } });
+        const projects = await (prisma.duAn as any).findMany({ 
+            where: { nam: 2026 },
+            select: {
+                id: true,
+                tongDoanhThuDuKien: true,
+                doanhThuTheoThang: true,
+                thang: true,
+                nam: true,
+                trangThaiHienTai: true
+            }
+        });
+        return { projects, kpis };
+    } catch (e: any) {
+        return { error: e.message };
+    }
+}

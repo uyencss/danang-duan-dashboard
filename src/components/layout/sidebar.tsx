@@ -18,6 +18,7 @@ import {
   PlusCircle,
   UserCheck,
   GraduationCap,
+  Target,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -41,7 +42,7 @@ const adminNavItems: SidebarItem[] = [
   { label: "Khách hàng", href: "/admin/khach-hang", icon: Building2, role: "ADMIN" },
   { label: "Sản phẩm", href: "/admin/san-pham", icon: Package, role: "ADMIN" },
   { label: "Quản lý User", href: "/admin/users", icon: UserCog, role: "ADMIN" },
-  { label: "Sổ địa bàn", href: "/dia-ban", icon: MapPin, role: "ADMIN" },
+  { label: "Giao KPI", href: "/admin/kpi", icon: Target, role: "ADMIN" },
 ];
 
 interface SidebarProps {
