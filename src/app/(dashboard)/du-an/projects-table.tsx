@@ -161,10 +161,8 @@ export function ProjectsTable({ data }: { data: any[] }) {
             </Button>
             
             <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Button variant="ghost" size="icon-xs" className="text-gray-400">
-                    <MoreHorizontal className="size-4" />
-                </Button>
+              <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 w-7 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors outline-none">
+                  <MoreHorizontal className="size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>

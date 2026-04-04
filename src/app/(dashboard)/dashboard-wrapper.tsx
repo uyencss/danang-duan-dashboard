@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 interface DashboardWrapperProps {
   children: React.ReactNode;
   user: {
+    id?: string;
     name: string;
     email: string;
     role: string;

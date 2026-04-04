@@ -4,16 +4,15 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Bell,
   Search,
   LogOut,
   User,
-  MoreVertical,
   HelpCircle,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -21,9 +20,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 interface HeaderProps {
   user: {
+    id?: string;
     name: string;
     email: string;
     role: string;
@@ -66,10 +67,7 @@ export function Header({ user }: HeaderProps) {
         <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-50">
           <HelpCircle className="size-5" />
         </Button>
-        <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-50 relative">
-          <Bell className="size-5" />
-          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-        </Button>
+        <NotificationBell userId={user.id} />
         
         <DropdownMenu>
           <DropdownMenuTrigger>
@@ -95,12 +93,14 @@ export function Header({ user }: HeaderProps) {
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user.name}</p>
-                <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-              </div>
-            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user.name}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                </div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer">
               <User className="mr-2 h-4 w-4" />

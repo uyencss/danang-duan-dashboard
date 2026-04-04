@@ -40,6 +40,80 @@ interface CurrentUser {
     role: string;
 }
 
+// ─── Extracted outside to avoid remount on every parent render ─────────────
+interface CommentItemProps {
+    comment: Comment;
+    isReply?: boolean;
+    replies: Comment[];
+    currentUser: CurrentUser | null | undefined;
+    onDelete: (id: number) => void;
+    onReply: (comment: Comment) => void;
+}
+
+function CommentItem({ comment, isReply = false, replies, currentUser, onDelete, onReply }: CommentItemProps) {
+    return (
+        <div className={cn("flex gap-3", isReply ? "mt-4" : "mt-8 animate-in slide-in-from-left duration-300")}>
+            <Avatar className={cn("rounded-xl border shadow-sm", isReply ? "size-8" : "size-10")}>
+                <AvatarImage src={comment.user.avatarUrl || ""} />
+                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                    {comment.user.name.charAt(0)}
+                </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 space-y-2">
+                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm shadow-gray-200/20 group relative">
+                    <div className="flex items-center justify-between gap-4 mb-1">
+                        <div className="flex items-center gap-2">
+                            <span className="font-black text-gray-800 text-sm">{comment.user.name}</span>
+                            {comment.user.role === "ADMIN" && (
+                                <Badge className="bg-blue-50 text-blue-600 border-none px-1 text-[8px] h-3 uppercase font-black">Admin</Badge>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-tight">
+                            {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}
+                            
+                            {(currentUser?.role === "ADMIN" || currentUser?.id === comment.user.id) && (
+                                <button 
+                                    onClick={() => onDelete(comment.id)} 
+                                    className="p-1 hover:bg-red-50 hover:text-red-500 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                    <Trash2 className="size-3" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    <p className="text-gray-600 text-sm leading-relaxed">{comment.content}</p>
+
+                    {!isReply && (
+                        <button 
+                            onClick={() => {
+                                onReply(comment);
+                                const el = document.getElementById('comment-input');
+                                el?.focus();
+                            }}
+                            className="absolute -bottom-6 left-0 text-[10px] font-black text-primary hover:text-blue-700 flex items-center gap-1 uppercase"
+                        >
+                            <Reply className="size-3" /> Phản hồi
+                        </button>
+                    )}
+                </div>
+
+                {!isReply && replies.map(reply => (
+                    <CommentItem
+                        key={reply.id}
+                        comment={reply}
+                        isReply
+                        replies={[]}
+                        currentUser={currentUser}
+                        onDelete={onDelete}
+                        onReply={onReply}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────
 export function ProjectComments({ 
     projectId, 
     comments = [], 
@@ -55,8 +129,11 @@ export function ProjectComments({
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        // Initialize Ably client-side instance
-        const client = new Ably.Realtime({ key: process.env.NEXT_PUBLIC_ABLY_KEY || "dummy_key" });
+        // Initialize Ably client-side instance — only if key is valid
+        const key = process.env.NEXT_PUBLIC_ABLY_KEY;
+        if (!key || !key.includes(':')) return; // skip if placeholder/missing key
+
+        const client = new Ably.Realtime({ key });
         const channel = client.channels.get(`project-${projectId}`);
 
         channel.subscribe("new_comment", (message) => {
@@ -75,7 +152,6 @@ export function ProjectComments({
         };
     }, [projectId, router, currentUser]);
 
-    // Grouping comments by parent
     const rootComments = comments.filter(c => !c.parentId);
     const getReplies = (parentId: number) => comments.filter(c => c.parentId === parentId);
 
@@ -107,59 +183,6 @@ export function ProjectComments({
             toast.error(res.error);
         }
     };
-
-    const CommentItem = ({ comment, isReply = false }: { comment: Comment, isReply?: boolean }) => (
-        <div className={cn("flex gap-3", isReply ? "mt-4" : "mt-8 animate-in slide-in-from-left duration-300")}>
-            <Avatar className={cn("rounded-xl border shadow-sm", isReply ? "size-8" : "size-10")}>
-                <AvatarImage src={comment.user.avatarUrl || ""} />
-                <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                    {comment.user.name.charAt(0)}
-                </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-2">
-                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm shadow-gray-200/20 group relative">
-                    <div className="flex items-center justify-between gap-4 mb-1">
-                        <div className="flex items-center gap-2">
-                            <span className="font-black text-gray-800 text-sm">{comment.user.name}</span>
-                            {comment.user.role === "ADMIN" && (
-                                <Badge className="bg-blue-50 text-blue-600 border-none px-1 text-[8px] h-3 uppercase font-black">Admin</Badge>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                            {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}
-                            
-                            {(currentUser?.role === "ADMIN" || currentUser?.id === comment.user.id) && (
-                                <button 
-                                    onClick={() => handleDelete(comment.id)} 
-                                    className="p-1 hover:bg-red-50 hover:text-red-500 rounded-md transition-colors opacity-0 group-hover:opacity-100"
-                                >
-                                    <Trash2 className="size-3" />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                    <p className="text-gray-600 text-sm leading-relaxed">{comment.content}</p>
-
-                    {!isReply && (
-                        <button 
-                            onClick={() => {
-                                setReplyingTo(comment);
-                                const el = document.getElementById('comment-input');
-                                el?.focus();
-                            }}
-                            className="absolute -bottom-6 left-0 text-[10px] font-black text-primary hover:text-blue-700 flex items-center gap-1 uppercase"
-                        >
-                            <Reply className="size-3" /> Phản hồi
-                        </button>
-                    )}
-                </div>
-
-                {!isReply && getReplies(comment.id).map(reply => (
-                    <CommentItem key={reply.id} comment={reply} isReply />
-                ))}
-            </div>
-        </div>
-    );
 
     return (
         <div className="space-y-12">
@@ -208,7 +231,16 @@ export function ProjectComments({
                         <p className="text-[10px] uppercase font-black opacity-40 mt-1">HÃY BẮT ĐẦU CUỘC TRÒ CHUYỆN!</p>
                     </div>
                 ) : (
-                    rootComments.map(c => <CommentItem key={c.id} comment={c} />)
+                    rootComments.map(c => (
+                        <CommentItem
+                            key={c.id}
+                            comment={c}
+                            replies={getReplies(c.id)}
+                            currentUser={currentUser}
+                            onDelete={handleDelete}
+                            onReply={setReplyingTo}
+                        />
+                    ))
                 )}
             </div>
         </div>

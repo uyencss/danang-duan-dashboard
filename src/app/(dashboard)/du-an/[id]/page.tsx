@@ -15,6 +15,7 @@ import {
   AlertCircle,
   FileText,
   MessageSquare,
+  MessagesSquare,
   Activity,
   UserCheck2,
   ChevronRight,
@@ -28,6 +29,7 @@ import { TrangThaiDuAn } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { ProjectComments } from "@/components/du-an/project-comments";
+import { ProjectChat } from "@/components/du-an/project-chat";
 import { Separator } from "@/components/ui/separator";
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -115,7 +117,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                         <History className="size-4 mr-2" /> Nhật ký ({project.nhatKy?.length || 0})
                     </TabsTrigger>
                     <TabsTrigger value="comments" className="rounded-[1.5rem] px-8 h-full font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white">
-                        <MessageSquare className="size-4 mr-2" /> Bình thảo luận ({project.binhLuan?.length || 0})
+                        <MessageSquare className="size-4 mr-2" /> Thảo luận ({project.binhLuan?.length || 0})
+                    </TabsTrigger>
+                    <TabsTrigger value="chat" className="rounded-[1.5rem] px-8 h-full font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white">
+                        <MessagesSquare className="size-4 mr-2" /> Chat
                     </TabsTrigger>
                 </TabsList>
 
@@ -195,6 +200,17 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                         projectId={project.id} 
                         comments={project.binhLuan as any} 
                         currentUser={currentUser} 
+                    />
+                </TabsContent>
+
+                <TabsContent value="chat" className="pt-4">
+                    <ProjectChat
+                        projectId={project.id}
+                        currentUser={currentUser ? {
+                            id: currentUser.id,
+                            name: currentUser.name,
+                            role: currentUser.role,
+                        } : null}
                     />
                 </TabsContent>
             </Tabs>

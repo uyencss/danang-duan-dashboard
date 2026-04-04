@@ -30,7 +30,7 @@ Khi có bình luận mới hoặc phản hồi mới, người dùng liên quan 
 
 ### 4. Thông báo UI (Notification System)
 - [x] Hiển thị Toast (Sonner) thông báo nội dung bình luận mới: "[Tên] vừa bình luận: [Nội dung...]".
-- [ ] (Nâng cao) Thêm trung tâm thông báo (Notification Bell) trên Sidebar/Layout.
+- [x] (Nâng cao) Thêm trung tâm thông báo (Notification Bell) trên Sidebar/Layout.
 
 ### 5. Tối ưu hóa
 - [x] Đảm bảo bảo mật: Component kiểm tra ID người gửi để không tự ping chính mình.
