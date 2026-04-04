@@ -1,0 +1,245 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  ADMIN        // Lãnh đạo — full access
+  USER         // AM / Chuyên viên — limited
+}
+
+enum PhanLoaiKH {
+  CHINH_PHU    // Sở, Ban, Ngành
+  DOANH_NGHIEP // Doanh nghiệp tư nhân
+  CONG_AN      // Công an (B2A)
+}
+
+enum TrangThaiDuAn {
+  MOI              // Mới
+  DANG_LAM_VIEC    // Đang làm việc
+  DA_DEMO          // Đã demo
+  DA_GUI_BAO_GIA   // Đã gửi báo giá
+  DA_KY_HOP_DONG   // Đã ký hợp đồng
+  THAT_BAI         // Thất bại
+}
+
+enum LinhVuc {
+  B2B_B2G   // Cloud, IT, Digital Transformation
+  B2A       // Công nghệ cho Công an
+}
+
+enum LoaiTinNhan {
+  TEXT
+  SYSTEM
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  emailVerified  Boolean   @default(false)
+  image          String?
+  hashedPassword String?
+  role           UserRole  @default(USER)
+  diaBan         String?   @default("Chưa phân công")
+  avatarUrl      String?
+  isActive       Boolean   @default(true)
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  duAnAM         DuAn[]           @relation("AMRelation")
+  duAnCV         DuAn[]           @relation("CVRelation")
+  nhatKy         NhatKyCongViec[]
+  binhLuan       BinhLuan[]
+  tinNhan        TinNhan[]
+  sessions       Session[]
+  accounts       Account[]
+
+  @@index([email])
+  @@index([role])
+  @@index([diaBan])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id           String    @id @default(cuid())
+  userId       String
+  accountId    String
+  providerId   String
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+  password     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model KhachHang {
+  id          Int        @id @default(autoincrement())
+  ten         String
+  phanLoai    PhanLoaiKH
+  diaChi      String?
+  soDienThoai String?
+  email       String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  duAns DuAn[]
+
+  @@index([phanLoai])
+  @@index([ten])
+}
+
+model SanPham {
+  id         Int      @id @default(autoincrement())
+  nhom       String
+  tenChiTiet String
+  moTa       String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  duAns DuAn[]
+
+  @@index([nhom])
+}
+
+model DuAn {
+  id                    Int           @id @default(autoincrement())
+  customerId            Int
+  productId             Int
+  amId                  String
+  chuyenVienId          String?
+  tenDuAn               String
+  linhVuc               LinhVuc       @default(B2B_B2G)
+  tongDoanhThuDuKien    Float         @default(0)
+  soHopDong             String?
+  maHopDong             String?
+  ngayBatDau            DateTime
+  tuan                  Int
+  thang                 Int
+  quy                   Int
+  nam                   Int
+  ngayChamsocCuoiCung   DateTime?
+  trangThaiHienTai      TrangThaiDuAn @default(MOI)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  // Relations
+  khachHang  KhachHang @relation(fields: [customerId], references: [id])
+  sanPham    SanPham   @relation(fields: [productId], references: [id])
+  am         User      @relation("AMRelation", fields: [amId], references: [id])
+  chuyenVien User?     @relation("CVRelation", fields: [chuyenVienId], references: [id])
+
+  nhatKy   NhatKyCongViec[]
+  binhLuan BinhLuan[]
+  tinNhan  TinNhan[]
+
+  @@index([customerId])
+  @@index([productId])
+  @@index([amId])
+  @@index([chuyenVienId])
+  @@index([trangThaiHienTai])
+  @@index([linhVuc])
+  @@index([nam, quy, thang])
+  @@index([ngayChamsocCuoiCung])
+}
+
+model NhatKyCongViec {
+  id             Int           @id @default(autoincrement())
+  projectId      Int
+  userId         String
+  ngayGio        DateTime      @default(now())
+  trangThaiMoi   TrangThaiDuAn
+  noiDungChiTiet String
+  createdAt      DateTime      @default(now())
+
+  duAn DuAn @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([projectId])
+  @@index([userId])
+}
+
+model BinhLuan {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  userId    String
+  content   String
+  parentId  Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  duAn   DuAn      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user   User      @relation(fields: [userId], references: [id])
+  parent BinhLuan? @relation("CommentThread", fields: [parentId], references: [id])
+  replies BinhLuan[] @relation("CommentThread")
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([parentId])
+}
+
+model TinNhan {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  userId    String
+  content   String
+  type      LoaiTinNhan @default(TEXT)
+  isEdited  Boolean  @default(false)
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  duAn   DuAn @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id])
+
+  @@index([projectId, createdAt])
+  @@index([userId])
+}
