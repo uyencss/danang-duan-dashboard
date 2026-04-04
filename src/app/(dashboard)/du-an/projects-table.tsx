@@ -235,20 +235,20 @@ export function ProjectsTable({ data }: { data: any[] }) {
 
   const handleExport = () => {
     const exportData = table.getFilteredRowModel().rows.map(row => {
-        const p = row.original as any;
-        return {
-            "Tên Dự Án": p.tenDuAn,
-            "Khách Hàng": p.khachHang?.ten || "",
-            "Lĩnh Vực": LINH_VUC_LABELS[p.linhVuc] || p.linhVuc,
-            "Sản Phẩm": p.sanPham?.tenChiTiet || "",
-            "AM": p.am?.name || "",
-            "Chuyên Viên": p.chuyenVien?.name || "",
-            "Trạng Thái": STATUS_STYLES[p.trangThaiHienTai]?.label || p.trangThaiHienTai,
-            "Tổng DT Dự Kiến": p.tongDoanhThuDuKien,
-            "Doanh Thu Theo Tháng": p.doanhThuTheoThang,
-            "Ghi Chú": p.ghiChu || "",
-            "Ngày CSKH Cuối": p.ngayChamsocCuoiCung ? new Date(p.ngayChamsocCuoiCung).toLocaleDateString("vi-VN") : "Chưa CSKH"
-        };
+      const p = row.original as any;
+      return {
+        "Tên Dự Án": p.tenDuAn,
+        "Khách Hàng": p.khachHang?.ten || "",
+        "Lĩnh Vực": LINH_VUC_LABELS[p.linhVuc] || p.linhVuc,
+        "Sản Phẩm": p.sanPham?.tenChiTiet || "",
+        "AM": p.am?.name || "",
+        "Chuyên Viên": p.chuyenVien?.name || "",
+        "Trạng Thái": STATUS_STYLES[p.trangThaiHienTai]?.label || p.trangThaiHienTai,
+        "Tổng DT Dự Kiến": p.tongDoanhThuDuKien,
+        "Doanh Thu Theo Tháng": p.doanhThuTheoThang,
+        "Ghi Chú": p.ghiChu || "",
+        "Ngày CSKH Cuối": p.ngayChamsocCuoiCung ? new Date(p.ngayChamsocCuoiCung).toLocaleDateString("vi-VN") : "Chưa CSKH"
+      };
     });
     exportToExcel(exportData, "DanhSachDuAn_CRM");
   };
@@ -269,20 +269,19 @@ export function ProjectsTable({ data }: { data: any[] }) {
           </div>
         </div>
         <div className="flex items-center gap-4 px-2">
-            <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
+          <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
             {data.length} dự án
-            </span>
-            <Button onClick={handleExport} variant="outline" size="sm" className="h-9 gap-2 font-bold text-[#0058bc] border-[#0058bc]/20 bg-white shadow-sm hover:bg-[#0058bc]/5">
-                <Download className="size-4" /> Xuất Excel
-            </Button>
+          </span>
+          <Button onClick={handleExport} variant="outline" size="sm" className="h-9 gap-2 font-bold text-[#0058bc] border-[#0058bc]/20 bg-white shadow-sm hover:bg-[#0058bc]/5">
+            <Download className="size-4" /> Xuất Excel
+          </Button>
         </div>
       </div>
 
-      {/* Table Container */}
-      <div className="bg-white rounded-2xl overflow-x-auto shadow-sm border border-[#c5c6ce]/10">
+      <div className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-x-auto shadow-2xl shadow-blue-900/5 border border-blue-100/50">
         <table className="w-full min-w-[1400px] text-left border-collapse">
-          <thead>
-            <tr className="bg-[#f2f4f6] text-[#44474d]">
+          <thead className="bg-gradient-to-r from-[#0058bc] via-blue-600 to-cyan-500 text-white">
+            <tr>
               {table.getHeaderGroups().map((hg) =>
                 hg.headers.map((header) => {
                   const filterValue = header.column.getFilterValue();
@@ -291,19 +290,19 @@ export function ProjectsTable({ data }: { data: any[] }) {
                   return (
                     <th
                       key={header.id}
-                      className="py-4 px-6 font-bold text-[10px] uppercase tracking-widest whitespace-nowrap group"
+                      className="py-4 px-6 font-black text-[10px] uppercase tracking-widest whitespace-nowrap group border-b border-white/20"
                     >
                       <div className="flex items-center gap-2">
                         {header.isPlaceholder
                           ? null
                           : flexRender(header.column.columnDef.header as any, header.getContext())}
-                        
+
                         {!header.isPlaceholder && header.id !== "actions" && header.id !== "index" && (
                           <Popover>
                             <PopoverTrigger>
                               <div className={cn(
-                                "p-1 rounded hover:bg-slate-200 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer",
-                                (filterValue as any) && "opacity-100 text-[#0058bc]"
+                                "p-1 rounded hover:bg-white/20 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer text-white/70 hover:text-white",
+                                (filterValue as any) && "opacity-100 bg-white/20 text-white"
                               )}>
                                 <Filter className="size-3" />
                               </div>
@@ -333,9 +332,9 @@ export function ProjectsTable({ data }: { data: any[] }) {
                                       }} className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", ((filterValue as string[]) || []).includes(k) ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{v.label}</button>
                                     ))}
                                     {header.id === "warning" && [
-                                      {k: "urgent", v: "Cần CS gấp"},
-                                      {k: "normal", v: "Bình thường"}
-                                    ].map(({k, v}) => (
+                                      { k: "urgent", v: "Cần CS gấp" },
+                                      { k: "normal", v: "Bình thường" }
+                                    ].map(({ k, v }) => (
                                       <button key={k} onClick={() => header.column.setFilterValue(filterValue === k ? undefined : k)} className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", filterValue === k ? "bg-[#ba1a1a] text-white border-[#ba1a1a]" : "bg-white text-slate-600 border-slate-200")}>{v}</button>
                                     ))}
                                   </div>
@@ -356,25 +355,25 @@ export function ProjectsTable({ data }: { data: any[] }) {
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#eceef0]">
+          <tbody className="divide-y divide-blue-50/50">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
                 const lastDate = row.original.ngayChamsocCuoiCung;
                 const isUrgent = lastDate
                   ? Math.floor(
-                      (new Date().getTime() - new Date(lastDate).getTime()) /
-                        (1000 * 60 * 60 * 24)
-                    ) > 15
+                    (new Date().getTime() - new Date(lastDate).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                  ) > 15
                   : false;
 
                 return (
                   <tr
                     key={row.id}
                     className={cn(
-                      "transition-colors",
+                      "transition-all duration-300",
                       isUrgent
-                        ? "bg-[#ffdad6]/20 hover:bg-[#ffdad6]/30"
-                        : "hover:bg-[#f7f9fb]"
+                        ? "bg-[#ffdad6]/20 hover:bg-[#ffdad6]/40"
+                        : "hover:bg-blue-50/60"
                     )}
                   >
                     {row.getVisibleCells().map((cell) => (
@@ -399,7 +398,7 @@ export function ProjectsTable({ data }: { data: any[] }) {
         </table>
 
         {/* Pagination */}
-        <div className="p-6 bg-[#f2f4f6] flex justify-between items-center">
+        <div className="p-6 bg-slate-50/50 flex justify-between items-center border-t border-slate-100/50">
           <p className="text-xs text-[#44474d] font-medium">
             Hiển thị {table.getRowModel().rows.length} trên tổng số {data.length} dự án
           </p>

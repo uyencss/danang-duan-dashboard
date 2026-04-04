@@ -30,7 +30,7 @@ export default async function DiaBanPage({ searchParams }: { searchParams: Promi
     return (
         <div className="space-y-6">
             <Breadcrumb items={[{ label: "Thống kê" }, { label: "Phân bổ & Địa bàn" }]} />
-            <DiaBanDashboardClient diaBanData={res.diaBanData} topStaffData={res.topStaffData} />
+            <DiaBanDashboardClient diaBanData={res.diaBanData} topStaffData={res.topStaffData} kpiTotal={res.kpiTotal || 0} />
         </div>
     );
 }

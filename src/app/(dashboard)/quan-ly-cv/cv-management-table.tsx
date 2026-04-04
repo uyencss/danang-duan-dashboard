@@ -58,42 +58,42 @@ export function CVManagementTable({ data }: { data: CVStat[] }) {
     };
 
     return (
-        <Card className="border-none shadow-2xl shadow-slate-200/50 overflow-hidden rounded-3xl bg-white/70 backdrop-blur-xl">
-            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white/50">
-                <span className="text-sm font-bold text-slate-500">Hiển thị {data.length} nhân sự (Chuyên viên)</span>
+        <Card className="border-none shadow-2xl shadow-blue-900/5 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl ring-1 ring-blue-100/50">
+            <div className="p-4 border-b border-blue-50 flex justify-between items-center bg-gradient-to-r from-blue-50/50 to-transparent">
+                <span className="text-sm font-bold text-blue-900/60">Hiển thị {data.length} nhân sự (Chuyên viên)</span>
                 <Button onClick={handleExport} variant="outline" size="sm" className="h-8 gap-2 font-bold text-purple-600 border-purple-200 hover:bg-purple-50 bg-white">
                     <Download className="size-3" /> Xuất Excel
                 </Button>
             </div>
             <div className="overflow-x-auto">
                 <Table className="min-w-[1700px]">
-                    <TableHeader className="bg-slate-50/50">
-                        <TableRow className="border-b border-slate-100">
-                             <TableHead className="w-16 text-center font-black text-slate-400 uppercase tracking-widest text-[10px]">#</TableHead>
-                             <TableHead className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Chuyên viên</TableHead>
-                             <TableHead className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Tổ / Địa bàn</TableHead>
-                             <TableHead className="font-black text-indigo-600 uppercase tracking-widest text-[10px] text-center">Tỷ lệ Chuyển đổi</TableHead>
+                    <TableHeader className="bg-gradient-to-r from-[#0058bc]/95 via-blue-600/95 to-cyan-500/95 backdrop-blur-sm">
+                        <TableRow className="border-b border-white/10 hover:bg-transparent">
+                             <TableHead className="w-16 text-center font-black text-white/70 uppercase tracking-widest text-[10px]">#</TableHead>
+                             <TableHead className="font-black text-white uppercase tracking-widest text-[10px]">Chuyên viên</TableHead>
+                             <TableHead className="font-black text-white uppercase tracking-widest text-[10px]">Tổ / Địa bàn</TableHead>
+                             <TableHead className="font-black text-cyan-200 uppercase tracking-widest text-[10px] text-center">Tỷ lệ Chuyển đổi</TableHead>
                              
                              {/* Monthly Header Group */}
-                             <TableHead className="bg-blue-50/30 font-black text-blue-600 uppercase tracking-widest text-[10px] border-l border-white">Doanh thu Tháng</TableHead>
-                             <TableHead className="bg-blue-50/30 text-center font-black text-blue-600 uppercase tracking-widest text-[10px]">HĐ Tháng</TableHead>
-                             <TableHead className="bg-blue-50/30 text-center font-black text-blue-600 uppercase tracking-widest text-[10px]">Tiếp cận (M)</TableHead>
-                             <TableHead className="bg-blue-50/30 text-center font-black text-blue-600 uppercase tracking-widest text-[10px] border-r border-white">Hạng Tháng</TableHead>
+                             <TableHead className="bg-white/10 font-black text-white uppercase tracking-widest text-[10px] border-l border-white/10">Doanh thu Tháng</TableHead>
+                             <TableHead className="bg-white/10 text-center font-black text-white uppercase tracking-widest text-[10px]">HĐ Tháng</TableHead>
+                             <TableHead className="bg-white/10 text-center font-black text-white uppercase tracking-widest text-[10px]">Tiếp cận (M)</TableHead>
+                             <TableHead className="bg-white/10 text-center font-black text-white uppercase tracking-widest text-[10px] border-r border-white/10">Hạng Tháng</TableHead>
 
                              {/* Quarterly Header Group */}
-                             <TableHead className="bg-purple-50/30 font-black text-purple-600 uppercase tracking-widest text-[10px]">Doanh thu Quý</TableHead>
-                             <TableHead className="bg-purple-50/30 text-center font-black text-purple-600 uppercase tracking-widest text-[10px]">HĐ Quý</TableHead>
-                             <TableHead className="bg-purple-50/30 text-center font-black text-purple-600 uppercase tracking-widest text-[10px] border-r border-white">Hạng Quý</TableHead>
+                             <TableHead className="bg-white/5 font-black text-white uppercase tracking-widest text-[10px]">Doanh thu Quý</TableHead>
+                             <TableHead className="bg-white/5 text-center font-black text-white uppercase tracking-widest text-[10px]">HĐ Quý</TableHead>
+                             <TableHead className="bg-white/5 text-center font-black text-white uppercase tracking-widest text-[10px] border-r border-white/10">Hạng Quý</TableHead>
 
                              {/* Yearly Header Group */}
-                             <TableHead className="bg-amber-50/30 font-black text-amber-600 uppercase tracking-widest text-[10px]">Doanh thu Năm</TableHead>
-                             <TableHead className="bg-amber-50/30 text-center font-black text-amber-600 uppercase tracking-widest text-[10px]">HĐ Năm</TableHead>
-                             <TableHead className="bg-amber-50/30 text-center font-black text-amber-600 uppercase tracking-widest text-[10px]">Hạng Năm</TableHead>
+                             <TableHead className="bg-white/10 font-black text-white uppercase tracking-widest text-[10px]">Doanh thu Năm</TableHead>
+                             <TableHead className="bg-white/10 text-center font-black text-white uppercase tracking-widest text-[10px]">HĐ Năm</TableHead>
+                             <TableHead className="bg-white/10 text-center font-black text-white uppercase tracking-widest text-[10px]">Hạng Năm</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {data.map((cv, idx) => (
-                            <TableRow key={cv.id} className="group hover:bg-slate-50/80 transition-all border-b border-slate-50">
+                            <TableRow key={cv.id} className="group hover:bg-blue-50/60 transition-all duration-300 border-b border-slate-50 relative">
                                 <TableCell className="text-center font-bold text-slate-300 group-hover:text-slate-500 transition-colors">
                                     {idx + 1}
                                 </TableCell>

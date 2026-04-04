@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function CreateProjectPage() {
   return (
-    <div className="max-w-[860px] mx-auto space-y-8 animate-in slide-in-from-bottom-2 duration-500">
+    <div className="w-full mx-auto space-y-4 lg:space-y-6 animate-in slide-in-from-bottom-2 duration-500">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[

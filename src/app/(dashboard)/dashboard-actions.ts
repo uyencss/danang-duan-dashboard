@@ -455,19 +455,42 @@ export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' 
             });
         });
 
-        const diaBanData = Array.from(diaBanMap.values()).map(d => ({
-            ...d,
-            staffCount: d.staffCount.size
-        })).sort((a, b) => b.revenue - a.revenue);
+        // 3. Fetch matching KPI
+        let kpiFilter: any = {};
+        if (filter?.type === 'nam' && filter.year) {
+            kpiFilter.nam = filter.year;
+        } else if (filter?.type === 'quy' && filter.year && filter.quarter) {
+            kpiFilter.nam = filter.year;
+            let qMonths: number[] = [];
+            if (filter.quarter === 1) qMonths = [1,2,3];
+            else if (filter.quarter === 2) qMonths = [4,5,6];
+            else if (filter.quarter === 3) qMonths = [7,8,9];
+            else if (filter.quarter === 4) qMonths = [10,11,12];
+            kpiFilter.thang = { in: qMonths };
+        } else if (filter?.type === 'thang' && filter.year && filter.month) {
+            kpiFilter.nam = filter.year;
+            kpiFilter.thang = filter.month;
+        }
 
-        const topStaffData = Array.from(staffMap.values())
-            .map(s => ({
-                ...s,
-                conversionRate: s.totalProjects > 0 ? (s.contracts / s.totalProjects) * 100 : 0
-            }))
-            .sort((a, b) => b.revenue - a.revenue);
+        const kpiRecords = await (prisma as any).chiTieuKpi.findMany({ where: kpiFilter });
+        let kpiTotal = 0;
+        kpiRecords.forEach((k: any) => {
+            kpiTotal += Number(k.anNinhMang||0) + Number(k.giaiPhapCntt||0) + Number(k.duAnCds||0) + Number(k.cnsAnNinh||0);
+        });
 
-        return { diaBanData, topStaffData };
+        return {
+            diaBanData: Array.from(diaBanMap.values()).map(d => ({
+                ...d,
+                staffCount: d.staffCount.size
+            })).sort((a, b) => b.revenue - a.revenue),
+            topStaffData: Array.from(staffMap.values())
+                .map(s => ({
+                    ...s,
+                    conversionRate: s.totalProjects > 0 ? (s.contracts / s.totalProjects) * 100 : 0
+                }))
+                .sort((a, b) => b.revenue - a.revenue),
+            kpiTotal
+        };
     } catch (error: any) {
         console.error("getDiaBanAnalytics Error:", error);
         return { error: `Lỗi phân tích địa bàn: ${error?.message}` };

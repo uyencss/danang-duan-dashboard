@@ -100,8 +100,8 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
   return (
     <aside
       className={cn(
-        "relative flex flex-col h-screen transition-all duration-300 ease-in-out z-40 shadow-2xl",
-        "bg-[#0D1F3C]",
+        "relative flex flex-col h-screen transition-all duration-300 ease-in-out z-40 shadow-2xl border-r border-[#0058bc]/20",
+        "bg-gradient-to-b from-[#0a192f] via-[#0d2a52] to-[#0a192f]",
         isCollapsed ? "w-20" : "w-72"
       )}
     >
@@ -109,19 +109,28 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
       <div className={cn("px-4 py-8 mb-2", isCollapsed ? "flex justify-center" : "px-8")}>
         {!isCollapsed ? (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#000719] to-[#0d1f3c] flex items-center justify-center shadow-lg ring-1 ring-white/10">
-              <span className="text-white font-black text-xl">M</span>
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0058bc] via-blue-500 to-cyan-400 flex items-center justify-center overflow-hidden shadow-[0_0_20px_rgba(0,180,216,0.4)] ring-1 ring-cyan-200/50">
+              <div className="absolute inset-0 bg-white/20 animate-pulse mix-blend-overlay"></div>
+              <svg className="w-6 h-6 text-white relative z-10 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 21V5a2 2 0 0 1 2-2h3l3 6 3-6h3a2 2 0 0 1 2 2v16" />
+                <circle cx="12" cy="11" r="1.5" fill="currentColor" />
+                <circle cx="7" cy="18" r="1.5" fill="currentColor" />
+                <circle cx="17" cy="18" r="1.5" fill="currentColor" />
+              </svg>
             </div>
             <div>
-              <h1 className="text-white font-black text-xl tracking-tight leading-none">MobiFone</h1>
-              <p className="text-slate-400 text-[10px] mt-0.5 uppercase tracking-widest font-bold">
-                Project Tracker
+              <h1 className="text-white font-black text-xl tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-white to-cyan-200">MobiFone</h1>
+              <p className="text-cyan-400 text-[10px] mt-0.5 uppercase tracking-widest font-black drop-shadow-sm">
+                Dự án
               </p>
             </div>
           </div>
         ) : (
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#000719] to-[#0d1f3c] flex items-center justify-center ring-1 ring-white/10">
-            <span className="text-white font-black text-xl">M</span>
+          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0058bc] via-blue-500 to-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(0,180,216,0.3)] ring-1 ring-cyan-200/50">
+            <div className="absolute inset-0 bg-white/20 animate-pulse mix-blend-overlay"></div>
+            <svg className="w-5 h-5 text-white relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 21V5a2 2 0 0 1 2-2h3l3 6 3-6h3a2 2 0 0 1 2 2v16" />
+            </svg>
           </div>
         )}
       </div>
@@ -149,10 +158,11 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
         {!isCollapsed ? (
           <Link
             href="/du-an/tao-moi"
-            className="w-full py-3 rounded-xl bg-[#0070eb] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-[#0058bc] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-blue-900/30"
+            className="relative w-full py-3 rounded-xl bg-gradient-to-r from-[#0058bc] to-blue-500 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:from-blue-600 hover:to-cyan-500 hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(0,180,216,0.3)] transition-all overflow-hidden group"
           >
-            <PlusCircle className="size-4" />
-            Tạo Dự án Mới
+            <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+            <PlusCircle className="size-4 relative z-10" />
+            <span className="relative z-10">Khởi tạo Dự án CĐS</span>
           </Link>
         ) : (
           <Link

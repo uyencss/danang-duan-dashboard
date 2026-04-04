@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Treemap } from "recharts";
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -43,57 +43,7 @@ const COLORS = [
     '#002147', // Navy
 ];
 
-const TreemapContent = (props: any) => {
-    const { root, depth, x, y, width, height, index, colors, name } = props;
-    if (depth !== 1) return null;
-
-    return (
-        <g>
-            <rect
-                x={x}
-                y={y}
-                width={width}
-                height={height}
-                rx={8}
-                ry={8}
-                style={{
-                    fill: colors[index % colors.length],
-                    stroke: '#fff',
-                    strokeWidth: 2,
-                    cursor: 'pointer',
-                    transition: 'opacity 0.2s'
-                }}
-                className="hover:opacity-80"
-            />
-            {width > 60 && height > 30 ? (
-                <>
-                    <text 
-                        x={x + 10} 
-                        y={y + 25} 
-                        fill="#fff" 
-                        fontSize={13} 
-                        fontWeight="900"
-                        className="pointer-events-none uppercase tracking-wider"
-                    >
-                        {name}
-                    </text>
-                    <text 
-                        x={x + 10} 
-                        y={y + 45} 
-                        fill="rgba(255,255,255,0.8)" 
-                        fontSize={11} 
-                        fontWeight="bold"
-                        className="pointer-events-none"
-                    >
-                        {props.revenue?.toLocaleString()} Tr.đ
-                    </text>
-                </>
-            ) : null}
-        </g>
-    );
-};
-
-export function DiaBanDashboardClient({ diaBanData, topStaffData }: { diaBanData: DiaBanData[], topStaffData: TopStaff[] }) {
+export function DiaBanDashboardClient({ diaBanData, topStaffData, kpiTotal }: { diaBanData: DiaBanData[], topStaffData: TopStaff[], kpiTotal: number }) {
     const [selectedDiaBan, setSelectedDiaBan] = useState<string>("all");
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -143,12 +93,52 @@ export function DiaBanDashboardClient({ diaBanData, topStaffData }: { diaBanData
     const totalContracts = filteredDiaBanData.reduce((acc, d) => acc + d.contracts, 0);
     const avgConversion = (totalProjects > 0) ? (totalContracts / totalProjects * 100) : 0;
 
-    const treeData = [
-        {
-            name: 'Địa bàn',
-            children: filteredDiaBanData.map(d => ({ size: d.revenue, ...d }))
+    // Globals for percentage calculations
+    const globalSigned = diaBanData.reduce((acc, d) => acc + d.signedRevenue, 0);
+    const globalOther = diaBanData.reduce((acc, d) => acc + d.otherRevenue, 0);
+
+    // Prepare pie chart datasets
+    let pieSignedData: any[] = [];
+    let pieOtherData: any[] = [];
+    let pieKpiData: any[] = [];
+
+    if (selectedDiaBan === "all") {
+        pieSignedData = diaBanData.map(d => ({ name: d.name, value: d.signedRevenue })).filter(d => d.value > 0);
+        pieOtherData = diaBanData.map(d => ({ name: d.name, value: d.otherRevenue })).filter(d => d.value > 0);
+        pieKpiData = [
+            { name: "Đã Ký (Tổng)", value: globalSigned },
+            { name: "KPI Chưa Hoàn Thành", value: Math.max(0, kpiTotal - globalSigned) }
+        ];
+    } else {
+        const sel = filteredDiaBanData[0];
+        if (sel) {
+            pieSignedData = [
+                { name: sel.name, value: sel.signedRevenue },
+                { name: "Các tổ khác", value: Math.max(0, globalSigned - sel.signedRevenue) }
+            ];
+            pieOtherData = [
+                { name: sel.name, value: sel.otherRevenue },
+                { name: "Các tổ khác", value: Math.max(0, globalOther - sel.otherRevenue) }
+            ];
+            pieKpiData = [
+                { name: `Đã Ký (${sel.name})`, value: sel.signedRevenue },
+                { name: "KPI Tương ứng còn lại", value: Math.max(0, kpiTotal - sel.signedRevenue) }
+            ];
         }
-    ];
+    }
+
+    const CustomTooltip = ({ active, payload }: any) => {
+        if (active && payload && payload.length) {
+            const data = payload[0].payload;
+            return (
+                <div className="bg-white/95 backdrop-blur-xl p-4 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,88,188,0.2)] border border-blue-50">
+                    <p className="font-black text-[#0D1F3C] text-sm uppercase mb-1">{data.name}</p>
+                    <p className="text-blue-600 font-bold text-lg">{data.value.toLocaleString()} Tr.đ</p>
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
@@ -213,64 +203,137 @@ export function DiaBanDashboardClient({ diaBanData, topStaffData }: { diaBanData
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 {[
-                    { label: "DT Đã Ký", value: `${totalSignedRevenue.toLocaleString()} Tr.đ`, icon: CheckCircle, color: "bg-blue-500", text: "text-blue-600" },
-                    { label: "DT Trạng Thái Khác", value: `${totalOtherRevenue.toLocaleString()} Tr.đ`, icon: DollarSign, color: "bg-orange-500", text: "text-orange-600" },
-                    { label: "Tổng Hợp Đồng", value: totalContracts, icon: Briefcase, color: "bg-emerald-500", text: "text-emerald-600" },
-                    { label: "Dự Án Khác", value: totalProjects - totalContracts, icon: Target, color: "bg-amber-500", text: "text-amber-600" },
-                    { label: "Tỉ lệ Thành Công", value: `${avgConversion.toFixed(1)}%`, icon: TrendingUp, color: "bg-purple-500", text: "text-purple-600" },
+                    { label: "DT Đã Ký", value: `${totalSignedRevenue.toLocaleString()} Tr.đ`, icon: CheckCircle, color: "bg-gradient-to-br from-blue-400 to-[#0058bc]" },
+                    { label: "DT Trạng Thái Khác", value: `${totalOtherRevenue.toLocaleString()} Tr.đ`, icon: DollarSign, color: "bg-gradient-to-br from-orange-400 to-red-500" },
+                    { label: "Tổng Hợp Đồng", value: totalContracts, icon: Briefcase, color: "bg-gradient-to-br from-emerald-400 to-[#00d084]" },
+                    { label: "Dự Án Khác", value: totalProjects - totalContracts, icon: Target, color: "bg-gradient-to-br from-amber-300 to-orange-500" },
+                    { label: "Tỉ lệ Thành Công", value: `${avgConversion.toFixed(1)}%`, icon: TrendingUp, color: "bg-gradient-to-br from-purple-400 to-indigo-600" },
                 ].map((kpi, i) => (
-                    <Card key={i} className="border-none shadow-sm hover:shadow-md transition-shadow rounded-3xl overflow-hidden bg-white">
-                        <CardContent className="p-4 lg:p-6">
-                            <div className="flex items-center gap-4">
-                                <div className={cn("p-3 rounded-2xl text-white shadow-lg", kpi.color)}>
-                                    <kpi.icon className="size-6" />
+                    <Card key={i} className="border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,88,188,0.1)] transition-all rounded-[24px] overflow-hidden bg-white/80 backdrop-blur-xl group">
+                        <CardContent className="p-5 lg:p-6 flex flex-col gap-5">
+                            <div className="flex items-start">
+                                <div className={cn("p-3.5 rounded-[18px] text-white shadow-xl shadow-blue-900/10 ring-1 ring-white/50 group-hover:scale-110 transition-transform duration-300", kpi.color)}>
+                                    <kpi.icon className="size-6 drop-shadow-md" strokeWidth={2.5} />
                                 </div>
-                                <div className="overflow-visible break-words w-full">
-                                    <p className="text-[10px] lg:text-xs font-black text-slate-400 uppercase tracking-wider break-words whitespace-normal leading-tight">{kpi.label}</p>
-                                    <h3 className="text-lg lg:text-xl font-black text-[#0D1F3C] mt-1 break-words whitespace-normal">{kpi.value}</h3>
-                                </div>
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 h-8 line-clamp-2 leading-tight flex items-end">{kpi.label}</p>
+                                <h3 className="text-2xl lg:text-[26px] font-[900] text-[#0D1F3C] tracking-tight break-words pb-1">{kpi.value}</h3>
                             </div>
                         </CardContent>
                     </Card>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Treemap */}
-                <Card className="border-none shadow-sm rounded-[32px] bg-white overflow-hidden flex flex-col">
-                    <CardHeader className="pb-2">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                {/* Phân Bổ Doanh Thu - 3 Pie Charts */}
+                <Card className="xl:col-span-2 border-none shadow-2xl shadow-blue-900/5 rounded-[32px] bg-white overflow-hidden flex flex-col ring-1 ring-blue-100/50">
+                    <CardHeader className="pb-2 bg-gradient-to-r from-blue-50/50 to-transparent border-b border-blue-50/50">
                         <div className="flex justify-between items-center">
                             <div>
-                                <CardTitle className="text-xl font-black text-[#0D1F3C]">Phân Bổ Doanh Thu</CardTitle>
-                                <CardDescription className="font-medium">Tỉ trọng dự kiến theo Treemap</CardDescription>
+                                <CardTitle className="text-xl font-black text-[#0D1F3C]">Phân Bổ Tỉ Trọng & KPI</CardTitle>
+                                <CardDescription className="font-medium text-slate-500">
+                                    {selectedDiaBan === "all" ? "Tỉ trọng đóng góp của các tổ" : `Đóng góp của ${selectedDiaBan} so với toàn hệ thống`}
+                                </CardDescription>
                             </div>
-                            <Badge className="bg-blue-50 text-blue-700 border-blue-100 font-black">LIVE DATA</Badge>
+                            <Badge className="bg-gradient-to-r from-[#0058bc] to-blue-500 text-white border-none font-black px-3 py-1 shadow-lg">LIVE DATA</Badge>
                         </div>
                     </CardHeader>
-                    <CardContent className="flex-1 pb-8">
-                        <div className="h-[350px] w-full mt-4">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <Treemap
-                                    data={treeData}
-                                    dataKey="size"
-                                    stroke="#fff"
-                                    content={<TreemapContent colors={COLORS} />}
-                                >
-                                    <Tooltip 
-                                        contentStyle={{ borderRadius: '1.5rem', border: 'none', boxShadow: '0 20px 50px -12px rgba(0, 0, 0, 0.15)', padding: '12px 16px' }}
-                                        itemStyle={{ fontWeight: '900', color: '#0D1F3C' }}
-                                        formatter={(value: any, name: any, props: any) => {
-                                            return [`${Number(value).toLocaleString()} Tr.đ`, props.payload.name];
-                                        }}
-                                    />
-                                </Treemap>
-                            </ResponsiveContainer>
+                    <CardContent className="flex-1 p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
+                            {/* Chart 1: Doanh Thu Đã Ký */}
+                            <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-[#f7f9fb] shadow-inner border border-white">
+                                <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-4 whitespace-normal text-center">Tỉ trọng DT Đã Ký</h4>
+                                <div className="h-[220px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={pieSignedData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={50}
+                                                outerRadius={80}
+                                                paddingAngle={2}
+                                                dataKey="value"
+                                                stroke="none"
+                                            >
+                                                {pieSignedData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={selectedDiaBan !== "all" && index === 1 ? '#e2e8f0' : COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* Chart 2: Doanh Thu Khác */}
+                            <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-[#f7f9fb] shadow-inner border border-white">
+                                <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-4 whitespace-normal text-center">Tỉ trọng DT Trạng Thái Khác</h4>
+                                <div className="h-[220px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={pieOtherData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={50}
+                                                outerRadius={80}
+                                                paddingAngle={2}
+                                                dataKey="value"
+                                                stroke="none"
+                                            >
+                                                {pieOtherData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={selectedDiaBan !== "all" && index === 1 ? '#e2e8f0' : COLORS[(index + 2) % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* Chart 3: KPI Hoàn Thành */}
+                            <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-b from-blue-50/50 to-[#f7f9fb] shadow-inner border border-blue-100/50">
+                                <h4 className="text-[11px] font-black uppercase tracking-widest text-[#0058bc] mb-4 whitespace-normal text-center">Hoàn Thành KPI Tương Ứng</h4>
+                                <div className="h-[220px] w-full relative">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={pieKpiData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={60}
+                                                outerRadius={85}
+                                                paddingAngle={2}
+                                                dataKey="value"
+                                                stroke="none"
+                                                startAngle={90}
+                                                endAngle={-270}
+                                            >
+                                                {pieKpiData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={index === 0 ? '#00d084' : '#e2e8f0'} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip content={<CustomTooltip />} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                        <span className="text-2xl font-black text-[#00d084]">
+                                            {kpiTotal > 0 ? ((pieKpiData[0]?.value || 0) / kpiTotal * 100).toFixed(1) : 0}%
+                                        </span>
+                                        <span className="text-[9px] uppercase font-bold text-slate-400 mt-0.5">Tiến độ</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Performance Chart */}
-                <Card className="border-none shadow-sm rounded-[32px] bg-white overflow-hidden flex flex-col">
+                <Card className="xl:col-span-1 border-none shadow-sm rounded-[32px] bg-white overflow-hidden flex flex-col">
                     <CardHeader className="pb-2">
                         <div className="flex justify-between items-center">
                             <div>
@@ -312,94 +375,6 @@ export function DiaBanDashboardClient({ diaBanData, topStaffData }: { diaBanData
                 </Card>
             </div>
 
-            {/* Leaderboard Table */}
-            <Card className="border-none shadow-sm rounded-[32px] bg-white overflow-hidden">
-                <div className="p-8 pb-4 flex justify-between items-center border-b border-gray-50 mb-2">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-amber-100 rounded-2xl">
-                            <Trophy className="size-6 text-amber-600" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-[#0D1F3C]">Bảng Vàng Cá Nhân</h2>
-                            <p className="text-slate-500 font-medium text-sm">Vinh danh các AM & Chuyên viên xuất sắc theo địa bàn</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="px-4 pb-4">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="hover:bg-transparent border-none">
-                                <TableHead className="w-20 font-black text-[#0D1F3C] text-xs uppercase tracking-widest text-center">Rank</TableHead>
-                                <TableHead className="font-black text-[#0D1F3C] text-xs uppercase tracking-widest">Nhân sự / District</TableHead>
-                                <TableHead className="text-right font-black text-[#0D1F3C] text-xs uppercase tracking-widest">DT Đã Ký</TableHead>
-                                <TableHead className="text-right font-black text-[#0D1F3C] text-xs uppercase tracking-widest">DT Khác</TableHead>
-                                <TableHead className="text-center font-black text-[#0D1F3C] text-xs uppercase tracking-widest">Hợp đồng</TableHead>
-                                <TableHead className="text-right font-black text-[#0D1F3C] text-xs uppercase tracking-widest">Hiệu suất</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredStaff.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-20 text-slate-400 italic">Chưa ghi nhận dữ liệu tại địa bàn này</TableCell>
-                                </TableRow>
-                            ) : filteredStaff.slice(0, 10).map((staff, index) => (
-                                <TableRow key={staff.id} className="group border-gray-50/50 hover:bg-slate-50/80 transition-all rounded-2xl">
-                                    <TableCell className="text-center">
-                                        <div className={cn(
-                                            "inline-flex size-10 items-center justify-center rounded-xl font-black text-sm shadow-sm",
-                                            index === 0 ? "bg-amber-400 text-white shadow-amber-200" :
-                                            index === 1 ? "bg-slate-300 text-white shadow-slate-100" :
-                                            index === 2 ? "bg-orange-300 text-white shadow-orange-100" :
-                                            "bg-[#f7f9fb] text-slate-400"
-                                        )}>
-                                            {index + 1}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-400 group-hover:bg-white group-hover:text-[#0058bc] shadow-inner transition-colors">
-                                                {staff.name.charAt(0)}
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="font-black text-[#0D1F3C] group-hover:text-[#0058bc] transition-colors">{staff.name}</span>
-                                                <span className="text-xs text-slate-400 font-bold uppercase tracking-tighter">{staff.diaBan}</span>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <span className="text-lg font-[900] text-[#0D1F3C]">
-                                            {staff.signedRevenue.toLocaleString()} 
-                                            <span className="ml-1 text-[10px] text-slate-400">Tr.đ</span>
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <span className="text-sm font-bold text-orange-600">
-                                            {staff.otherRevenue.toLocaleString()} 
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <div className="inline-flex items-center gap-2 bg-[#f7f9fb] px-3 py-1 rounded-full group-hover:bg-white border border-transparent group-hover:border-slate-100 transition-all">
-                                            <Users className="size-3 text-slate-400" />
-                                            <span className="font-black text-slate-600 text-xs">{staff.contracts}/{staff.totalProjects}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex flex-col items-end gap-1">
-                                            <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                <div 
-                                                    className={cn("h-full rounded-full transition-all duration-1000", staff.conversionRate > 50 ? "bg-emerald-500" : "bg-orange-500")}
-                                                    style={{ width: `${staff.conversionRate}%` }}
-                                                />
-                                            </div>
-                                            <span className="text-[10px] font-black text-slate-500">{staff.conversionRate.toFixed(1)}%</span>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            </Card>
         </div>
     );
 }

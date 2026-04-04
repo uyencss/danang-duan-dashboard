@@ -100,12 +100,12 @@ export function CustomersTable({ data }: { data: any[] }) {
       cell: ({ row }) => {
         const type = row.getValue("phanLoai") as PhanLoaiKH;
         return (
-          <Badge 
-            variant="outline" 
+          <Badge
+            variant="outline"
             className={
               type === "CHINH_PHU" ? "bg-blue-50 text-blue-700 border-blue-200" :
-              type === "CONG_AN" ? "bg-red-50 text-red-700 border-red-200" : 
-              "bg-green-50 text-green-700 border-green-200"
+                type === "CONG_AN" ? "bg-red-50 text-red-700 border-red-200" :
+                  "bg-green-50 text-green-700 border-green-200"
             }
           >
             {type === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : type === "CONG_AN" ? "Công an" : "Doanh nghiệp"}
@@ -138,9 +138,9 @@ export function CustomersTable({ data }: { data: any[] }) {
       header: "Trạng thái",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <Switch 
-            checked={row.getValue("isActive")} 
-            onCheckedChange={() => handleToggle(row.original.id, row.original.isActive)} 
+          <Switch
+            checked={row.getValue("isActive")}
+            onCheckedChange={() => handleToggle(row.original.id, row.original.isActive)}
           />
         </div>
       ),
@@ -155,12 +155,12 @@ export function CustomersTable({ data }: { data: any[] }) {
               <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem 
-               className="cursor-pointer"
-               onClick={() => {
-                 setSelectedKH(kh);
-                 setOpenForm(true);
-               }}
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => {
+                  setSelectedKH(kh);
+                  setOpenForm(true);
+                }}
               >
                 <Pencil className="mr-2 h-4 w-4" /> Chỉnh sửa
               </DropdownMenuItem>
@@ -168,7 +168,7 @@ export function CustomersTable({ data }: { data: any[] }) {
                 <AlertDialogTrigger
                   nativeButton={false}
                   render={
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="text-red-600 cursor-pointer focus:bg-red-50 focus:text-red-600"
                       onSelect={(e) => e.preventDefault()}
                     />
@@ -177,19 +177,19 @@ export function CustomersTable({ data }: { data: any[] }) {
                   <Trash2 className="mr-2 h-4 w-4" /> Xóa Client
                 </AlertDialogTrigger>
                 <AlertDialogContent>
-                   <AlertDialogHeader>
-                      <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Thao tác này không thể hoàn tác. Khách hàng <strong>{kh.ten}</strong> sẽ bị xóa vĩnh viễn khỏi hệ thống.
-                        Nếu khách hàng còn dự án liên quan, bạn sẽ không thể thực hiện thao tác này.
-                      </AlertDialogDescription>
-                   </AlertDialogHeader>
-                   <AlertDialogFooter>
-                      <AlertDialogCancel>Hủy</AlertDialogCancel>
-                      <AlertDialogAction className="bg-red-600 focus:ring-red-600" onClick={() => handleDelete(kh.id)}>
-                        Xác nhận xóa
-                      </AlertDialogAction>
-                   </AlertDialogFooter>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Thao tác này không thể hoàn tác. Khách hàng <strong>{kh.ten}</strong> sẽ bị xóa vĩnh viễn khỏi hệ thống.
+                      Nếu khách hàng còn dự án liên quan, bạn sẽ không thể thực hiện thao tác này.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Hủy</AlertDialogCancel>
+                    <AlertDialogAction className="bg-red-600 focus:ring-red-600" onClick={() => handleDelete(kh.id)}>
+                      Xác nhận xóa
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
             </DropdownMenuContent>
@@ -226,17 +226,17 @@ export function CustomersTable({ data }: { data: any[] }) {
             className="border-none bg-transparent h-6 focus-visible:ring-0 text-sm shadow-none p-0"
           />
         </div>
-        
+
         <div className="flex items-center gap-3">
-           <Button 
+          <Button
             className="bg-primary hover:bg-primary/90 font-bold shadow-md rounded-xl"
             onClick={() => {
               setSelectedKH(null);
               setOpenForm(true);
             }}
-           >
-             <Plus className="mr-2 size-4" /> Thêm Khách hàng
-           </Button>
+          >
+            <Plus className="mr-2 size-4" /> Thêm Khách hàng
+          </Button>
         </div>
       </div>
 
@@ -301,11 +301,11 @@ export function CustomersTable({ data }: { data: any[] }) {
         </div>
       </div>
 
-      <KhachHangFormDialog 
-        open={openForm} 
-        setOpen={setOpenForm} 
-        data={selectedKH} 
-        key={selectedKH?.id || "create"} 
+      <KhachHangFormDialog
+        open={openForm}
+        setOpen={setOpenForm}
+        data={selectedKH}
+        key={selectedKH?.id || "create"}
       />
     </div>
   );

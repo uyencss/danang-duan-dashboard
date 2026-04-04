@@ -118,8 +118,12 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
     font-family: 'Inter', sans-serif;
+    background: radial-gradient(circle at top right, rgba(0, 88, 188, 0.1), transparent 40%),
+                radial-gradient(circle at bottom left, rgba(0, 180, 216, 0.15), transparent 40%),
+                #f4f8fb;
+    background-attachment: fixed;
   }
   html {
     @apply font-sans;

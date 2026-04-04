@@ -20,7 +20,7 @@ export function DashboardWrapper({ children, user }: DashboardWrapperProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f7f9fb]">
+    <div className="flex h-screen overflow-hidden bg-transparent">
       {/* Sidebar */}
       <Sidebar
         userRole={user.role as "ADMIN" | "USER"}
