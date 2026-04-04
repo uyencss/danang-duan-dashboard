@@ -129,7 +129,7 @@ export function QuickUpdateModal({
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Chuyển trạng thái sang</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select key={field.name} onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                         <SelectTrigger className="bg-white">
                             <SelectValue placeholder="Chọn trạng thái" />

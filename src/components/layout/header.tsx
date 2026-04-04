@@ -29,7 +29,9 @@ interface HeaderProps {
 
 const roleLabels: Record<string, string> = {
   ADMIN: "Ban Công Nghệ",
-  USER: "Account Manager",
+  AM: "Account Manager",
+  CV: "Chuyên viên giải pháp",
+  USER: "Nhân viên",
 };
 
 export function Header({ user }: HeaderProps) {
@@ -39,9 +41,14 @@ export function Header({ user }: HeaderProps) {
 
   const handleSignOut = async () => {
     try {
-      await authClient.signOut();
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            window.location.href = "/login";
+          }
+        }
+      });
       toast.success("Đã đăng xuất thành công!");
-      router.push("/login");
     } catch (err) {
       toast.error("Lỗi khi đăng xuất. Vui lòng thử lại.");
     }
@@ -101,12 +108,14 @@ export function Header({ user }: HeaderProps) {
               </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 shadow-xl border border-[#c5c6ce]/30">
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-bold leading-none">{user.name}</p>
-                <p className="text-xs leading-none text-slate-500">{user.email}</p>
-              </div>
-            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-bold leading-none">{user.name}</p>
+                  <p className="text-xs leading-none text-slate-500">{user.email}</p>
+                </div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer">
               <User className="mr-2 h-4 w-4" />

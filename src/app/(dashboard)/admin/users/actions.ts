@@ -5,12 +5,13 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { UserRole } from "@prisma/client";
 import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 const UserSchema = z.object({
   name: z.string().min(2, "Họ tên tối thiểu 2 ký tự"),
   email: z.string().email("Email không hợp lệ"),
   password: z.string().min(8, "Mật khẩu tối thiểu 8 ký tự").optional().or(z.literal("")),
-  role: z.nativeEnum(UserRole),
+  role: z.any(),
   diaBan: z.string().optional().or(z.literal("")),
 });
 
@@ -65,7 +66,7 @@ export async function createUser(data: any) {
         }
     });
 
-    revalidatePath("/admin/nhan-vien");
+    revalidatePath("/admin/users");
     return { success: true };
   } catch (error) {
     if (error instanceof z.ZodError) return { error: error.errors[0].message };
@@ -87,7 +88,7 @@ export async function updateUser(id: string, data: any) {
       },
     });
 
-    revalidatePath("/admin/nhan-vien");
+    revalidatePath("/admin/users");
     return { success: true };
   } catch (error) {
     if (error instanceof z.ZodError) return { error: error.errors[0].message };
@@ -97,7 +98,7 @@ export async function updateUser(id: string, data: any) {
 
 export async function toggleUserStatus(id: string, currentActive: boolean) {
   try {
-    const sessionRes = await (auth.api as any).getSession();
+    const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
     if (sessionRes?.user?.id === id) {
         return { error: "Bạn không thể tự khóa chính mình!" };
     }
@@ -107,9 +108,32 @@ export async function toggleUserStatus(id: string, currentActive: boolean) {
       data: { isActive: !currentActive },
     });
     
-    revalidatePath("/admin/nhan-vien");
+    revalidatePath("/admin/users");
     return { success: true };
   } catch (error) {
+    console.error("Toggle error:", error);
     return { error: "Lỗi khi cập nhật trạng thái" };
   }
+}
+
+export async function deleteUser(id: string) {
+    try {
+        const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
+        if (sessionRes?.user?.id === id) {
+            return { error: "Bạn không thể tự xóa chính mình!" };
+        }
+
+        await prisma.user.delete({
+            where: { id }
+        });
+
+        revalidatePath("/admin/users");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Delete error:", error);
+        if (error.code === 'P2003') {
+            return { error: "Không thể xóa nhân viên này vì đang có dữ liệu liên quan (Dự án, Nhật ký...)" };
+        }
+        return { error: "Lỗi hệ thống khi xóa nhân viên" };
+    }
 }

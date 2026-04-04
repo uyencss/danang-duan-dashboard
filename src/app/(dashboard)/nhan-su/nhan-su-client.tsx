@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -22,10 +22,19 @@ export function NhanSuDashboardClient({ initialData }: { initialData: AnalyticsD
     const router = useRouter();
     const searchParams = useSearchParams();
     
-    // Parse current filter from URL
-    const currentType = searchParams.get("type") || "all";
-    const currentYear = searchParams.get("year") || "2026";
-    const currentParam = searchParams.get("value") || "all";
+    // Controlled state for Select
+    const [selectedValue, setSelectedValue] = useState(() => {
+        const type = searchParams.get("type") || "all";
+        const val = searchParams.get("value") || "all";
+        return type === 'all' ? 'all' : `${type}-${val}`;
+    });
+
+    // Synchronize state with URL changes
+    useEffect(() => {
+        const type = searchParams.get("type") || "all";
+        const val = searchParams.get("value") || "all";
+        setSelectedValue(type === 'all' ? 'all' : `${type}-${val}`);
+    }, [searchParams]);
 
     const handleFilterChange = (value: string | null) => {
         if (!value) return;
@@ -54,7 +63,7 @@ export function NhanSuDashboardClient({ initialData }: { initialData: AnalyticsD
                 </div>
 
                 <div className="flex bg-white/50 border border-gray-200/60 p-1.5 rounded-2xl shadow-sm">
-                    <Select onValueChange={handleFilterChange} defaultValue={currentType === 'all' ? 'all' : `${currentType}-${currentParam}`}>
+                    <Select onValueChange={handleFilterChange} value={selectedValue}>
                         <SelectTrigger className="w-[180px] border-none bg-transparent shadow-none font-bold text-gray-700">
                             <SelectValue placeholder="Toàn thời gian" />
                         </SelectTrigger>

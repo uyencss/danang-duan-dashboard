@@ -1,6 +1,6 @@
 import { getDashboardOverview, getAMPerformance } from "./dashboard-actions";
 import { KPICard } from "@/components/dashboard/kpi-card";
-import { StatusFunnel } from "@/components/dashboard/status-funnel";
+import { StatusPieChart } from "@/components/dashboard/status-pie-chart";
 import {
   Package2,
   DollarSign,
@@ -8,12 +8,15 @@ import {
   AlertTriangle,
   ArrowRight,
   TrendingUp,
+  Medal,
+  Flame,
 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -40,8 +43,7 @@ export default async function DashboardPage() {
   const { stats, statusCounts } = result;
 
   // Compute max revenue for bar chart
-  const amList = amPerf.data?.slice(0, 5) || [];
-  const maxRevenue = Math.max(1, ...amList.map((a: any) => a.revenue));
+
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -82,7 +84,8 @@ export default async function DashboardPage() {
           title="Tổng Dự án"
           value={stats.totalProjects}
           icon={Package2}
-          trend="+12% vs tháng"
+          subValue={stats.totalCustomers}
+          subLabel="Tổng khách hàng"
           variant="default"
         />
         <KPICard
@@ -108,39 +111,204 @@ export default async function DashboardPage() {
       </section>
 
       {/* Charts Row */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Funnel */}
-        <StatusFunnel data={statusCounts} />
+      {/* Charts Row */}
+      <section className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* Pie Chart */}
+        <StatusPieChart data={statusCounts} />
 
-        {/* AM Performance Bar Chart */}
-        <div className="bg-white p-8 rounded-xl border border-[#c5c6ce]/10">
-          <h4 className="text-sm font-black uppercase tracking-widest text-[#44474d] mb-8 flex items-center gap-2">
-            <span className="w-1 h-4 bg-[#0058bc] rounded-full inline-block" />
-            Top 5 AM Performance (Revenue)
-          </h4>
+        {/* Top 5 AM */}
+        <div className="bg-white p-8 rounded-xl border border-[#c5c6ce]/10 shadow-sm flex flex-col h-full overflow-hidden">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-sm font-black uppercase tracking-widest text-[#44474d] flex items-center gap-2">
+              <span className="w-1 h-4 bg-[#0058bc] rounded-full inline-block" />
+              Top 5 AM
+              <Medal className="size-4 text-amber-500 animate-bounce" />
+            </h4>
+          </div>
+
+          <Tabs defaultValue="signed" className="flex-1 flex flex-col">
+             <TabsList className="bg-[#f2f4f6] p-1 rounded-full mb-6 w-full gap-1 grid grid-cols-2 shadow-inner">
+                <TabsTrigger value="signed" className="rounded-full text-[10px] font-black uppercase tracking-wider py-2 data-[state=active]:bg-[#0058bc] data-[state=active]:text-white transition-all shadow-none">Dự án Đã ký</TabsTrigger>
+                <TabsTrigger value="others" className="rounded-full text-[10px] font-black uppercase tracking-wider py-2 data-[state=active]:bg-[#0058bc] data-[state=active]:text-white transition-all shadow-none">Trạng thái khác</TabsTrigger>
+             </TabsList>
+
+             <div className="flex-1 overflow-y-auto pr-1">
+               <TabsContent value="signed" className="space-y-6 pt-2 m-0 mt-0 focus-visible:outline-none">
+                  {(amPerf as any).topAMSigned?.map((am: any, i: number) => {
+                    const maxVal = (amPerf as any).topAMSigned[0]?.signedRevenue || 1;
+                    const pct = Math.max(5, (am.signedRevenue / maxVal) * 100);
+                    return (
+                      <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
+                        <div className="flex justify-between text-xs font-bold text-[#191c1e]">
+                          <span className="truncate pr-4">{am.name}</span>
+                          <span className="text-[#0058bc] font-black">{am.signedRevenue.toLocaleString()} Tr</span>
+                        </div>
+                        <div className="h-2.5 w-full bg-[#f2f4f6] rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {(!(amPerf as any).topAMSigned || (amPerf as any).topAMSigned.length === 0) && (
+                    <div className="text-center py-12 flex flex-col items-center justify-center text-slate-300">
+                      <TrendingUp className="size-8 mb-2 opacity-20" />
+                      <p className="text-sm font-medium italic">Chưa có dữ liệu.</p>
+                    </div>
+                  )}
+               </TabsContent>
+               <TabsContent value="others" className="space-y-6 pt-2 m-0 focus-visible:outline-none">
+                  {(amPerf as any).topAMOthers?.map((am: any, i: number) => {
+                    const maxVal = (amPerf as any).topAMOthers[0]?.otherRevenue || 1;
+                    const pct = Math.max(5, (am.otherRevenue / maxVal) * 100);
+                    return (
+                      <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
+                        <div className="flex justify-between text-xs font-bold text-[#191c1e]">
+                          <span className="truncate pr-4">{am.name}</span>
+                          <span className="text-[#0058bc] font-black">{am.otherRevenue.toLocaleString()} Tr</span>
+                        </div>
+                        <div className="h-2.5 w-full bg-[#f2f4f6] rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-[#0058bc] to-[#004493] rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {(!(amPerf as any).topAMOthers || (amPerf as any).topAMOthers.length === 0) && (
+                    <div className="text-center py-12 flex flex-col items-center justify-center text-slate-300">
+                      <TrendingUp className="size-8 mb-2 opacity-20" />
+                      <p className="text-sm font-medium italic">Chưa có dữ liệu.</p>
+                    </div>
+                  )}
+               </TabsContent>
+             </div>
+          </Tabs>
+        </div>
+
+        {/* Top 5 Chuyên viên */}
+        <div className="bg-white p-8 rounded-xl border border-[#c5c6ce]/10 shadow-sm flex flex-col h-full overflow-hidden">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-sm font-black uppercase tracking-widest text-[#44474d] flex items-center gap-2">
+              <span className="w-1 h-4 bg-purple-600 rounded-full inline-block" />
+              Top 5 Chuyên viên
+              <Medal className="size-4 text-amber-500 animate-bounce" />
+            </h4>
+          </div>
+
+          <Tabs defaultValue="signed" className="flex-1 flex flex-col">
+             <TabsList className="bg-[#f2f4f6] p-1 rounded-full mb-6 w-full gap-1 grid grid-cols-2 shadow-inner">
+                <TabsTrigger value="signed" className="rounded-full text-[10px] font-black uppercase tracking-wider py-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white transition-all shadow-none">Dự án Đã ký</TabsTrigger>
+                <TabsTrigger value="others" className="rounded-full text-[10px] font-black uppercase tracking-wider py-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white transition-all shadow-none">Trạng thái khác</TabsTrigger>
+             </TabsList>
+
+             <div className="flex-1 overflow-y-auto pr-1">
+               <TabsContent value="signed" className="space-y-6 pt-2 m-0 mt-0 focus-visible:outline-none">
+                  {(amPerf as any).topCVSigned?.map((cv: any, i: number) => {
+                    const maxVal = (amPerf as any).topCVSigned[0]?.signedRevenue || 1;
+                    const pct = Math.max(5, (cv.signedRevenue / maxVal) * 100);
+                    return (
+                      <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
+                        <div className="flex justify-between text-xs font-bold text-[#191c1e]">
+                          <span className="truncate pr-4">{cv.name}</span>
+                          <span className="text-purple-600 font-black">{cv.signedRevenue.toLocaleString()} Tr</span>
+                        </div>
+                        <div className="h-2.5 w-full bg-[#f2f4f6] rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {(!(amPerf as any).topCVSigned || (amPerf as any).topCVSigned.length === 0) && (
+                    <div className="text-center py-12 flex flex-col items-center justify-center text-slate-300">
+                      <TrendingUp className="size-8 mb-2 opacity-20" />
+                      <p className="text-sm font-medium italic">Chưa có dữ liệu.</p>
+                    </div>
+                  )}
+               </TabsContent>
+               <TabsContent value="others" className="space-y-6 pt-2 m-0 focus-visible:outline-none">
+                  {(amPerf as any).topCVOthers?.map((cv: any, i: number) => {
+                    const maxVal = (amPerf as any).topCVOthers[0]?.otherRevenue || 1;
+                    const pct = Math.max(5, (cv.otherRevenue / maxVal) * 100);
+                    return (
+                      <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
+                        <div className="flex justify-between text-xs font-bold text-[#191c1e]">
+                          <span className="truncate pr-4">{cv.name}</span>
+                          <span className="text-purple-600 font-black">{cv.otherRevenue.toLocaleString()} Tr</span>
+                        </div>
+                        <div className="h-2.5 w-full bg-[#f2f4f6] rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-purple-500 to-purple-700 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {(!(amPerf as any).topCVOthers || (amPerf as any).topCVOthers.length === 0) && (
+                    <div className="text-center py-12 flex flex-col items-center justify-center text-slate-300">
+                      <TrendingUp className="size-8 mb-2 opacity-20" />
+                      <p className="text-sm font-medium italic">Chưa có dữ liệu.</p>
+                    </div>
+                  )}
+               </TabsContent>
+             </div>
+          </Tabs>
+        </div>
+      </section>
+
+      {/* Alarm Section */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Bottom 5 AM */}
+        <div className="bg-white p-8 rounded-xl border border-red-100 shadow-sm flex flex-col h-full overflow-hidden">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-sm font-black uppercase tracking-widest text-red-600 flex items-center gap-2">
+              <span className="w-1 h-4 bg-red-600 rounded-full inline-block" />
+              Top 5 AM Thấp nhất
+              <Flame className="size-4 text-red-500 animate-pulse" />
+            </h4>
+          </div>
           <div className="space-y-6">
-            {amList.map((am: any, i: number) => {
-              const pct = maxRevenue > 0 ? Math.max(5, (am.revenue / maxRevenue) * 100) : 5;
+            {(amPerf as any).bottomAM?.map((am: any, i: number) => {
+              const maxVal = (amPerf as any).bottomAM[0]?.totalRevenue || 1; // It should be sorted asc, so 0 index is lowest? No, the user wants "Top 5 lowest" meaning the 5 with lowest revenue. I sorted asc, so am[0] is lowest.
+              // For bar length, we want them relative to the "best of the bottom"? Or just use a fixed max.
+              // Actually, l'll use the same pct logic for consistency if possible.
+              const maxInGroup = Math.max(...(amPerf as any).bottomAM.map((a: any) => a.totalRevenue), 1);
+              const pct = Math.max(5, (am.totalRevenue / maxInGroup) * 100);
               return (
                 <div key={i} className="space-y-2">
                   <div className="flex justify-between text-xs font-bold text-[#191c1e]">
-                    <span>{am.name}</span>
-                    <span>{am.revenue.toLocaleString()} Tr</span>
+                    <span className="truncate pr-4">{am.name}</span>
+                    <span className="text-red-600 font-black">{am.totalRevenue.toLocaleString()} Tr</span>
                   </div>
-                  <div className="h-2 w-full bg-[#eceef0] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-[#0058bc] to-[#004493] rounded-full transition-all duration-700"
-                      style={{ width: `${pct}%` }}
-                    />
+                  <div className="h-2.5 w-full bg-red-50 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-red-400 to-red-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
             })}
-            {amList.length === 0 && (
-              <p className="text-center text-slate-400 text-sm py-8">
-                Chưa có dữ liệu nhân sự.
-              </p>
-            )}
+          </div>
+        </div>
+
+        {/* Bottom 5 CV */}
+        <div className="bg-white p-8 rounded-xl border border-orange-100 shadow-sm flex flex-col h-full overflow-hidden">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-sm font-black uppercase tracking-widest text-orange-600 flex items-center gap-2">
+              <span className="w-1 h-4 bg-orange-600 rounded-full inline-block" />
+              Top 5 Chuyên viên Thấp nhất
+              <Flame className="size-4 text-orange-500 animate-pulse" />
+            </h4>
+          </div>
+          <div className="space-y-6">
+            {(amPerf as any).bottomCV?.map((cv: any, i: number) => {
+              const maxInGroup = Math.max(...(amPerf as any).bottomCV.map((a: any) => a.totalRevenue), 1);
+              const pct = Math.max(5, (cv.totalRevenue / maxInGroup) * 100);
+              return (
+                <div key={i} className="space-y-2">
+                  <div className="flex justify-between text-xs font-bold text-[#191c1e]">
+                    <span className="truncate pr-4">{cv.name}</span>
+                    <span className="text-orange-600 font-black">{cv.totalRevenue.toLocaleString()} Tr</span>
+                  </div>
+                  <div className="h-2.5 w-full bg-orange-50 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -153,7 +321,7 @@ export default async function DashboardPage() {
             Bảng đánh giá hiệu quả Nhân sự (AM)
           </h4>
           <Link
-            href="/admin/nhan-vien"
+            href="/admin/users"
             className="text-xs text-[#0058bc] font-bold flex items-center gap-1 hover:underline"
           >
             Xem tất cả <ArrowRight className="size-3" />
@@ -181,8 +349,8 @@ export default async function DashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#eceef0]">
-              {amList.map((am: any, i: number) => {
-                const convRate = am.count > 0 ? ((am.signed / am.count) * 100).toFixed(1) : "0.0";
+              {(amPerf as any).data?.slice(0, 5).map((am: any, i: number) => {
+                const convRate = am.projects > 0 ? ((am.contracts / am.projects) * 100).toFixed(1) : "0.0";
                 const initials = am.name.split(" ").map((n: string) => n[0]).slice(-2).join("").toUpperCase();
                 return (
                   <tr key={i} className="hover:bg-[#f7f9fb] transition-colors group">
@@ -222,7 +390,7 @@ export default async function DashboardPage() {
                   </tr>
                 );
               })}
-              {amList.length === 0 && (
+              {(!(amPerf as any).data || (amPerf as any).data.length === 0) && (
                 <tr>
                   <td colSpan={5} className="px-8 py-12 text-center text-slate-400 text-sm">
                     Chưa có dữ liệu nhân sự.

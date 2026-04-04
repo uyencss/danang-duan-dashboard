@@ -11,14 +11,18 @@ import { headers } from "next/headers";
 const DuAnSchema = z.object({
   customerId: z.number().min(1, "Vui lòng chọn khách hàng"),
   productId: z.number().min(1, "Vui lòng chọn sản phẩm"),
-  amId: z.string().min(1, "Vui lòng chọn AM phụ trách"),
+  amId: z.string().optional().or(z.literal("")),
+  amHoTroId: z.string().optional().or(z.literal("")),
   chuyenVienId: z.string().optional().or(z.literal("")),
+  cvHoTro1Id: z.string().optional().or(z.literal("")),
+  cvHoTro2Id: z.string().optional().or(z.literal("")),
   tenDuAn: z.string().min(5, "Tên dự án tối thiểu 5 ký tự"),
-  linhVuc: z.nativeEnum(LinhVuc),
+  linhVuc: z.enum(["CHINH_PHU", "DOANH_NGHIEP", "CONG_AN", "B2B_B2G", "B2A"]),
   tongDoanhThuDuKien: z.coerce.number().min(0, "Doanh thu không được âm"),
-  soHopDong: z.string().optional().or(z.literal("")),
+  doanhThuTheoThang: z.coerce.number().optional().default(0),
   maHopDong: z.string().optional().or(z.literal("")),
   ngayBatDau: z.coerce.date({ required_error: "Vui lòng chọn ngày bắt đầu" }),
+  trangThaiHienTai: z.nativeEnum(TrangThaiDuAn).optional(),
 });
 
 export async function createDuAn(data: any) {
@@ -29,14 +33,19 @@ export async function createDuAn(data: any) {
     const project = await prisma.duAn.create({
       data: {
         ...validated,
+        amId: validated.amId || null,
+        amHoTroId: validated.amHoTroId || null,
+        chuyenVienId: validated.chuyenVienId || null,
+        cvHoTro1Id: validated.cvHoTro1Id || null,
+        cvHoTro2Id: validated.cvHoTro2Id || null,
         tuan,
         thang,
         quy,
         nam,
-        trangThaiHienTai: TrangThaiDuAn.MOI,
+        trangThaiHienTai: validated.trangThaiHienTai || TrangThaiDuAn.MOI,
         ngayBatDau: validated.ngayBatDau,
         ngayChamsocCuoiCung: new Date(),
-      },
+      } as any,
     });
 
     revalidatePath("/du-an");
@@ -46,6 +55,70 @@ export async function createDuAn(data: any) {
     console.error("Create Project Error:", error);
     return { error: "Lỗi hệ thống khi tạo dự án" };
   }
+}
+
+export async function updateDuAn(id: number, data: any) {
+    try {
+        const validated = DuAnSchema.parse(data);
+        const { tuan, thang, quy, nam } = extractTimeFields(validated.ngayBatDau);
+
+        await prisma.duAn.update({
+            where: { id },
+            data: {
+                ...validated,
+                amId: validated.amId || null,
+                amHoTroId: validated.amHoTroId || null,
+                chuyenVienId: validated.chuyenVienId || null,
+                cvHoTro1Id: validated.cvHoTro1Id || null,
+                cvHoTro2Id: validated.cvHoTro2Id || null,
+                tuan,
+                thang,
+                quy,
+                nam,
+                trangThaiHienTai: validated.trangThaiHienTai || undefined,
+                ngayBatDau: validated.ngayBatDau,
+            } as any,
+        });
+
+        revalidatePath("/du-an");
+        revalidatePath(`/du-an/${id}`);
+        return { success: true };
+    } catch (error) {
+        if (error instanceof z.ZodError) return { error: error.errors[0].message };
+        console.error("Update Project Error:", error);
+        return { error: "Lỗi hệ thống khi cập nhật dự án" };
+    }
+}
+
+export async function updateNhatKy(id: number, content: string, status?: TrangThaiDuAn, date?: Date) {
+    try {
+        await prisma.nhatKyCongViec.update({
+            where: { id },
+            data: { 
+                noiDungChiTiet: content,
+                trangThaiMoi: status || undefined,
+                ngayGio: date || undefined
+            }
+        });
+        revalidatePath("/du-an/[id]", "page");
+        return { success: true };
+    } catch (error) {
+        console.error("Update Log Error:", error);
+        return { error: "Lỗi hệ thống khi cập nhật nhật ký" };
+    }
+}
+
+export async function deleteNhatKy(id: number) {
+    try {
+        await prisma.nhatKyCongViec.delete({
+            where: { id }
+        });
+        revalidatePath("/du-an/[id]", "page");
+        return { success: true };
+    } catch (error) {
+        console.error("Delete Log Error:", error);
+        return { error: "Lỗi hệ thống khi xóa nhật ký" };
+    }
 }
 
 export async function getDuAnList(params?: { 
@@ -101,11 +174,14 @@ export async function getDuAnList(params?: {
         khachHang: true,
         sanPham: true,
         am: true,
+        amHoTro: true,
         chuyenVien: true,
+        cvHoTro1: true,
+        cvHoTro2: true,
         _count: {
           select: { nhatKy: true, binhLuan: true }
         }
-      },
+      } as any,
       orderBy: { updatedAt: 'desc' }
     });
     
@@ -130,7 +206,10 @@ export async function getDuAnDetail(id: number) {
         khachHang: true,
         sanPham: true,
         am: true,
+        amHoTro: true,
         chuyenVien: true,
+        cvHoTro1: true,
+        cvHoTro2: true,
         nhatKy: {
             orderBy: { ngayGio: 'desc' },
             include: { user: true }
@@ -139,7 +218,7 @@ export async function getDuAnDetail(id: number) {
             orderBy: { createdAt: 'desc' },
             include: { user: true }
         }
-      }
+      } as any
     });
 
     if (!project) return { error: "Không tìm thấy dự án" };

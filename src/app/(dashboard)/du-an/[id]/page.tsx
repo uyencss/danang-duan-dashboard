@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { TaskLogTimeline } from "@/components/du-an/task-log-timeline";
+import { TaskLogTable } from "@/components/du-an/task-log-table";
 import { QuickUpdateModalTrigger } from "./quick-update-trigger";
 import { TrangThaiDuAn } from "@prisma/client";
 import { auth } from "@/lib/auth";
@@ -27,6 +27,7 @@ import { headers } from "next/headers";
 import { ProjectComments } from "@/components/du-an/project-comments";
 import { ProjectChat } from "@/components/du-an/project-chat";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { EditProjectTrigger } from "./edit-project-trigger";
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   MOI: { label: "Mới", className: "bg-blue-100 text-blue-700" },
@@ -43,7 +44,8 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { data: project, error } = await getDuAnDetail(Number(id));
+  const { data: projectData, error } = await getDuAnDetail(Number(id));
+  const project = projectData as any;
 
   const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
   const currentUser = sessionRes?.user;
@@ -102,9 +104,7 @@ export default async function ProjectDetailPage({
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <Button variant="outline" className="rounded-xl border-[#c5c6ce] h-11 font-bold px-5">
-            <Pencil className="size-4 mr-2" /> Chỉnh sửa
-          </Button>
+          <EditProjectTrigger project={project} />
           <QuickUpdateModalTrigger project={project} />
         </div>
       </div>
@@ -114,7 +114,7 @@ export default async function ProjectDetailPage({
         <div>
           <p className="text-[10px] font-black text-[#44474d] uppercase tracking-widest mb-1">Khách hàng</p>
           <p className="font-bold text-[#191c1e]">{project.khachHang.ten}</p>
-          <span className="text-[10px] text-slate-500">{project.khachHang.phanLoai}</span>
+          <span className="text-[10px] text-slate-500">{project.khachHang.phanLoai === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : project.khachHang.phanLoai === "CONG_AN" ? "Công an" : "Doanh nghiệp"}</span>
         </div>
         <div>
           <p className="text-[10px] font-black text-[#44474d] uppercase tracking-widest mb-1">Sản phẩm</p>
@@ -123,24 +123,28 @@ export default async function ProjectDetailPage({
         </div>
         <div>
           <p className="text-[10px] font-black text-[#44474d] uppercase tracking-widest mb-1">AM Phụ trách</p>
-          <div className="flex items-center gap-2">
-            <div className="size-6 bg-[#000719]/10 text-[#000719] rounded-full flex items-center justify-center text-[10px] font-black">
-              {project.am.name[0]}
+          {project.am ? (
+            <div className="flex items-center gap-2">
+              <div className="size-6 bg-[#000719]/10 text-[#000719] rounded-full flex items-center justify-center text-[10px] font-black uppercase">
+                {project.am.name?.[0] || "?"}
+              </div>
+              <p className="font-bold text-[#191c1e] text-sm">{project.am.name}</p>
             </div>
-            <p className="font-bold text-[#191c1e] text-sm">{project.am.name}</p>
-          </div>
+          ) : (
+            <span className="text-[11px] text-slate-400 italic font-medium">Chưa phân công</span>
+          )}
         </div>
         <div>
           <p className="text-[10px] font-black text-[#44474d] uppercase tracking-widest mb-1">Chuyên viên hỗ trợ</p>
           {project.chuyenVien ? (
             <div className="flex items-center gap-2">
-              <div className="size-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-[10px] font-black">
-                {project.chuyenVien.name[0]}
+              <div className="size-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-[10px] font-black uppercase">
+                {project.chuyenVien.name?.[0] || "?"}
               </div>
               <p className="font-bold text-[#191c1e] text-sm">{project.chuyenVien.name}</p>
             </div>
           ) : (
-            <span className="text-sm text-slate-400 italic">Chưa phân công</span>
+            <span className="text-[11px] text-slate-400 italic font-medium">Chưa phân công</span>
           )}
         </div>
       </div>
@@ -190,16 +194,16 @@ export default async function ProjectDetailPage({
                   <div className="grid grid-cols-2 gap-y-8 gap-x-12">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-[#44474d] uppercase tracking-widest">
-                        Mã / Số HĐ
+                        Doanh thu theo tháng
                       </label>
-                      <p className="font-mono text-sm font-bold text-[#191c1e]">
-                        {project.maHopDong || "N/A"} / {project.soHopDong || "N/A"}
+                      <p className="font-mono text-sm font-bold text-[#0058bc]">
+                        {project.doanhThuTheoThang?.toLocaleString() || "0"} <span className="text-[10px] opacity-60">Tr.đ</span>
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-[#44474d] uppercase tracking-widest">
-                        Doanh thu dự kiến
-                      </label>
+                      <span className="bg-[#0058bc]/10 text-[#0058bc] text-[10px] font-black uppercase px-2.5 py-1 rounded-full tracking-widest">
+                        {project.khachHang.phanLoai === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : project.khachHang.phanLoai === "CONG_AN" ? "Công an" : "Doanh nghiệp"}
+                      </span>
                       <div className="flex items-center gap-2 text-xl font-black text-[#0058bc]">
                         <DollarSign className="size-4 text-green-600" />
                         {project.tongDoanhThuDuKien.toLocaleString()}
@@ -251,7 +255,7 @@ export default async function ProjectDetailPage({
             </TabsContent>
 
             <TabsContent value="timeline" className="pt-2">
-              <TaskLogTimeline logs={project.nhatKy} />
+              <TaskLogTable logs={project.nhatKy} />
             </TabsContent>
 
             <TabsContent value="comments" className="pt-2">

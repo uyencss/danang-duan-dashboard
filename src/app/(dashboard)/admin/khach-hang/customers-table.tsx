@@ -108,7 +108,7 @@ export function CustomersTable({ data }: { data: any[] }) {
               "bg-green-50 text-green-700 border-green-200"
             }
           >
-            {type === "CHINH_PHU" ? "Chính phủ" : type === "CONG_AN" ? "Công an" : "Doanh nghiệp"}
+            {type === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : type === "CONG_AN" ? "Công an" : "Doanh nghiệp"}
           </Badge>
         );
       },
@@ -151,10 +151,8 @@ export function CustomersTable({ data }: { data: any[] }) {
         const kh = row.original;
         return (
           <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
+              <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem 
@@ -167,13 +165,16 @@ export function CustomersTable({ data }: { data: any[] }) {
                 <Pencil className="mr-2 h-4 w-4" /> Chỉnh sửa
               </DropdownMenuItem>
               <AlertDialog>
-                <AlertDialogTrigger>
-                  <DropdownMenuItem 
-                    className="text-red-600 cursor-pointer focus:bg-red-50 focus:text-red-600"
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" /> Xóa Client
-                  </DropdownMenuItem>
+                <AlertDialogTrigger
+                  nativeButton={false}
+                  render={
+                    <DropdownMenuItem 
+                      className="text-red-600 cursor-pointer focus:bg-red-50 focus:text-red-600"
+                      onSelect={(e) => e.preventDefault()}
+                    />
+                  }
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Xóa Client
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                    <AlertDialogHeader>

@@ -14,19 +14,37 @@ import {
 import {
   Search,
   Eye,
-  History,
+  History as HistoryIcon,
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
   Clock,
+  Pencil,
+  Filter,
+  X,
+  ChevronDown,
 } from "lucide-react";
 import * as React from "react";
 import Link from "next/link";
-
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { TrangThaiDuAn } from "@prisma/client";
 import { QuickUpdateModal } from "@/components/du-an/quick-update-modal";
+import { ProjectFormDialog } from "@/components/du-an/project-form-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+
+const LINH_VUC_COLORS: Record<string, string> = {
+  CHINH_PHU: "bg-blue-50 text-blue-600 border-blue-100",
+  DOANH_NGHIEP: "bg-slate-50 text-slate-600 border-slate-100",
+  CONG_AN: "bg-orange-50 text-orange-600 border-orange-100",
+};
+
+const LINH_VUC_LABELS: Record<string, string> = {
+  CHINH_PHU: "Chính phủ",
+  DOANH_NGHIEP: "Doanh nghiệp",
+  CONG_AN: "Công an",
+};
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   MOI: { label: "Mới", className: "bg-blue-100 text-blue-700" },
@@ -43,6 +61,7 @@ export function ProjectsTable({ data }: { data: any[] }) {
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [selectedProject, setSelectedProject] = React.useState<any>(null);
   const [openUpdateModal, setOpenUpdateModal] = React.useState(false);
+  const [openEditModal, setOpenEditModal] = React.useState(false);
 
   const columns: ColumnDef<any>[] = [
     {
@@ -58,35 +77,63 @@ export function ProjectsTable({ data }: { data: any[] }) {
       cell: ({ row }) => (
         <div>
           <Link
-            href={`/du-an/${row.original.id}`}
+            href={`/du-an/${(row.original as any).id}`}
             className="font-bold text-sm text-[#191c1e] hover:text-[#0058bc] transition-colors"
           >
-            {row.original.khachHang.ten}
+            {(row.original as any).khachHang.ten}
           </Link>
-          <p className="text-[10px] text-slate-500 mt-0.5">{row.original.tenDuAn}</p>
+          <p className="text-[10px] text-slate-500 mt-0.5">{(row.original as any).tenDuAn}</p>
         </div>
       ),
+      filterFn: (row, id, value) => {
+        return row.original.khachHang.ten.toLowerCase().includes(value.toLowerCase());
+      },
+    },
+    {
+      accessorKey: "linhVuc",
+      header: "Lĩnh vực",
+      cell: ({ row }) => {
+        const lv = row.getValue("linhVuc") as string;
+        const style = LINH_VUC_COLORS[lv] || LINH_VUC_COLORS.CHINH_PHU;
+        return (
+          <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold border", style)}>
+            {LINH_VUC_LABELS[lv] || lv}
+          </span>
+        );
+      },
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id));
+      },
     },
     {
       accessorKey: "sanPham",
       header: "Sản phẩm",
       cell: ({ row }) => (
-        <span className="text-sm text-[#44474d]">{row.original.sanPham.tenChiTiet}</span>
+        <span className="text-sm text-[#44474d]">{(row.original as any).sanPham.tenChiTiet}</span>
       ),
+      filterFn: (row, id, value) => {
+        return row.original.sanPham.tenChiTiet.toLowerCase().includes(value.toLowerCase());
+      },
     },
     {
       accessorKey: "am",
-      header: "AM",
+      header: "AM phụ trách",
       cell: ({ row }) => (
-        <span className="text-sm text-center">{row.original.am?.name || "—"}</span>
+        <span className="text-sm">{(row.original as any).am?.name || "—"}</span>
       ),
+      filterFn: (row, id, value) => {
+        return (row.original.am?.name || "").toLowerCase().includes(value.toLowerCase());
+      },
     },
     {
       accessorKey: "chuyenVien",
       header: "Chuyên viên",
       cell: ({ row }) => (
-        <span className="text-sm text-[#44474d]">{row.original.chuyenVien?.name || "—"}</span>
+        <span className="text-sm">{(row.original as any).chuyenVien?.name || "—"}</span>
       ),
+      filterFn: (row, id, value) => {
+        return (row.original.chuyenVien?.name || "").toLowerCase().includes(value.toLowerCase());
+      },
     },
     {
       accessorKey: "trangThaiHienTai",
@@ -100,22 +147,25 @@ export function ProjectsTable({ data }: { data: any[] }) {
           </span>
         );
       },
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id));
+      },
     },
     {
       accessorKey: "tongDoanhThuDuKien",
-      header: "Doanh thu (Tr.đ)",
+      header: "Tổng DT",
       cell: ({ row }) => (
-        <span className="text-sm font-bold text-right block">{row.getValue<number>("tongDoanhThuDuKien").toLocaleString()}</span>
+        <span className="text-sm font-bold">{(row.getValue("tongDoanhThuDuKien") as number).toLocaleString()}</span>
       ),
     },
     {
       accessorKey: "ngayChamsocCuoiCung",
-      header: "Ngày CSKH",
+      header: "CSKH",
       cell: ({ row }) => {
         const lastDate = row.getValue("ngayChamsocCuoiCung") as Date;
-        if (!lastDate) return <span className="text-red-500 font-bold text-xs animate-pulse">Chưa CSKH</span>;
+        if (!lastDate) return <span className="text-red-500 font-bold text-[10px] animate-pulse">CHƯA CSKH</span>;
         return (
-          <span className="text-sm text-center text-slate-500">
+          <span className="text-sm text-slate-500">
             {new Date(lastDate).toLocaleDateString("vi-VN")}
           </span>
         );
@@ -125,46 +175,32 @@ export function ProjectsTable({ data }: { data: any[] }) {
       id: "warning",
       header: "Cảnh báo",
       cell: ({ row }) => {
-        const lastDate = row.original.ngayChamsocCuoiCung;
+        const lastDate = (row.original as any).ngayChamsocCuoiCung;
         if (!lastDate) return <span className="text-slate-300">—</span>;
-        const diff = Math.floor(
-          (new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24)
-        );
+        const diff = Math.floor((new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24));
         if (diff > 15) {
           return (
             <span className="px-2 py-1 rounded bg-[#ba1a1a] text-white text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 w-fit">
-              <AlertTriangle className="size-3" />
-              Cần CS gấp
+              <AlertTriangle className="size-3" /> Cần CS gấp
             </span>
           );
         }
-        return (
-          <span className="text-slate-300 text-center block">—</span>
-        );
+        return <span className="text-slate-300">—</span>;
+      },
+      filterFn: (row, id, value) => {
+        const lastDate = (row.original as any).ngayChamsocCuoiCung;
+        const isUrgent = lastDate ? Math.floor((new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24)) > 15 : false;
+        return value === "urgent" ? isUrgent : !isUrgent;
       },
     },
     {
       id: "actions",
-      header: "Hành động",
+      header: "Thao tác",
       cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-2">
-          <button
-            className="p-2 hover:bg-slate-100 rounded-lg transition-all text-[#0058bc]"
-            title="Cập nhật nhanh"
-            onClick={() => {
-              setSelectedProject(row.original);
-              setOpenUpdateModal(true);
-            }}
-          >
-            <History className="size-4" />
-          </button>
-          <Link
-            href={`/du-an/${row.original.id}`}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-all text-slate-500"
-            title="Xem chi tiết"
-          >
-            <Eye className="size-4" />
-          </Link>
+        <div className="flex items-center gap-2">
+          <button className="p-2 hover:bg-slate-100 rounded-lg text-[#0058bc]" onClick={() => { setSelectedProject(row.original); setOpenEditModal(true); }}><Pencil className="size-4" /></button>
+          <button className="p-2 hover:bg-slate-100 rounded-lg text-amber-600" onClick={() => { setSelectedProject(row.original); setOpenUpdateModal(true); }}><HistoryIcon className="size-4" /></button>
+          <Link href={`/du-an/${(row.original as any).id}`} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500"><Eye className="size-4" /></Link>
         </div>
       ),
     },
@@ -180,6 +216,17 @@ export function ProjectsTable({ data }: { data: any[] }) {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, columnId, filterValue) => {
+      const value = filterValue.toLowerCase();
+      const project = row.original as any;
+      return (
+        project.tenDuAn?.toLowerCase().includes(value) ||
+        project.khachHang?.ten?.toLowerCase().includes(value) ||
+        project.sanPham?.tenChiTiet?.toLowerCase().includes(value) ||
+        project.am?.name?.toLowerCase().includes(value) ||
+        LINH_VUC_LABELS[project.linhVuc]?.toLowerCase().includes(value)
+      );
+    },
     state: { sorting, columnFilters, globalFilter },
     initialState: { pagination: { pageSize: 10 } },
   });
@@ -204,22 +251,81 @@ export function ProjectsTable({ data }: { data: any[] }) {
         </span>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#c5c6ce]/10">
-        <table className="w-full text-left border-collapse">
+      {/* Table Container */}
+      <div className="bg-white rounded-2xl overflow-x-auto shadow-sm border border-[#c5c6ce]/10">
+        <table className="w-full min-w-[1400px] text-left border-collapse">
           <thead>
             <tr className="bg-[#f2f4f6] text-[#44474d]">
               {table.getHeaderGroups().map((hg) =>
-                hg.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="py-4 px-6 font-bold text-[10px] uppercase tracking-widest whitespace-nowrap"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))
+                hg.headers.map((header) => {
+                  const filterValue = header.column.getFilterValue();
+                  const isSelectFilter = ["linhVuc", "trangThaiHienTai", "warning"].includes(header.id);
+
+                  return (
+                    <th
+                      key={header.id}
+                      className="py-4 px-6 font-bold text-[10px] uppercase tracking-widest whitespace-nowrap group"
+                    >
+                      <div className="flex items-center gap-2">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header as any, header.getContext())}
+                        
+                        {!header.isPlaceholder && header.id !== "actions" && header.id !== "index" && (
+                          <Popover>
+                            <PopoverTrigger>
+                              <div className={cn(
+                                "p-1 rounded hover:bg-slate-200 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer",
+                                (filterValue as any) && "opacity-100 text-[#0058bc]"
+                              )}>
+                                <Filter className="size-3" />
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-60 p-3" align="start">
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-black uppercase text-slate-400">Lọc {header.column.columnDef.header as string}</span>
+                                  {!!filterValue && (
+                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => header.column.setFilterValue(undefined)}>
+                                      Xóa lọc
+                                    </Button>
+                                  )}
+                                </div>
+                                {isSelectFilter ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {header.id === "linhVuc" && Object.entries(LINH_VUC_LABELS).map(([k, v]) => (
+                                      <button key={k} onClick={() => {
+                                        const current = (filterValue as string[]) || [];
+                                        header.column.setFilterValue(current.includes(k) ? current.filter(x => x !== k) : [...current, k]);
+                                      }} className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", ((filterValue as string[]) || []).includes(k) ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{v}</button>
+                                    ))}
+                                    {header.id === "trangThaiHienTai" && Object.entries(STATUS_STYLES).map(([k, v]) => (
+                                      <button key={k} onClick={() => {
+                                        const current = (filterValue as string[]) || [];
+                                        header.column.setFilterValue(current.includes(k) ? current.filter(x => x !== k) : [...current, k]);
+                                      }} className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", ((filterValue as string[]) || []).includes(k) ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{v.label}</button>
+                                    ))}
+                                    {header.id === "warning" && [
+                                      {k: "urgent", v: "Cần CS gấp"},
+                                      {k: "normal", v: "Bình thường"}
+                                    ].map(({k, v}) => (
+                                      <button key={k} onClick={() => header.column.setFilterValue(filterValue === k ? undefined : k)} className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", filterValue === k ? "bg-[#ba1a1a] text-white border-[#ba1a1a]" : "bg-white text-slate-600 border-slate-200")}>{v}</button>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="relative">
+                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-slate-400" />
+                                    <Input placeholder="Nhập từ khóa..." value={(filterValue as string) || ""} onChange={(e) => header.column.setFilterValue(e.target.value)} className="pl-7 pr-3 py-1 h-8 text-xs shadow-none border-slate-200" />
+                                  </div>
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </div>
+                    </th>
+                  );
+                })
               )}
             </tr>
           </thead>
@@ -307,7 +413,14 @@ export function ProjectsTable({ data }: { data: any[] }) {
         open={openUpdateModal}
         setOpen={setOpenUpdateModal}
         project={selectedProject}
-        key={selectedProject?.id || "quick-update"}
+        key={selectedProject?.id ? `quick-${selectedProject.id}` : "quick-update"}
+      />
+
+      <ProjectFormDialog
+        open={openEditModal}
+        onOpenChange={setOpenEditModal}
+        project={selectedProject}
+        key={selectedProject?.id ? `edit-${selectedProject.id}` : "edit-form"}
       />
     </div>
   );

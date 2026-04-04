@@ -14,8 +14,10 @@ datasource db {
 // ============================================
 
 enum UserRole {
-  ADMIN        // Lãnh đạo — full access
-  USER         // AM / Chuyên viên — limited
+  ADMIN        // Quản trị viên
+  AM           // Account Manager
+  CV           // Chuyên viên
+  USER         // Nhân viên (Legacy)
 }
 
 enum PhanLoaiKH {
@@ -34,8 +36,9 @@ enum TrangThaiDuAn {
 }
 
 enum LinhVuc {
-  B2B_B2G   // Cloud, IT, Digital Transformation
-  B2A       // Công nghệ cho Công an
+  CHINH_PHU      // Chính phủ/ Sở ban ngành
+  DOANH_NGHIEP   // Doanh nghiệp
+  CONG_AN        // Công an
 }
 
 enum LoaiTinNhan {
@@ -64,7 +67,10 @@ model User {
 
   // Relations
   duAnAM         DuAn[]           @relation("AMRelation")
+  duAnAMHoTro    DuAn[]           @relation("AMHoTroRelation")
   duAnCV         DuAn[]           @relation("CVRelation")
+  duAnCVHoTro1   DuAn[]           @relation("CVHoTro1Relation")
+  duAnCVHoTro2   DuAn[]           @relation("CVHoTro2Relation")
   nhatKy         NhatKyCongViec[]
   binhLuan       BinhLuan[]
   tinNhan        TinNhan[]
@@ -126,6 +132,20 @@ model KhachHang {
   diaChi      String?
   soDienThoai String?
   email       String?
+  
+  // Thông tin liên hệ & Đầu mối
+  dauMoiTiepCan      String?   // Đầu mối tiếp cận
+  soDienThoaiDauMoi  String?   // Số điện thoại đầu mối
+  ngaySinhDauMoi     DateTime? // Ngày sinh nhật đầu mối
+  lanhDaoDonVi       String?   // Lãnh đạo đơn vị
+  soDienThoaiLanhDao String?   // Số điện thoại Lãnh đạo
+  ngaySinhLanhDao    DateTime? // Ngày sinh nhật Lãnh đạo
+  
+  // Ngày kỷ niệm
+  ngayThanhLap       DateTime? // Ngày thành lập
+  ngayKyNiem         DateTime? // Ngày kỷ niệm
+  ghiChu             String?   // Ghi chú thêm
+
   isActive    Boolean    @default(true)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -154,12 +174,15 @@ model DuAn {
   id                    Int           @id @default(autoincrement())
   customerId            Int
   productId             Int
-  amId                  String
+  amId                  String?
+  amHoTroId             String?
   chuyenVienId          String?
+  cvHoTro1Id            String?
+  cvHoTro2Id            String?
   tenDuAn               String
-  linhVuc               LinhVuc       @default(B2B_B2G)
+  linhVuc               LinhVuc       @default(CHINH_PHU)
   tongDoanhThuDuKien    Float         @default(0)
-  soHopDong             String?
+  doanhThuTheoThang     Float?        @default(0)
   maHopDong             String?
   ngayBatDau            DateTime
   tuan                  Int
@@ -174,8 +197,11 @@ model DuAn {
   // Relations
   khachHang  KhachHang @relation(fields: [customerId], references: [id])
   sanPham    SanPham   @relation(fields: [productId], references: [id])
-  am         User      @relation("AMRelation", fields: [amId], references: [id])
-  chuyenVien User?     @relation("CVRelation", fields: [chuyenVienId], references: [id])
+  am         User?     @relation("AMRelation", fields: [amId], references: [id], onDelete: SetNull)
+  amHoTro    User?     @relation("AMHoTroRelation", fields: [amHoTroId], references: [id], onDelete: SetNull)
+  chuyenVien User?     @relation("CVRelation", fields: [chuyenVienId], references: [id], onDelete: SetNull)
+  cvHoTro1   User?     @relation("CVHoTro1Relation", fields: [cvHoTro1Id], references: [id], onDelete: SetNull)
+  cvHoTro2   User?     @relation("CVHoTro2Relation", fields: [cvHoTro2Id], references: [id], onDelete: SetNull)
 
   nhatKy   NhatKyCongViec[]
   binhLuan BinhLuan[]
@@ -201,7 +227,7 @@ model NhatKyCongViec {
   createdAt      DateTime      @default(now())
 
   duAn DuAn @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([userId])
@@ -217,7 +243,7 @@ model BinhLuan {
   updatedAt DateTime @updatedAt
 
   duAn   DuAn      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user   User      @relation(fields: [userId], references: [id])
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   parent BinhLuan? @relation("CommentThread", fields: [parentId], references: [id])
   replies BinhLuan[] @relation("CommentThread")
 
@@ -238,7 +264,7 @@ model TinNhan {
   updatedAt DateTime @updatedAt
 
   duAn   DuAn @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user   User @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([projectId, createdAt])
   @@index([userId])

@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { TrangThaiDuAn } from "@prisma/client";
+import { TrangThaiDuAn, UserRole } from "@prisma/client";
 
 export async function getDashboardOverview() {
   try {
@@ -53,9 +53,12 @@ export async function getDashboardOverview() {
         })
         .slice(0, 5);
 
+    const totalCustomers = await prisma.khachHang.count();
+
     return {
         stats: {
             totalProjects,
+            totalCustomers,
             totalRevenue,
             signedProjects,
             urgentCare
@@ -69,32 +72,7 @@ export async function getDashboardOverview() {
   }
 }
 
-export async function getAMPerformance() {
-    try {
-        const ams = await prisma.user.findMany({
-            where: { role: 'USER' } // Simple filter for AMs
-        });
-
-        const performance = await Promise.all(ams.map(async (am) => {
-            const projects = await prisma.duAn.findMany({
-                where: { amId: am.id }
-            });
-
-            return {
-                name: am.name,
-                count: projects.length,
-                revenue: projects.reduce((acc, p) => acc + p.tongDoanhThuDuKien, 0),
-                signed: projects.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG).length
-            };
-        }));
-
-        return { data: performance.sort((a, b) => b.revenue - a.revenue) };
-    } catch (error) {
-        return { error: "Lỗi tải xếp hạng AM" };
-    }
-}
-
-export async function getNhanSuAnalytics(filter?: { type: 'all' | 'nam' | 'quy' | 'thang', year?: number, quarter?: number, month?: number }) {
+export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 'thang', year?: number, quarter?: number, month?: number }) {
     try {
         const sessionRes = await (auth.api as any).getSession({
             headers: await headers()
@@ -103,53 +81,134 @@ export async function getNhanSuAnalytics(filter?: { type: 'all' | 'nam' | 'quy' 
         if (!currentUser) return { error: "Yêu cầu đăng nhập" };
 
         let projectFilter: any = {};
-        
+        const now = new Date();
+        const currentYear = 2026;
+        let contextMonth = now.getFullYear() === currentYear ? now.getMonth() + 1 : 12;
+
         if (filter?.type === 'nam' && filter.year) {
             projectFilter.nam = filter.year;
+            if (filter.year !== currentYear) contextMonth = 12;
         } else if (filter?.type === 'quy' && filter.year && filter.quarter) {
             projectFilter.nam = filter.year;
             projectFilter.quy = filter.quarter;
+            contextMonth = filter.quarter * 3;
         } else if (filter?.type === 'thang' && filter.year && filter.month) {
             projectFilter.nam = filter.year;
             projectFilter.thang = filter.month;
+            contextMonth = filter.month;
         }
 
-        // Fetch users who are USERs (personnel)
+        // Fetch users who are personnel (AM, CV, USER)
         const personals = await prisma.user.findMany({
-            where: { role: 'USER' },
-            select: { id: true, name: true, diaBan: true }
+            where: {
+                role: { in: ['AM', 'CV', 'USER'] as any }
+            },
+            select: { id: true, name: true, diaBan: true, role: true }
         });
 
-        const analytics = await Promise.all(personals.map(async (p) => {
-            const projects = await prisma.duAn.findMany({
-                where: { 
-                    ...projectFilter,
-                    OR: [
-                        { amId: p.id },
-                        { chuyenVienId: p.id }
-                    ]
-                }
-            });
-
-            const totalRevenue = projects.reduce((acc, proj) => acc + proj.tongDoanhThuDuKien, 0);
-            const totalContracts = projects.filter(proj => proj.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG).length;
-            const totalProjects = projects.length;
-
-            return {
-                id: p.id,
-                name: p.name,
-                diaBan: p.diaBan || "Chưa phân công",
-                revenue: totalRevenue,
-                contracts: totalContracts,
-                projects: totalProjects,
-            };
+        const analytics = personals.map(p => ({
+            id: p.id,
+            name: p.name,
+            role: p.role,
+            diaBan: p.diaBan || "Chưa phân công",
+            signedRevenue: 0,
+            otherRevenue: 0,
+            totalRevenue: 0,
+            contracts: 0,
+            projects: 0
         }));
 
-        // Sort by revenue descending by default
-        return { data: analytics.sort((a, b) => b.revenue - a.revenue) };
+        const projects = await prisma.duAn.findMany({
+            where: projectFilter
+        });
+
+        projects.forEach(proj => {
+            const involvedIds = [
+                (proj as any).amId, 
+                (proj as any).amHoTroId, 
+                (proj as any).chuyenVienId, 
+                (proj as any).cvHoTro1Id, 
+                (proj as any).cvHoTro2Id
+            ].filter((id): id is string => !!id);
+
+            const hasTotal = proj.tongDoanhThuDuKien && proj.tongDoanhThuDuKien > 0;
+            const hasMonthly = (proj as any).doanhThuTheoThang && (proj as any).doanhThuTheoThang > 0;
+
+            let projRevValue = 0;
+            if (hasMonthly) {
+                projRevValue = contextMonth * (proj as any).doanhThuTheoThang!;
+            } else if (hasTotal) {
+                projRevValue = proj.tongDoanhThuDuKien;
+            }
+
+            involvedIds.forEach(id => {
+                const stat = analytics.find(a => a.id === id);
+                if (!stat) return;
+
+                stat.projects += 1;
+                stat.totalRevenue += projRevValue;
+
+                if (proj.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG) {
+                    stat.signedRevenue += projRevValue;
+                    stat.contracts += 1;
+                } else {
+                    stat.otherRevenue += projRevValue;
+                }
+            });
+        });
+
+        // Map for compatibility with older dashboard views
+        const finalAnalytics = analytics.map(a => ({
+            ...a,
+            revenue: a.totalRevenue,
+            count: a.projects,
+            signed: a.contracts
+        }));
+
+        const analyticsSorted = finalAnalytics.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+        // Filter and sort for AMs
+        const amAnalytics = finalAnalytics.filter(a => (a.role as string) === 'AM');
+        const topAMSigned = [...amAnalytics]
+            .filter(a => a.signedRevenue > 0)
+            .sort((a, b) => b.signedRevenue - a.signedRevenue)
+            .slice(0, 5);
+        const topAMOthers = [...amAnalytics]
+            .filter(a => a.otherRevenue > 0)
+            .sort((a, b) => b.otherRevenue - a.otherRevenue)
+            .slice(0, 5);
+ 
+        // Filter and sort for CVs
+        const cvAnalytics = finalAnalytics.filter(a => (a.role as string) === 'CV');
+        const topCVSigned = [...cvAnalytics]
+            .filter(a => a.signedRevenue > 0)
+            .sort((a, b) => b.signedRevenue - a.signedRevenue)
+            .slice(0, 5);
+        const topCVOthers = [...cvAnalytics]
+            .filter(a => a.otherRevenue > 0)
+            .sort((a, b) => b.otherRevenue - a.otherRevenue)
+            .slice(0, 5);
+ 
+        // Lowest Revenue rankings (Bottom 5)
+        const bottomAM = [...amAnalytics]
+            .sort((a, b) => a.totalRevenue - b.totalRevenue)
+            .slice(0, 5);
+        const bottomCV = [...cvAnalytics]
+            .sort((a, b) => a.totalRevenue - b.totalRevenue)
+            .slice(0, 5);
+
+        return { 
+            data: analyticsSorted,
+            topAMSigned,
+            topAMOthers,
+            topCVSigned,
+            topCVOthers,
+            bottomAM,
+            bottomCV
+        };
     } catch (error: any) {
-        console.error("getNhanSuAnalytics Error:", error);
-        return { error: `Lỗi tải dữ liệu nhân sự: ${error?.message || "Unknown error"}` };
+        console.error("getAMPerformance Error:", error);
+        return { error: `Lỗi tải dữ liệu AM: ${error?.message || "Unknown error"}` };
     }
 }
 
@@ -247,39 +306,58 @@ export async function getDiaBanAnalytics() {
         if (!currentUser) return { error: "Yêu cầu đăng nhập" };
 
         const personals = await prisma.user.findMany({
-            where: { role: 'USER' },
+            where: {
+                role: { in: ['AM', 'CV', 'USER'] as any }
+            },
             select: { id: true, name: true, diaBan: true }
         });
 
-        const projects = await prisma.duAn.findMany({
+        const projects = await (prisma.duAn as any).findMany({
             select: {
                 id: true,
                 tongDoanhThuDuKien: true,
                 trangThaiHienTai: true,
                 amId: true,
-                chuyenVienId: true
+                amHoTroId: true,
+                chuyenVienId: true,
+                cvHoTro1Id: true,
+                cvHoTro2Id: true
             }
         });
 
         const diaBanMap = new Map();
         const staffMap = new Map();
 
-        projects.forEach(p => {
-            const am = personals.find(u => u.id === p.amId);
-            const diaBan = am?.diaBan || "Chưa phân công";
-
-            // Track per staff for Top Ranking
-            if (am) {
-                if (!staffMap.has(am.id)) {
-                    staffMap.set(am.id, { id: am.id, name: am.name, diaBan: diaBan, revenue: 0, contracts: 0, totalProjects: 0 });
+        projects.forEach((p: any) => {
+            const project = p as any;
+            const involvedIds = Array.from(new Set([
+                project.amId, 
+                project.amHoTroId, 
+                project.chuyenVienId,
+                project.cvHoTro1Id,
+                project.cvHoTro2Id
+            ].filter(id => !!id)));
+            
+            // Credit EACH staff member fully in staffMap
+            involvedIds.forEach(id => {
+                const staff = personals.find(u => u.id === id);
+                if (staff) {
+                    const diaBan = staff.diaBan || "Chưa phân công";
+                    if (!staffMap.has(staff.id)) {
+                        staffMap.set(staff.id, { id: staff.id, name: staff.name, diaBan: diaBan, revenue: 0, contracts: 0, totalProjects: 0 });
+                    }
+                    const st = staffMap.get(staff.id);
+                    st.totalProjects += 1;
+                    st.revenue += p.tongDoanhThuDuKien;
+                    if (p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG) st.contracts += 1;
                 }
-                const st = staffMap.get(am.id);
-                st.totalProjects += 1;
-                st.revenue += p.tongDoanhThuDuKien;
-                if (p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG) st.contracts += 1;
-            }
+            });
 
-            // Track per Dia Ban
+            // Credit Dia Ban ONLY ONCE per project (usually using the main AM's location)
+            const primaryAMId = project.amId || project.amHoTroId || project.chuyenVienId;
+            const primaryStaff = primaryAMId ? personals.find(u => u.id === primaryAMId) : null;
+            const diaBan = primaryStaff?.diaBan || "Chưa phân công";
+
             if (!diaBanMap.has(diaBan)) {
                 diaBanMap.set(diaBan, { name: diaBan, revenue: 0, projects: 0, contracts: 0, staffCount: new Set() });
             }
@@ -287,7 +365,14 @@ export async function getDiaBanAnalytics() {
             dbRef.projects += 1;
             dbRef.revenue += p.tongDoanhThuDuKien;
             if (p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG) dbRef.contracts += 1;
-            if (am) dbRef.staffCount.add(am.id);
+            
+            // Record all distinct staff seen in this Dia Ban
+            involvedIds.forEach(id => {
+                const staff = personals.find(u => u.id === id);
+                if (staff && (staff.diaBan || "Chưa phân công") === diaBan) {
+                    dbRef.staffCount.add(staff.id);
+                }
+            });
         });
 
         const diaBanData = Array.from(diaBanMap.values()).map(d => ({

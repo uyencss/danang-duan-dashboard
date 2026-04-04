@@ -1,5 +1,6 @@
 "use server";
 
+// Re-triggered sync to resolve Prisma Client argument mismatch
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -9,9 +10,16 @@ import { PhanLoaiKH } from "@prisma/client";
 const KhachHangSchema = z.object({
   ten: z.string().min(2, "Tên khách hàng tối thiểu 2 ký tự"),
   phanLoai: z.nativeEnum(PhanLoaiKH),
-  diaChi: z.string().optional(),
-  soDienThoai: z.string().regex(/^(0|\+84)[3|5|7|8|9][0-9]{8}$/, "Số điện thoại không đúng định dạng VN").optional().or(z.literal("")),
-  email: z.string().email("Email không hợp lệ").optional().or(z.literal("")),
+  diaChi: z.string().optional().or(z.literal("")),
+  dauMoiTiepCan: z.string().optional().or(z.literal("")),
+  soDienThoaiDauMoi: z.string().optional().or(z.literal("")),
+  ngaySinhDauMoi: z.string().optional().or(z.literal("")),
+  lanhDaoDonVi: z.string().optional().or(z.literal("")),
+  soDienThoaiLanhDao: z.string().optional().or(z.literal("")),
+  ngaySinhLanhDao: z.string().optional().or(z.literal("")),
+  ngayThanhLap: z.string().optional().or(z.literal("")),
+  ngayKyNiem: z.string().optional().or(z.literal("")),
+  ghiChu: z.string().optional().or(z.literal("")),
 });
 
 export async function getKhachHangList(params?: { search?: string, phanLoai?: string }) {
@@ -43,26 +51,37 @@ export async function getKhachHangList(params?: { search?: string, phanLoai?: st
   }
 }
 
+const toSafeDate = (val?: string) => {
+  if (!val || val.trim() === "") return null;
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 export async function createKhachHang(data: any) {
   try {
     const validated = KhachHangSchema.parse(data);
     
+    // Convert date strings to Date objects safely
+    const dataToSave: any = {
+      ...validated,
+      ngaySinhDauMoi: toSafeDate(validated.ngaySinhDauMoi),
+      ngaySinhLanhDao: toSafeDate(validated.ngaySinhLanhDao),
+      ngayThanhLap: toSafeDate(validated.ngayThanhLap),
+      ngayKyNiem: toSafeDate(validated.ngayKyNiem),
+    };
+    
     await prisma.khachHang.create({
-      data: {
-        ...validated,
-        diaChi: validated.diaChi || null,
-        soDienThoai: validated.soDienThoai || null,
-        email: validated.email || null,
-      },
+      data: dataToSave,
     });
 
     revalidatePath("/admin/khach-hang");
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Create KhachHang Error:", error);
     if (error instanceof z.ZodError) {
       return { error: error.errors[0].message };
     }
-    return { error: "Lỗi hệ thống khi tạo khách hàng" };
+    return { error: `Lỗi hệ thống: ${error?.message || "Không thể tạo khách hàng"}` };
   }
 }
 
@@ -70,23 +89,27 @@ export async function updateKhachHang(id: number, data: any) {
   try {
     const validated = KhachHangSchema.parse(data);
     
+    const dataToUpdate: any = {
+      ...validated,
+      ngaySinhDauMoi: toSafeDate(validated.ngaySinhDauMoi),
+      ngaySinhLanhDao: toSafeDate(validated.ngaySinhLanhDao),
+      ngayThanhLap: toSafeDate(validated.ngayThanhLap),
+      ngayKyNiem: toSafeDate(validated.ngayKyNiem),
+    };
+    
     await prisma.khachHang.update({
       where: { id },
-      data: {
-        ...validated,
-        diaChi: validated.diaChi || null,
-        soDienThoai: validated.soDienThoai || null,
-        email: validated.email || null,
-      },
+      data: dataToUpdate,
     });
 
     revalidatePath("/admin/khach-hang");
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Update KhachHang Error:", error);
     if (error instanceof z.ZodError) {
       return { error: error.errors[0].message };
     }
-    return { error: "Lỗi hệ thống khi cập nhật khách hàng" };
+    return { error: `Lỗi hệ thống: ${error?.message || "Không thể cập nhật khách hàng"}` };
   }
 }
 

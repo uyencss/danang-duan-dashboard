@@ -20,9 +20,22 @@ import {
   ShieldCheck,
   ShieldAlert,
   MapPin,
+  Trash2,
   Lock,
   Unlock,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { deleteUser } from "./actions";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -80,16 +93,22 @@ export function UsersTable({ data }: { data: any[] }) {
       accessorKey: "role",
       header: "Quyền hạn",
       cell: ({ row }) => {
-        const role = row.getValue("role") as UserRole;
+        const role = row.getValue("role") as any;
         return (
           <Badge 
             variant="outline" 
-            className={role === "ADMIN" ? "bg-purple-50 text-purple-700 border-purple-200" : "bg-blue-50 text-blue-700 border-blue-200"}
+            className={
+              role === "ADMIN" ? "bg-purple-50 text-purple-700 border-purple-200" : 
+              role === "AM" ? "bg-blue-50 text-blue-700 border-blue-200" :
+              "bg-emerald-50 text-emerald-700 border-emerald-200"
+            }
           >
             {role === "ADMIN" ? (
                 <><ShieldCheck className="size-3 mr-1" /> Quản trị</>
+            ) : role === "AM" ? (
+                <><ShieldAlert className="size-3 mr-1" /> Account Manager</>
             ) : (
-                <><ShieldAlert className="size-3 mr-1" /> Nhân viên</>
+                <><ShieldAlert className="size-3 mr-1" /> Chuyên viên</>
             )}
           </Badge>
         );
@@ -97,10 +116,9 @@ export function UsersTable({ data }: { data: any[] }) {
     },
     {
       accessorKey: "diaBan",
-      header: "Địa bàn",
+      header: "Tổ",
       cell: ({ row }) => (
         <div className="flex items-center text-xs text-gray-500">
-            <MapPin className="size-3 mr-1 text-gray-300" />
             {row.getValue("diaBan") || "Chưa phân công"}
         </div>
       ),
@@ -136,10 +154,8 @@ export function UsersTable({ data }: { data: any[] }) {
         const user = row.original;
         return (
           <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
+              <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem 
@@ -153,6 +169,45 @@ export function UsersTable({ data }: { data: any[] }) {
               <DropdownMenuItem>
                 <Lock className="mr-2 h-4 w-4" /> Reset mật khẩu
               </DropdownMenuItem>
+              
+              <AlertDialog>
+                <AlertDialogTrigger
+                  nativeButton={false}
+                  render={
+                    <DropdownMenuItem 
+                      className="text-red-600 cursor-pointer focus:bg-red-50 focus:text-red-600"
+                      onSelect={(e) => e.preventDefault()}
+                    />
+                  }
+                >
+                    <Trash2 className="mr-2 h-4 w-4" /> Xóa tài khoản
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-2xl border-red-100">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-xl font-bold text-red-700 text-left">Xác nhận xóa tài khoản?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-gray-500 text-left">
+                      Bạn đang thực hiện xóa tài khoản của <span className="font-bold text-gray-900">{user.name}</span>. 
+                      Hành động này sẽ xóa vĩnh viễn quyền truy cập và dữ liệu liên quan.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="gap-2">
+                    <AlertDialogCancel className="rounded-xl font-bold">Hủy bỏ</AlertDialogCancel>
+                    <AlertDialogAction 
+                      className="bg-red-600 hover:bg-red-700 rounded-xl font-black shadow-lg shadow-red-200"
+                      onClick={async () => {
+                        const res = await deleteUser(user.id);
+                        if (res.success) {
+                          toast.success("Đã xóa tài khoản vĩnh viễn");
+                        } else {
+                          toast.error(res.error);
+                        }
+                      }}
+                    >
+                      Xác nhận xóa
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </DropdownMenuContent>
           </DropdownMenu>
         );

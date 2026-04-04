@@ -1,0 +1,256 @@
+"use client";
+
+import { useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Pencil, 
+  Trash2, 
+  Clock, 
+  MessageSquareQuote,
+  User as UserIcon,
+  Calendar
+} from "lucide-react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { updateNhatKy, deleteNhatKy } from "@/app/(dashboard)/du-an/actions";
+import { cn } from "@/lib/utils";
+import { TrangThaiDuAn } from "@prisma/client";
+
+interface TaskLogTableProps {
+  logs: any[];
+}
+
+export function TaskLogTable({ logs }: TaskLogTableProps) {
+  const [editingLog, setEditingLog] = useState<any>(null);
+  const [newContent, setNewContent] = useState("");
+  const [newStatus, setNewStatus] = useState<TrangThaiDuAn>(TrangThaiDuAn.MOI);
+  const [newDate, setNewDate] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Sort logs by time (newest first)
+  const sortedLogs = [...(logs || [])].sort((a, b) => 
+    new Date(b.ngayGio).getTime() - new Date(a.ngayGio).getTime()
+  );
+
+  const STATUS_LABELS: any = {
+    MOI: "Mới",
+    DANG_LAM_VIEC: "Đang làm việc",
+    DA_DEMO: "Đã Demo",
+    DA_GUI_BAO_GIA: "Đã gửi báo giá",
+    DA_KY_HOP_DONG: "Đã ký hợp đồng",
+    THAT_BAI: "Thất bại",
+  };
+
+  const getStatusBadge = (state: TrangThaiDuAn) => {
+    if (!state) return null;
+    const colors: any = {
+      MOI: "bg-gray-100 text-gray-600",
+      DANG_LAM_VIEC: "bg-blue-100 text-blue-600",
+      DA_DEMO: "bg-purple-100 text-purple-600",
+      DA_GUI_BAO_GIA: "bg-yellow-100 text-yellow-700",
+      DA_KY_HOP_DONG: "bg-green-100 text-green-700",
+      THAT_BAI: "bg-red-100 text-red-600",
+    };
+    const colorClass = colors[state] || "bg-gray-100 text-gray-600";
+    return <Badge className={cn("text-[10px] font-black border-none px-2 py-0.5", colorClass)}>{STATUS_LABELS[state] || state}</Badge>;
+  };
+
+  const handleEditClick = (log: any) => {
+    setEditingLog(log);
+    setNewContent(log.noiDungChiTiet);
+    setNewStatus(log.trangThaiMoi);
+    // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
+    const d = new Date(log.ngayGio);
+    const offset = d.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(d.getTime() - offset).toISOString().slice(0, 16);
+    setNewDate(localISOTime);
+  };
+
+  const handleUpdate = async () => {
+    if (!newContent.trim()) return;
+    setLoading(true);
+    const result = await updateNhatKy(editingLog.id, newContent, newStatus, new Date(newDate));
+    if (result.success) {
+      toast.success("Cập nhật nhật ký thành công");
+      setEditingLog(null);
+    } else {
+      toast.error(result.error);
+    }
+    setLoading(false);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa nhật ký này?")) return;
+    const result = await deleteNhatKy(id);
+    if (result.success) {
+      toast.success("Đã xóa nhật ký");
+    } else {
+      toast.error(result.error);
+    }
+  };
+
+  if (!logs || logs.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-gray-400 bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-100">
+        <MessageSquareQuote className="size-10 mb-2 opacity-20" />
+        <p className="font-medium text-sm">Chưa có nhật ký công việc nào.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl overflow-hidden border border-[#eceef0] shadow-sm w-full">
+      <div className="overflow-x-auto">
+        <Table className="table-fixed w-full min-w-[900px]">
+          <TableHeader>
+            <TableRow className="bg-[#f8fafc] hover:bg-[#f8fafc]">
+              <TableHead className="w-[160px] text-[10px] font-black uppercase text-[#44474d] tracking-widest pl-6 py-4">Thời gian</TableHead>
+              <TableHead className="text-[10px] font-black uppercase text-[#44474d] tracking-widest py-4">Nội dung cập nhật</TableHead>
+              <TableHead className="w-[200px] text-[10px] font-black uppercase text-[#44474d] tracking-widest py-4 text-center">Người cập nhật</TableHead>
+              <TableHead className="w-[120px] text-[10px] font-black uppercase text-[#44474d] tracking-widest pr-6 py-4 text-center">Hành động</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedLogs.map((log) => (
+              <TableRow key={log.id} className="hover:bg-slate-50/50 border-b border-[#f2f4f6] group">
+                <TableCell className="pl-6 py-4 align-top">
+                  <div className="flex flex-col gap-1 pr-2">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#191c1e]">
+                      <Clock className="size-3 text-[#0058bc]" />
+                      {new Date(log.ngayGio).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 ml-4.5">
+                      {new Date(log.ngayGio).toLocaleDateString('vi-VN')}
+                    </span>
+                    <div className="mt-1 ml-4.5">
+                      {getStatusBadge(log.trangThaiMoi)}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell className="py-4 align-top">
+                  <div className="whitespace-normal break-words overflow-hidden text-sm font-medium text-slate-700 leading-relaxed pr-8">
+                    {log.noiDungChiTiet}
+                  </div>
+                </TableCell>
+                <TableCell className="py-4 align-top text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="size-7 bg-[#0058bc]/10 rounded-full flex items-center justify-center text-[#0058bc] shrink-0">
+                      <UserIcon className="size-3.5" />
+                    </div>
+                    <span className="text-[11px] font-black text-[#191c1e] truncate">{log.user?.name || "Hệ thống"}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="pr-6 py-4 align-top text-center">
+                  <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="size-8 rounded-lg hover:bg-[#0058bc]/10 hover:text-[#0058bc]"
+                      onClick={() => handleEditClick(log)}
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="size-8 rounded-lg hover:bg-red-50 hover:text-red-500"
+                      onClick={() => handleDelete(log.id)}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={!!editingLog} onOpenChange={(open) => !open && setEditingLog(null)}>
+        <DialogContent className="max-w-2xl rounded-2xl p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="px-6 py-4 bg-[#f2f4f6] border-b border-[#eceef0]">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#0058bc]/10 text-[#0058bc] rounded-lg">
+                <Pencil className="size-4" />
+              </div>
+              <DialogTitle className="text-lg font-black text-[#191c1e]">Chỉnh sửa Nhật ký</DialogTitle>
+            </div>
+          </DialogHeader>
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Trạng thái mới</label>
+                <Select onValueChange={(v) => setNewStatus(v as TrangThaiDuAn)} value={newStatus}>
+                  <SelectTrigger className="rounded-xl border-slate-200">
+                    <SelectValue placeholder="Chọn trạng thái" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>{String(label)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Thời gian ghi nhận</label>
+                <div className="relative">
+                   <Input 
+                    type="datetime-local" 
+                    value={newDate} 
+                    onChange={(e) => setNewDate(e.target.value)}
+                    className="rounded-xl border-slate-200 pl-10"
+                   />
+                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Nội dung chi tiết</label>
+              <Textarea 
+                value={newContent} 
+                onChange={(e) => setNewContent(e.target.value)}
+                className="min-h-[180px] rounded-2xl border-slate-200 focus:ring-[#0058bc] text-sm font-medium leading-relaxed"
+                placeholder="Nhập nội dung nhật ký chi tiết..."
+              />
+            </div>
+          </div>
+          <DialogFooter className="px-6 py-4 bg-slate-50 border-t border-slate-100">
+            <Button variant="ghost" onClick={() => setEditingLog(null)} className="rounded-xl font-bold">Hủy</Button>
+            <Button 
+              disabled={loading || !newContent.trim()} 
+              onClick={handleUpdate}
+              className="rounded-xl bg-[#0058bc] text-white px-8 font-black shadow-lg shadow-blue-200"
+            >
+              {loading ? "Đang lưu..." : "Lưu thay đổi"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

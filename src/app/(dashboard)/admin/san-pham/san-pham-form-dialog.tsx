@@ -21,7 +21,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createSanPham, updateSanPham } from "./actions";
 
@@ -45,6 +52,33 @@ export function SanPhamFormDialog({ open, setOpen, data }: { open: boolean, setO
       moTa: data?.moTa || "",
     },
   });
+
+  // Update form when data changes (for edit mode)
+  useEffect(() => {
+    if (data) {
+      form.reset({
+        nhom: data.nhom,
+        tenChiTiet: data.tenChiTiet,
+        moTa: data.moTa || "",
+      });
+    } else {
+      form.reset({
+        nhom: "",
+        tenChiTiet: "",
+        moTa: "",
+      });
+    }
+  }, [data, form]);
+
+  const nhomOptions = [
+    "Dự án",
+    "Hoá đơn điện tử",
+    "Chữ ký số",
+    "IOC",
+    "Camera AI",
+    "Cloud",
+    "Khác"
+  ];
 
   const onSubmit = async (values: FormValues) => {
     setLoading(true);
@@ -79,9 +113,22 @@ export function SanPhamFormDialog({ open, setOpen, data }: { open: boolean, setO
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nhóm Sản phẩm *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ví dụ: Cloud, IOC, mInvoice..." {...field} />
-                  </FormControl>
+                  <Select 
+                    key={field.name + (isEdit ? "-edit" : "-new")}
+                    onValueChange={field.onChange} 
+                    value={field.value || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Chọn nhóm sản phẩm..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {nhomOptions.map(opt => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

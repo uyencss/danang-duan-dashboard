@@ -1,5 +1,5 @@
 import { NhanSuDashboardClient } from "./nhan-su-client";
-import { getNhanSuAnalytics } from "../dashboard-actions";
+import { getAMPerformance } from "../dashboard-actions";
 import { AlertCircle } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 
@@ -15,7 +15,7 @@ export default async function NhanSuPage({ searchParams }: { searchParams: Promi
         filterArgs = { type: 'thang', year: Number(params.year), month: Number(params.value) };
     }
 
-    const res = await getNhanSuAnalytics(filterArgs);
+    const res = await getAMPerformance(filterArgs);
 
     if (res.error || !res.data) {
         return (

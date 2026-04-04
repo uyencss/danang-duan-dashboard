@@ -115,10 +115,8 @@ export function ProductsTable({ data }: { data: any[] }) {
         const sp = row.original;
         return (
           <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
+              <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem 
@@ -130,13 +128,16 @@ export function ProductsTable({ data }: { data: any[] }) {
                 <Pencil className="mr-2 h-4 w-4" /> Sửa
               </DropdownMenuItem>
               <AlertDialog>
-                <AlertDialogTrigger>
-                  <DropdownMenuItem 
-                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" /> Xóa
-                  </DropdownMenuItem>
+                <AlertDialogTrigger
+                  nativeButton={false}
+                  render={
+                    <DropdownMenuItem 
+                      className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                      onSelect={(e) => e.preventDefault()}
+                    />
+                  }
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Xóa
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                    <AlertDialogHeader>

@@ -16,6 +16,8 @@ import {
   ChevronLeft,
   Menu,
   PlusCircle,
+  UserCheck,
+  GraduationCap,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -31,13 +33,15 @@ const mainNavItems: SidebarItem[] = [
   { label: "Tổng hợp Nhân sự", href: "/nhan-su", icon: Users, role: "ALL" },
   { label: "Phân tích & KPI", href: "/kpi", icon: TrendingUp, role: "ALL" },
   { label: "Top Địa bàn", href: "/dia-ban", icon: MapPin, role: "ALL" },
+  { label: "Quản lý AM", href: "/quan-ly-am", icon: UserCheck, role: "ALL" },
+  { label: "Quản lý Chuyên viên", href: "/quan-ly-cv", icon: GraduationCap, role: "ALL" },
 ];
 
 const adminNavItems: SidebarItem[] = [
   { label: "Khách hàng", href: "/admin/khach-hang", icon: Building2, role: "ADMIN" },
   { label: "Sản phẩm", href: "/admin/san-pham", icon: Package, role: "ADMIN" },
-  { label: "Nhân viên", href: "/admin/nhan-vien", icon: UserCog, role: "ADMIN" },
-  { label: "Tài khoản", href: "/admin/users", icon: Shield, role: "ADMIN" },
+  { label: "Quản lý User", href: "/admin/users", icon: UserCog, role: "ADMIN" },
+  { label: "Sổ địa bàn", href: "/dia-ban", icon: MapPin, role: "ADMIN" },
 ];
 
 interface SidebarProps {

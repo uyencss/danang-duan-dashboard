@@ -8,9 +8,11 @@ interface KPICardProps {
   description?: string;
   trend?: string;
   variant?: "default" | "urgent" | "success" | "warning";
+  subValue?: string | number;
+  subLabel?: string;
 }
 
-export function KPICard({ title, value, icon: Icon, description, trend, variant = "default" }: KPICardProps) {
+export function KPICard({ title, value, icon: Icon, description, trend, variant = "default", subValue, subLabel }: KPICardProps) {
   const iconContainerStyles = {
     default: "bg-[#0058bc]/10 text-[#0058bc]",
     success: "bg-green-500/10 text-green-600",
@@ -55,9 +57,15 @@ export function KPICard({ title, value, icon: Icon, description, trend, variant 
         variant === "urgent" && "text-[#ba1a1a]"
       )}>
         {value}
-        {description && <span className="text-lg font-bold text-[#44474d] ml-1">{description.includes("Tr") ? "" : ""}</span>}
+        {description && <span className="text-lg font-bold text-[#44474d] ml-1"></span>}
       </h3>
-      {description && (
+      {subValue && (
+        <div className="mt-3 pt-3 border-t border-[#f2f4f6] flex items-center justify-between">
+           <span className="text-[10px] font-black text-[#44474d] uppercase tracking-widest">{subLabel}</span>
+           <span className="text-lg font-black text-[#0058bc]">{subValue}</span>
+        </div>
+      )}
+      {description && !subValue && (
         <p className="text-[#44474d] text-xs font-medium mt-1 uppercase tracking-wide">{description}</p>
       )}
     </div>
