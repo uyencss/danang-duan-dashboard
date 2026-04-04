@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full">
+    <html lang="vi" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
+      <body className="min-h-full" suppressHydrationWarning>
         {children}
         <Toaster position="top-right" richColors />
       </body>

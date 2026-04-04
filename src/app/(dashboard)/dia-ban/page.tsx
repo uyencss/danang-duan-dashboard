@@ -1,6 +1,7 @@
 import { DiaBanDashboardClient } from "./dia-ban-client";
 import { getDiaBanAnalytics } from "../dashboard-actions";
 import { AlertCircle } from "lucide-react";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 
 export default async function DiaBanPage() {
     const res = await getDiaBanAnalytics();
@@ -15,5 +16,10 @@ export default async function DiaBanPage() {
         );
     }
 
-    return <DiaBanDashboardClient diaBanData={res.diaBanData} topStaffData={res.topStaffData} />;
+    return (
+        <div className="space-y-6">
+            <Breadcrumb items={[{ label: "Thống kê" }, { label: "Phân bổ & Địa bàn" }]} />
+            <DiaBanDashboardClient diaBanData={res.diaBanData} topStaffData={res.topStaffData} />
+        </div>
+    );
 }

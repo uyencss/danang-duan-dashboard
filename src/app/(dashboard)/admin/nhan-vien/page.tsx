@@ -3,13 +3,15 @@ import { getUserList } from "./actions";
 import { UsersTable } from "./users-table";
 import { Users2, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 
 export default async function NhanVienPage() {
   await requireAdmin();
   const { data = [], error } = await getUserList();
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <Breadcrumb items={[{ label: "Hệ thống" }, { label: "Người dùng & Nhân sự" }]} />
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-6">
         <div className="space-y-1">

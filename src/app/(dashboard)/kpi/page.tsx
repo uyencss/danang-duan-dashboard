@@ -1,6 +1,7 @@
 import { KPIDashboardClient } from "./kpi-client";
 import { getKPITimeSeries } from "../dashboard-actions";
 import { AlertCircle } from "lucide-react";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 
 export default async function KPIPage({ searchParams }: { searchParams: Promise<{ granularity?: string }> }) {
     const params = await searchParams;
@@ -20,5 +21,10 @@ export default async function KPIPage({ searchParams }: { searchParams: Promise<
         );
     }
 
-    return <KPIDashboardClient initialData={res.data} growth={res.growth as any} />;
+    return (
+        <div className="space-y-6">
+            <Breadcrumb items={[{ label: "Thống kê" }, { label: "KPI" }]} />
+            <KPIDashboardClient initialData={res.data} growth={res.growth as any} />
+        </div>
+    );
 }

@@ -1,25 +1,21 @@
 import { getDuAnDetail } from "../actions";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  ArrowLeft, 
-  History, 
-  MapPin, 
-  Package, 
-  User as UserIcon, 
-  Calendar, 
-  DollarSign, 
-  ShieldCheck, 
+import {
+  ArrowLeft,
+  History,
+  Package,
+  Calendar,
+  DollarSign,
   AlertCircle,
   FileText,
   MessageSquare,
   MessagesSquare,
   Activity,
-  UserCheck2,
   ChevronRight,
-  Pencil
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -30,267 +26,318 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { ProjectComments } from "@/components/du-an/project-comments";
 import { ProjectChat } from "@/components/du-an/project-chat";
-import { Separator } from "@/components/ui/separator";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 
-export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
+const STATUS_STYLES: Record<string, { label: string; className: string }> = {
+  MOI: { label: "Mới", className: "bg-blue-100 text-blue-700" },
+  DANG_LAM_VIEC: { label: "Đang làm việc", className: "bg-amber-100 text-amber-700" },
+  DA_DEMO: { label: "Đã Demo", className: "bg-purple-100 text-purple-700" },
+  DA_GUI_BAO_GIA: { label: "Gửi báo giá", className: "bg-blue-100 text-blue-700" },
+  DA_KY_HOP_DONG: { label: "Đã ký HĐ", className: "bg-green-100 text-green-700" },
+  THAT_BAI: { label: "Thất bại", className: "bg-red-100 text-red-700" },
+};
+
+export default async function ProjectDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const { data: project, error } = await getDuAnDetail(Number(id));
-  
-  const sessionRes = await (auth.api as any).getSession({
-    headers: await headers()
-  });
+
+  const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
   const currentUser = sessionRes?.user;
 
   if (error || !project) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="size-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center border border-red-100 shadow-xl shadow-red-100/50">
-           <AlertCircle className="size-10" />
+        <div className="size-16 bg-red-50 text-[#ba1a1a] rounded-xl flex items-center justify-center border border-red-100">
+          <AlertCircle className="size-10" />
         </div>
-        <h1 className="text-2xl font-black text-[#003466]">{error || "Dự án không tồn tại"}</h1>
-        <Link 
-            href="/du-an" 
-            className={cn(buttonVariants({ variant: "outline" }), "rounded-2xl h-12 font-bold px-6 shadow-sm border-gray-100")}
+        <h1 className="text-2xl font-black text-[#191c1e]">{error || "Dự án không tồn tại"}</h1>
+        <Link
+          href="/du-an"
+          className={cn(buttonVariants({ variant: "outline" }), "rounded-xl h-11 font-bold px-6")}
         >
-            <ArrowLeft className="mr-2 size-4" /> Quay lại danh sách
+          <ArrowLeft className="mr-2 size-4" /> Quay lại danh sách
         </Link>
       </div>
     );
   }
 
-  const getStatusBadge = (state: TrangThaiDuAn) => {
-    if (!state) return null;
-    const colors: any = {
-        MOI: "bg-gray-100 text-gray-600",
-        DANG_LAM_VIEC: "bg-blue-100 text-blue-600",
-        DA_DEMO: "bg-purple-100 text-purple-600",
-        DA_GUI_BAO_GIA: "bg-yellow-100 text-yellow-700",
-        DA_KY_HOP_DONG: "bg-green-100 text-green-700",
-        THAT_BAI: "bg-red-100 text-red-600",
-    };
-    const colorClass = colors[state] || "bg-gray-100";
-    return <Badge className={cn("text-xs font-black border-none px-3 uppercase", colorClass)}>{state?.replace(/_/g, ' ') || '...'}</Badge>;
-  };
+  const statusStyle = STATUS_STYLES[project.trangThaiHienTai] || STATUS_STYLES.MOI;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 pb-12">
-      {/* Dynamic Breadcrumbs & Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
-        <div className="flex flex-col gap-2">
-            <Link href="/du-an" className="flex items-center text-xs text-gray-400 font-bold hover:text-primary transition-colors">
-                 DANH SÁCH DỰ ÁN <ChevronRight className="size-3 mx-1" /> CHI TIẾT
-            </Link>
-            <div className="flex items-center gap-4">
-               <div className="p-3 bg-gradient-to-br from-primary to-blue-700 rounded-3xl text-white shadow-xl shadow-primary/20">
-                    <Package className="size-8" />
-               </div>
-               <div>
-                  <h1 className="text-4xl font-black tracking-tighter text-[#003466] leading-tight">
-                    {project.tenDuAn}
-                  </h1>
-                  <div className="flex items-center gap-2 mt-1">
-                     <Badge className="bg-primary/10 text-primary border-none text-[10px] uppercase font-black">{project.linhVuc}</Badge>
-                     <span className="text-[10px] text-gray-400 font-black">•</span>
-                     <span className="text-[11px] font-bold text-gray-400">ID: {project.id}</span>
-                  </div>
-               </div>
+    <div className="space-y-6 animate-in fade-in duration-500 pb-12">
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: "CRM & DS Dự án", href: "/du-an" },
+          { label: "Chi tiết Dự án" },
+        ]}
+      />
+
+      {/* Breadcrumb & Actions */}
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+        <div>
+
+          {/* Title */}
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-[#000719] to-[#0d1f3c] rounded-2xl text-white shadow-lg">
+              <Package className="size-7" />
             </div>
+            <div>
+              <h1 className="text-3xl font-black tracking-tight text-[#191c1e] leading-tight">
+                {project.tenDuAn}
+              </h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={cn("px-2 py-1 rounded text-[10px] font-black uppercase", statusStyle.className)}>
+                  {statusStyle.label}
+                </span>
+                <span className="text-[10px] text-slate-400 font-bold">{project.linhVuc}</span>
+                <span className="text-[10px] text-slate-400 font-black">• ID: {project.id}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-             <Button variant="outline" className="rounded-2xl border-gray-100 shadow-sm h-12 font-bold px-6">
-                <Pencil className="size-4 mr-2" /> Chỉnh sửa
-             </Button>
-             <QuickUpdateModalTrigger project={project} />
+        <div className="flex items-center gap-3 shrink-0">
+          <Button variant="outline" className="rounded-xl border-[#c5c6ce] h-11 font-bold px-5">
+            <Pencil className="size-4 mr-2" /> Chỉnh sửa
+          </Button>
+          <QuickUpdateModalTrigger project={project} />
+        </div>
+      </div>
+
+      {/* Meta Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white p-6 rounded-xl border border-[#c5c6ce]/10 shadow-sm">
+        <div>
+          <p className="text-[10px] font-black text-[#44474d] uppercase tracking-widest mb-1">Khách hàng</p>
+          <p className="font-bold text-[#191c1e]">{project.khachHang.ten}</p>
+          <span className="text-[10px] text-slate-500">{project.khachHang.phanLoai}</span>
+        </div>
+        <div>
+          <p className="text-[10px] font-black text-[#44474d] uppercase tracking-widest mb-1">Sản phẩm</p>
+          <p className="font-bold text-[#191c1e]">{project.sanPham.tenChiTiet}</p>
+          <span className="text-[10px] text-slate-500">{project.sanPham.nhom}</span>
+        </div>
+        <div>
+          <p className="text-[10px] font-black text-[#44474d] uppercase tracking-widest mb-1">AM Phụ trách</p>
+          <div className="flex items-center gap-2">
+            <div className="size-6 bg-[#000719]/10 text-[#000719] rounded-full flex items-center justify-center text-[10px] font-black">
+              {project.am.name[0]}
+            </div>
+            <p className="font-bold text-[#191c1e] text-sm">{project.am.name}</p>
+          </div>
+        </div>
+        <div>
+          <p className="text-[10px] font-black text-[#44474d] uppercase tracking-widest mb-1">Chuyên viên hỗ trợ</p>
+          {project.chuyenVien ? (
+            <div className="flex items-center gap-2">
+              <div className="size-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-[10px] font-black">
+                {project.chuyenVien.name[0]}
+              </div>
+              <p className="font-bold text-[#191c1e] text-sm">{project.chuyenVien.name}</p>
+            </div>
+          ) : (
+            <span className="text-sm text-slate-400 italic">Chưa phân công</span>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Main Details */}
-        <div className="lg:col-span-2 space-y-8">
-            <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="bg-gray-100/50 p-1.5 rounded-[2rem] border border-gray-100 mb-8 h-14 w-full justify-start overflow-auto">
-                    <TabsTrigger value="overview" className="rounded-[1.5rem] px-8 h-full font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white">
-                        <Activity className="size-4 mr-2" /> Thông tin chung
-                    </TabsTrigger>
-                    <TabsTrigger value="timeline" className="rounded-[1.5rem] px-8 h-full font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white">
-                        <History className="size-4 mr-2" /> Nhật ký ({project.nhatKy?.length || 0})
-                    </TabsTrigger>
-                    <TabsTrigger value="comments" className="rounded-[1.5rem] px-8 h-full font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white">
-                        <MessageSquare className="size-4 mr-2" /> Thảo luận ({project.binhLuan?.length || 0})
-                    </TabsTrigger>
-                    <TabsTrigger value="chat" className="rounded-[1.5rem] px-8 h-full font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white">
-                        <MessagesSquare className="size-4 mr-2" /> Chat
-                    </TabsTrigger>
-                </TabsList>
+        {/* Main Content Tabs */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="bg-[#f2f4f6] p-1 rounded-full border border-[#eceef0] mb-6 h-12 w-full justify-start overflow-x-auto gap-1">
+              <TabsTrigger
+                value="overview"
+                className="rounded-full px-6 h-full font-bold text-[10px] uppercase tracking-widest text-[#8a8d93] data-[state=active]:bg-white data-[state=active]:text-[#191c1e] data-[state=active]:shadow-sm transition-all"
+              >
+                <Activity className="size-3.5 mr-2" /> Thông tin chung
+              </TabsTrigger>
+              <TabsTrigger
+                value="timeline"
+                className="rounded-full px-6 h-full font-bold text-[10px] uppercase tracking-widest text-[#8a8d93] data-[state=active]:bg-white data-[state=active]:text-[#191c1e] data-[state=active]:shadow-sm transition-all"
+              >
+                <History className="size-3.5 mr-2" /> Nhật ký ({project.nhatKy?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger
+                value="comments"
+                className="rounded-full px-6 h-full font-bold text-[10px] uppercase tracking-widest text-[#8a8d93] data-[state=active]:bg-white data-[state=active]:text-[#191c1e] data-[state=active]:shadow-sm transition-all"
+              >
+                <MessageSquare className="size-3.5 mr-2" /> Thảo luận ({project.binhLuan?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger
+                value="chat"
+                className="rounded-full px-6 h-full font-bold text-[10px] uppercase tracking-widest text-[#8a8d93] data-[state=active]:bg-white data-[state=active]:text-[#191c1e] data-[state=active]:shadow-sm transition-all"
+              >
+                <MessagesSquare className="size-3.5 mr-2" /> Chat
+              </TabsTrigger>
+            </TabsList>
 
-                <TabsContent value="overview" className="space-y-6">
-                    <Card className="border-gray-100 shadow-2xl shadow-gray-200/20 rounded-[2.5rem] overflow-hidden border-none ring-1 ring-gray-100">
-                        <CardHeader className="bg-gray-50/50 border-b border-gray-50 pb-6">
-                             <div className="flex items-center gap-3">
-                                 <div className="p-2 bg-blue-100 text-blue-600 rounded-xl">
-                                     <FileText className="size-5" />
-                                 </div>
-                                 <CardTitle className="text-xl font-black text-[#003466]">Đặc tả Dự án</CardTitle>
-                             </div>
-                        </CardHeader>
-                        <CardContent className="p-8">
-                             <div className="grid grid-cols-2 gap-y-10 gap-x-12">
-                                 <div className="space-y-3">
-                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Khách hàng</label>
-                                     <div className="flex flex-col gap-1">
-                                         <span className="font-bold text-lg text-gray-800">{project.khachHang.ten}</span>
-                                         <Badge className="w-fit bg-gray-100 text-gray-500 border-none text-[10px] uppercase font-bold">{project.khachHang.phanLoai}</Badge>
-                                     </div>
-                                 </div>
-                                 <div className="space-y-3">
-                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sản phẩm / Dịch vụ</label>
-                                     <div className="flex flex-col gap-1">
-                                         <span className="font-bold text-lg text-gray-800">{project.sanPham.tenChiTiet}</span>
-                                         <span className="text-xs text-gray-400 font-medium italic">Thuộc nhóm: {project.sanPham.nhom}</span>
-                                     </div>
-                                 </div>
-                                 <div className="space-y-3">
-                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">AM Phụ trách</label>
-                                     <div className="flex items-center gap-2">
-                                         <div className="size-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-black">
-                                             {project.am.name[0]}
-                                         </div>
-                                         <span className="font-bold text-gray-800">{project.am.name}</span>
-                                     </div>
-                                 </div>
-                                 <div className="space-y-3">
-                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Chuyên viên hỗ trợ</label>
-                                     <div className="flex items-center gap-2">
-                                        {project.chuyenVien ? (
-                                            <>
-                                                <div className="size-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-xs font-black">
-                                                    {project.chuyenVien.name[0]}
-                                                </div>
-                                                <span className="font-bold text-gray-800">{project.chuyenVien.name}</span>
-                                            </>
-                                        ) : (
-                                            <span className="text-sm font-medium text-gray-400 italic">Chưa phân công</span>
-                                        )}
-                                     </div>
-                                 </div>
-                                 <div className="space-y-3">
-                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mã/Số HĐ</label>
-                                     <div className="flex items-center gap-2 font-mono text-sm font-bold text-gray-600">
-                                         {project.maHopDong || "N/A"} / {project.soHopDong || "N/A"}
-                                     </div>
-                                 </div>
-                                 <div className="space-y-3">
-                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Doanh thu dự kiến</label>
-                                     <div className="flex items-center gap-2 text-xl font-black text-[#003466]">
-                                         <DollarSign className="size-5 text-green-600" /> {project.tongDoanhThuDuKien.toLocaleString()} <span className="text-xs text-gray-400 uppercase">Tr.đ</span>
-                                     </div>
-                                 </div>
-                             </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+            <TabsContent value="overview" className="space-y-6">
+              <Card className="border-[#c5c6ce]/10 shadow-sm rounded-xl overflow-hidden">
+                <CardHeader className="bg-[#f2f4f6] border-b border-[#eceef0] py-5">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#0058bc]/10 text-[#0058bc] rounded-lg">
+                      <FileText className="size-4" />
+                    </div>
+                    <CardTitle className="text-base font-black text-[#191c1e]">Đặc tả Dự án</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-8">
+                  <div className="grid grid-cols-2 gap-y-8 gap-x-12">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-[#44474d] uppercase tracking-widest">
+                        Mã / Số HĐ
+                      </label>
+                      <p className="font-mono text-sm font-bold text-[#191c1e]">
+                        {project.maHopDong || "N/A"} / {project.soHopDong || "N/A"}
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-[#44474d] uppercase tracking-widest">
+                        Doanh thu dự kiến
+                      </label>
+                      <div className="flex items-center gap-2 text-xl font-black text-[#0058bc]">
+                        <DollarSign className="size-4 text-green-600" />
+                        {project.tongDoanhThuDuKien.toLocaleString()}
+                        <span className="text-xs text-slate-400 uppercase font-bold">Tr.đ</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-[#44474d] uppercase tracking-widest">
+                        Ngày bắt đầu
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="size-4 text-[#0058bc]" />
+                        <span className="text-sm font-bold text-[#191c1e]">
+                          {new Date(project.ngayBatDau).toLocaleDateString("vi-VN")}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-[#44474d] uppercase tracking-widest">
+                        Chăm sóc cuối
+                      </label>
+                      <span className={cn(
+                        "text-sm font-bold",
+                        project.ngayChamsocCuoiCung ? "text-[#191c1e]" : "text-[#ba1a1a]"
+                      )}>
+                        {project.ngayChamsocCuoiCung
+                          ? new Date(project.ngayChamsocCuoiCung).toLocaleDateString("vi-VN")
+                          : "Chưa chăm sóc"}
+                      </span>
+                    </div>
+                  </div>
 
-                <TabsContent value="timeline" className="pt-4">
-                    <TaskLogTimeline logs={project.nhatKy} />
-                </TabsContent>
+                  {/* Time context */}
+                  <div className="mt-8 p-4 bg-[#0058bc]/5 rounded-xl border border-[#0058bc]/10 flex flex-wrap gap-4">
+                    {[
+                      { label: "Tuần", value: project.tuan },
+                      { label: "Tháng", value: project.thang },
+                      { label: "Quý", value: project.quy },
+                      { label: "Năm", value: project.nam },
+                    ].map((item) => (
+                      <div key={item.label} className="flex flex-col items-center min-w-[60px]">
+                        <span className="text-[9px] font-black text-[#0058bc]/60 uppercase">{item.label}</span>
+                        <span className="text-xl font-black text-[#0058bc] leading-none">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                <TabsContent value="comments" className="pt-4">
-                    <ProjectComments 
-                        projectId={project.id} 
-                        comments={project.binhLuan as any} 
-                        currentUser={currentUser} 
-                    />
-                </TabsContent>
+            <TabsContent value="timeline" className="pt-2">
+              <TaskLogTimeline logs={project.nhatKy} />
+            </TabsContent>
 
-                <TabsContent value="chat" className="pt-4">
-                    <ProjectChat
-                        projectId={project.id}
-                        currentUser={currentUser ? {
-                            id: currentUser.id,
-                            name: currentUser.name,
-                            role: currentUser.role,
-                        } : null}
-                    />
-                </TabsContent>
-            </Tabs>
+            <TabsContent value="comments" className="pt-2">
+              <ProjectComments
+                projectId={project.id}
+                comments={project.binhLuan as any}
+                currentUser={currentUser}
+              />
+            </TabsContent>
+
+            <TabsContent value="chat" className="pt-2">
+              <ProjectChat
+                projectId={project.id}
+                currentUser={
+                  currentUser
+                    ? {
+                        id: currentUser.id,
+                        name: currentUser.name,
+                        role: currentUser.role,
+                      }
+                    : null
+                }
+              />
+            </TabsContent>
+          </Tabs>
         </div>
 
-        {/* Right Column - Status & Cards */}
-        <div className="space-y-8">
-            <Card className="border-none shadow-2xl shadow-gray-200/20 rounded-[2.5rem] bg-gradient-to-br from-white to-gray-50/50 overflow-hidden ring-1 ring-gray-100">
-                <CardHeader className="pb-4">
-                     <CardTitle className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Trạng thái HIỆN TẠI</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="flex flex-col gap-2">
-                        {getStatusBadge(project.trangThaiHienTai)}
-                        <h2 className="text-2xl font-black text-[#003466] leading-tight">
-                            {project.trangThaiHienTai.replace(/_/g, ' ')}
-                        </h2>
-                    </div>
-                    
-                    <Separator className="bg-gray-100" />
+        {/* Right Column */}
+        <div className="space-y-6">
+          {/* Financial Card */}
+          <div className="bg-[#0D1F3C] text-white p-6 rounded-xl shadow-lg">
+            <p className="text-xs font-black uppercase tracking-widest text-white/50 mb-2">
+              Doanh thu dự kiến
+            </p>
+            <h2 className="text-4xl font-black text-white leading-none">
+              {project.tongDoanhThuDuKien.toLocaleString()} <span className="text-xl text-white/60">Tr.đ</span>
+            </h2>
+            <div className="mt-4 pt-4 border-t border-white/10 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-white/50 text-xs uppercase font-bold">Trạng thái HĐ</span>
+                <span className={cn("px-2 py-0.5 rounded text-[10px] font-black uppercase", statusStyle.className)}>
+                  {statusStyle.label}
+                </span>
+              </div>
+              {project.maHopDong && (
+                <div className="flex justify-between">
+                  <span className="text-white/50 text-xs uppercase font-bold">Mã HĐ</span>
+                  <span className="font-mono text-xs font-bold">{project.maHopDong}</span>
+                </div>
+              )}
+            </div>
+          </div>
 
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
-                                <Calendar className="size-4 text-primary" /> Bắt đầu từ
-                            </div>
-                            <span className="text-sm font-black text-gray-800">{new Date(project.ngayBatDau).toLocaleDateString('vi-VN')}</span>
-                        </div>
-                        <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 flex flex-wrap gap-3 justify-between">
-                             <div className="flex flex-col items-center">
-                                 <span className="text-[9px] font-black text-primary/60 uppercase">Tuần</span>
-                                 <span className="text-lg font-black text-primary leading-none">{project.tuan}</span>
-                             </div>
-                             <div className="flex flex-col items-center">
-                                 <span className="text-[9px] font-black text-primary/60 uppercase">Tháng</span>
-                                 <span className="text-lg font-black text-primary leading-none">{project.thang}</span>
-                             </div>
-                             <div className="flex flex-col items-center">
-                                 <span className="text-[9px] font-black text-primary/60 uppercase">Quý</span>
-                                 <span className="text-lg font-black text-primary leading-none">{project.quy}</span>
-                             </div>
-                             <div className="flex flex-col items-center">
-                                 <span className="text-[9px] font-black text-primary/60 uppercase">Năm</span>
-                                 <span className="text-lg font-black text-primary leading-none">{project.nam}</span>
-                             </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+          {/* Health Card */}
+          <Card className="border-[#c5c6ce]/10 shadow-sm rounded-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xs font-black text-[#44474d] uppercase tracking-widest">
+                Sức khỏe Dự án
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="p-4 bg-red-50/50 rounded-xl border border-red-100/50">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-black text-[#ba1a1a]/60 uppercase">Chăm sóc cuối</span>
+                  <AlertCircle className="size-4 text-[#ba1a1a] animate-pulse" />
+                </div>
+                <span className="text-lg font-black text-[#ba1a1a]">
+                  {project.ngayChamsocCuoiCung
+                    ? new Date(project.ngayChamsocCuoiCung).toLocaleDateString("vi-VN")
+                    : "Chưa chăm sóc"}
+                </span>
+              </div>
 
-            <Card className="border-none shadow-2xl shadow-gray-200/20 rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-gray-100">
-                <CardHeader className="pb-4">
-                     <CardTitle className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Sức khỏe Dự án</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="p-6 bg-red-50/50 rounded-[2rem] border border-red-100/50">
-                        <div className="flex flex-col gap-2">
-                             <div className="flex items-center justify-between">
-                                 <span className="text-[10px] font-black text-red-700/60 uppercase">Chăm sóc cuối</span>
-                                 <AlertCircle className="size-4 text-red-600 animate-pulse" />
-                             </div>
-                             <span className="text-xl font-black text-red-700">
-                                {project.ngayChamsocCuoiCung ? new Date(project.ngayChamsocCuoiCung).toLocaleDateString('vi-VN') : "Chưa chăm sóc"}
-                             </span>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4">
-                         <div className="flex items-center gap-3">
-                             <div className="size-10 bg-green-100 text-green-700 rounded-2xl flex items-center justify-center font-black">
-                                 {project.nhatKy?.length || 0}
-                             </div>
-                             <div>
-                                 <p className="text-sm font-black text-gray-800">Lượt nhật ký</p>
-                                 <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Tổng số cập nhật tiến độ</p>
-                             </div>
-                         </div>
-                    </div>
-                </CardContent>
-            </Card>
+              <div className="flex items-center gap-3">
+                <div className="size-10 bg-green-100 text-green-700 rounded-xl flex items-center justify-center font-black text-lg">
+                  {project.nhatKy?.length || 0}
+                </div>
+                <div>
+                  <p className="text-sm font-black text-[#191c1e]">Lượt nhật ký</p>
+                  <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                    Tổng số cập nhật tiến độ
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

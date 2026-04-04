@@ -12,175 +12,159 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import {
-  ArrowUpDown,
-  MoreHorizontal,
-  Pencil,
   Search,
   Eye,
-  AlertCircle,
-  Clock,
   History,
-  Building2,
-  Package,
-  CirclePlay,
-  Briefcase,
+  ChevronLeft,
   ChevronRight,
+  AlertTriangle,
+  Clock,
 } from "lucide-react";
 import * as React from "react";
 import Link from "next/link";
 
-import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { TrangThaiDuAn, LinhVuc } from "@prisma/client";
-
+import { TrangThaiDuAn } from "@prisma/client";
 import { QuickUpdateModal } from "@/components/du-an/quick-update-modal";
+
+const STATUS_STYLES: Record<string, { label: string; className: string }> = {
+  MOI: { label: "Mới", className: "bg-blue-100 text-blue-700" },
+  DANG_LAM_VIEC: { label: "Đang làm việc", className: "bg-amber-100 text-amber-700" },
+  DA_DEMO: { label: "Đã Demo", className: "bg-purple-100 text-purple-700" },
+  DA_GUI_BAO_GIA: { label: "Gửi báo giá", className: "bg-blue-100 text-blue-700" },
+  DA_KY_HOP_DONG: { label: "Đã ký HĐ", className: "bg-green-100 text-green-700" },
+  THAT_BAI: { label: "Thất bại", className: "bg-red-100 text-red-700" },
+};
 
 export function ProjectsTable({ data }: { data: any[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = React.useState("");
   const [selectedProject, setSelectedProject] = React.useState<any>(null);
   const [openUpdateModal, setOpenUpdateModal] = React.useState(false);
 
   const columns: ColumnDef<any>[] = [
-    // ... existing columns (but I need to use the one-click update button)
-    // Wait, I'll update the whole file to make it cleaner.
     {
-      accessorKey: "tenDuAn",
-      header: "Tên dự án",
+      id: "index",
+      header: "#",
       cell: ({ row }) => (
-        <div className="flex flex-col gap-1 max-w-[280px]">
-          <Link 
-            href={`/du-an/${row.original.id}`} 
-            className="font-bold text-[#003466] hover:text-primary transition-colors truncate"
+        <span className="text-sm text-slate-400 font-medium">{row.index + 1}</span>
+      ),
+    },
+    {
+      accessorKey: "khachHang",
+      header: "Khách hàng",
+      cell: ({ row }) => (
+        <div>
+          <Link
+            href={`/du-an/${row.original.id}`}
+            className="font-bold text-sm text-[#191c1e] hover:text-[#0058bc] transition-colors"
           >
-            {row.getValue("tenDuAn")}
+            {row.original.khachHang.ten}
           </Link>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-[10px] py-1 border-gray-100 font-normal">
-              {row.original.khachHang.ten}
-            </Badge>
-          </div>
+          <p className="text-[10px] text-slate-500 mt-0.5">{row.original.tenDuAn}</p>
         </div>
       ),
     },
     {
-      accessorKey: "sanPham.tenChiTiet",
+      accessorKey: "sanPham",
       header: "Sản phẩm",
-      cell: ({ row }) => <div className="text-xs text-gray-500 font-medium">{row.original.sanPham.tenChiTiet}</div>,
+      cell: ({ row }) => (
+        <span className="text-sm text-[#44474d]">{row.original.sanPham.tenChiTiet}</span>
+      ),
     },
     {
-      accessorKey: "linhVuc",
-      header: "Lĩnh vực",
-      cell: ({ row }) => {
-        const val = row.getValue("linhVuc") as LinhVuc;
-        return (
-          <Badge className={cn("text-[10px]", val === "B2B_B2G" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700")}>
-            {val === "B2B_B2G" ? "B2B/B2G" : "B2A"}
-          </Badge>
-        );
-      },
+      accessorKey: "am",
+      header: "AM",
+      cell: ({ row }) => (
+        <span className="text-sm text-center">{row.original.am?.name || "—"}</span>
+      ),
     },
     {
-      accessorKey: "tongDoanhThuDuKien",
-      header: "Doanh thu",
-      cell: ({ row }) => <div className="font-mono font-bold text-gray-700">{row.getValue("tongDoanhThuDuKien")} Tr.đ</div>,
+      accessorKey: "chuyenVien",
+      header: "Chuyên viên",
+      cell: ({ row }) => (
+        <span className="text-sm text-[#44474d]">{row.original.chuyenVien?.name || "—"}</span>
+      ),
     },
     {
       accessorKey: "trangThaiHienTai",
       header: "Trạng thái",
       cell: ({ row }) => {
         const state = row.getValue("trangThaiHienTai") as TrangThaiDuAn;
-        const colors: any = {
-            MOI: "bg-gray-100 text-gray-600",
-            DANG_LAM_VIEC: "bg-blue-100 text-blue-600",
-            DA_DEMO: "bg-purple-100 text-purple-600",
-            DA_GUI_BAO_GIA: "bg-yellow-100 text-yellow-700",
-            DA_KY_HOP_DONG: "bg-green-100 text-green-700",
-            THAT_BAI: "bg-red-100 text-red-600",
-        };
-        const colorClass = colors[state] || "bg-gray-100";
-        return <Badge className={cn("text-[10px] font-black border-none px-2", colorClass)}>{state?.replace(/_/g, ' ') || '...'}</Badge>;
+        const style = STATUS_STYLES[state] || STATUS_STYLES.MOI;
+        return (
+          <span className={cn("px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter", style.className)}>
+            {style.label}
+          </span>
+        );
       },
     },
     {
+      accessorKey: "tongDoanhThuDuKien",
+      header: "Doanh thu (Tr.đ)",
+      cell: ({ row }) => (
+        <span className="text-sm font-bold text-right block">{row.getValue<number>("tongDoanhThuDuKien").toLocaleString()}</span>
+      ),
+    },
+    {
       accessorKey: "ngayChamsocCuoiCung",
-      header: "CSKH Cuối",
+      header: "Ngày CSKH",
       cell: ({ row }) => {
         const lastDate = row.getValue("ngayChamsocCuoiCung") as Date;
-        if (!lastDate) return <Badge variant="destructive" className="animate-pulse">Chưa CSKH</Badge>;
-        
-        const diff = Math.floor((new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24));
-        const isUrgent = diff > 15;
-
+        if (!lastDate) return <span className="text-red-500 font-bold text-xs animate-pulse">Chưa CSKH</span>;
         return (
-          <div className="flex flex-col gap-1">
-             <div className="text-[10px] text-gray-400 font-mono">{new Date(lastDate).toLocaleDateString('vi-VN')}</div>
-             {isUrgent ? (
-                 <Badge className="bg-red-50 text-red-600 hover:bg-red-50 border-red-100 text-[9px] px-1 animate-bounce">
-                    Cần CS gấp ({diff} ngày)
-                 </Badge>
-             ) : (
-                <div className="text-[9px] text-green-600 font-medium flex items-center">
-                    <Clock className="size-2 mr-1" /> {diff} ngày trước
-                </div>
-             )}
-          </div>
+          <span className="text-sm text-center text-slate-500">
+            {new Date(lastDate).toLocaleDateString("vi-VN")}
+          </span>
+        );
+      },
+    },
+    {
+      id: "warning",
+      header: "Cảnh báo",
+      cell: ({ row }) => {
+        const lastDate = row.original.ngayChamsocCuoiCung;
+        if (!lastDate) return <span className="text-slate-300">—</span>;
+        const diff = Math.floor(
+          (new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        if (diff > 15) {
+          return (
+            <span className="px-2 py-1 rounded bg-[#ba1a1a] text-white text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 w-fit">
+              <AlertTriangle className="size-3" />
+              Cần CS gấp
+            </span>
+          );
+        }
+        return (
+          <span className="text-slate-300 text-center block">—</span>
         );
       },
     },
     {
       id: "actions",
+      header: "Hành động",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-            <Button 
-                variant="outline" 
-                size="xs" 
-                className="text-primary font-bold border-primary/20 hover:bg-primary/5 h-7 rounded-lg"
-                onClick={() => {
-                    setSelectedProject(row.original);
-                    setOpenUpdateModal(true);
-                }}
-            >
-                <History className="size-3 mr-1" /> Update
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 w-7 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors outline-none">
-                  <MoreHorizontal className="size-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                    <Link href={`/du-an/${row.original.id}`} className="flex items-center w-full">
-                        <Eye className="size-4 mr-2" /> Chi tiết
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                   className="text-primary focus:text-primary font-bold"
-                   onClick={() => {
-                        setSelectedProject(row.original);
-                        setOpenUpdateModal(true);
-                   }}
-                >
-                    <History className="size-4 mr-2" /> Quick Update
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+        <div className="flex items-center justify-center gap-2">
+          <button
+            className="p-2 hover:bg-slate-100 rounded-lg transition-all text-[#0058bc]"
+            title="Cập nhật nhanh"
+            onClick={() => {
+              setSelectedProject(row.original);
+              setOpenUpdateModal(true);
+            }}
+          >
+            <History className="size-4" />
+          </button>
+          <Link
+            href={`/du-an/${row.original.id}`}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-all text-slate-500"
+            title="Xem chi tiết"
+          >
+            <Eye className="size-4" />
+          </Link>
         </div>
       ),
     },
@@ -195,68 +179,134 @@ export function ProjectsTable({ data }: { data: any[] }) {
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    state: { sorting, columnFilters },
+    onGlobalFilterChange: setGlobalFilter,
+    state: { sorting, columnFilters, globalFilter },
+    initialState: { pagination: { pageSize: 10 } },
   });
 
   return (
-    <div className="w-full space-y-6">
-      {/* Dynamic Filter Section Placeholder */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center bg-white px-4 py-2 rounded-2xl border border-gray-100 w-full max-w-md shadow-sm ring-4 ring-gray-50/50">
-          <Search className="size-4 text-gray-400 mr-2" />
-          <Input
-            placeholder="Tìm theo tên dự án..."
-            value={(table.getColumn("tenDuAn")?.getFilterValue() as string) ?? ""}
-            onChange={(event) => table.getColumn("tenDuAn")?.setFilterValue(event.target.value)}
-            className="border-none bg-transparent h-6 focus-visible:ring-0 text-sm shadow-none p-0"
-          />
+    <div className="w-full space-y-4">
+      {/* Filter Bar */}
+      <div className="bg-[#f2f4f6] p-2 rounded-2xl flex flex-wrap gap-2 items-center">
+        <div className="flex-1 flex gap-2 overflow-x-auto px-2 py-1 min-w-0">
+          <div className="relative min-w-[280px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+            <Input
+              placeholder="Tìm kiếm dự án, khách hàng..."
+              value={globalFilter ?? ""}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="bg-white border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#0058bc] shadow-none h-9"
+            />
+          </div>
         </div>
-
-        <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-white border-gray-100 text-gray-400 font-normal">
-                Hiển thị {data.length} dự án
-            </Badge>
-        </div>
+        <span className="text-xs text-slate-500 font-medium px-3">
+          {data.length} dự án
+        </span>
       </div>
 
-      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden">
-        <Table>
-          <TableHeader className="bg-gray-50/30">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent border-gray-100">
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-[10px] px-6 py-5 uppercase text-gray-400 font-black tracking-[0.1em]">
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
+      {/* Table */}
+      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#c5c6ce]/10">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-[#f2f4f6] text-[#44474d]">
+              {table.getHeaderGroups().map((hg) =>
+                hg.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className="py-4 px-6 font-bold text-[10px] uppercase tracking-widest whitespace-nowrap"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </th>
+                ))
+              )}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#eceef0]">
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="hover:bg-[#F8FAFC] transition-all border-gray-50/50 group">
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-6 py-5">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const lastDate = row.original.ngayChamsocCuoiCung;
+                const isUrgent = lastDate
+                  ? Math.floor(
+                      (new Date().getTime() - new Date(lastDate).getTime()) /
+                        (1000 * 60 * 60 * 24)
+                    ) > 15
+                  : false;
+
+                return (
+                  <tr
+                    key={row.id}
+                    className={cn(
+                      "transition-colors",
+                      isUrgent
+                        ? "bg-[#ffdad6]/20 hover:bg-[#ffdad6]/30"
+                        : "hover:bg-[#f7f9fb]"
+                    )}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="py-4 px-6">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
             ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-32 text-center text-gray-400 font-medium italic">
-                   🚀 Chưa có dự án nào được khởi tạo.
-                </TableCell>
-              </TableRow>
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="h-32 text-center text-slate-400 font-medium italic"
+                >
+                  🚀 Chưa có dự án nào được khởi tạo.
+                </td>
+              </tr>
             )}
-          </TableBody>
-        </Table>
+          </tbody>
+        </table>
+
+        {/* Pagination */}
+        <div className="p-6 bg-[#f2f4f6] flex justify-between items-center">
+          <p className="text-xs text-[#44474d] font-medium">
+            Hiển thị {table.getRowModel().rows.length} trên tổng số {data.length} dự án
+          </p>
+          <div className="flex gap-1">
+            <button
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 hover:text-[#0058bc] transition-all disabled:opacity-40"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+            {Array.from({ length: table.getPageCount() }, (_, i) => i).map((pg) => (
+              <button
+                key={pg}
+                onClick={() => table.setPageIndex(pg)}
+                className={cn(
+                  "w-8 h-8 rounded-lg text-xs font-bold transition-all",
+                  table.getState().pagination.pageIndex === pg
+                    ? "bg-[#0058bc] text-white"
+                    : "bg-white text-slate-500 hover:bg-slate-100"
+                )}
+              >
+                {pg + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 hover:text-[#0058bc] transition-all disabled:opacity-40"
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          </div>
+        </div>
       </div>
-      <QuickUpdateModal 
-        open={openUpdateModal} 
-        setOpen={setOpenUpdateModal} 
-        project={selectedProject} 
+
+      <QuickUpdateModal
+        open={openUpdateModal}
+        setOpen={setOpenUpdateModal}
+        project={selectedProject}
         key={selectedProject?.id || "quick-update"}
       />
     </div>

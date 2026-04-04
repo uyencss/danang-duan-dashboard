@@ -1,248 +1,505 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import * as Ably from "ably";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-import { 
-  MessageSquare, 
-  Trash2, 
-  Reply, 
-  Send, 
+import {
+  MessageSquare,
+  Trash2,
+  Reply,
+  Send,
   History,
-  X
+  X,
+  AtSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { createComment, deleteComment } from "@/app/(dashboard)/du-an/[id]/comment-actions";
+import {
+  createComment,
+  deleteComment,
+} from "@/app/(dashboard)/du-an/[id]/comment-actions";
 import { toast } from "sonner";
 
 interface Comment {
-    id: number;
-    content: string;
-    createdAt: Date;
-    parentId?: number | null;
-    user: {
-        id: string;
-        name: string;
-        role: string;
-        avatarUrl?: string | null;
-    };
-}
-
-interface CurrentUser {
+  id: number;
+  content: string;
+  createdAt: Date;
+  parentId?: number | null;
+  user: {
     id: string;
     name: string;
     role: string;
+    avatarUrl?: string | null;
+  };
 }
 
-// ─── Extracted outside to avoid remount on every parent render ─────────────
+interface CurrentUser {
+  id: string;
+  name: string;
+  role: string;
+}
+
+// ─── Mention Autocomplete ──────────────────────────────────────────
+interface MentionDropdownProps {
+  query: string;
+  users: { id: string; name: string }[];
+  onSelect: (name: string) => void;
+  anchorRef: React.RefObject<HTMLTextAreaElement | null>;
+}
+
+function MentionDropdown({ query, users, onSelect, anchorRef }: MentionDropdownProps) {
+  const filtered = users.filter((u) =>
+    u.name.toLowerCase().includes(query.toLowerCase())
+  );
+
+  if (!filtered.length) return null;
+
+  return (
+    <div className="absolute z-50 mt-1 bg-white rounded-2xl shadow-2xl border border-[#eceef0] overflow-hidden w-56">
+      {filtered.map((u) => (
+        <button
+          key={u.id}
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onSelect(u.name);
+          }}
+          className="w-full text-left px-4 py-3 text-sm font-medium text-[#191c1e] hover:bg-[#f2f4f6] flex items-center gap-2 transition-colors"
+        >
+          <div className="size-6 rounded-full bg-[#0058bc]/10 text-[#0058bc] flex items-center justify-center text-[10px] font-black shrink-0">
+            {u.name[0]}
+          </div>
+          {u.name}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Render content with @mention highlighting ───────────────────
+function CommentContent({ content }: { content: string }) {
+  const parts = content.split(/(@[\w\sÀ-ỹ]+?)(?=\s|$|[.,!?])/g);
+  return (
+    <p className="text-[#44474d] text-sm leading-relaxed whitespace-pre-wrap">
+      {parts.map((part, i) => {
+        if (part.startsWith("@")) {
+          return (
+            <span
+              key={i}
+              className="text-[#0058bc] font-bold bg-[#EBF3FF] px-2 py-0.5 rounded-md text-[13px] mr-0.5"
+            >
+              {part}
+            </span>
+          );
+        }
+        return part;
+      })}
+    </p>
+  );
+}
+
+// ─── Comment Item ─────────────────────────────────────────────────
 interface CommentItemProps {
-    comment: Comment;
-    isReply?: boolean;
-    replies: Comment[];
-    currentUser: CurrentUser | null | undefined;
-    onDelete: (id: number) => void;
-    onReply: (comment: Comment) => void;
+  comment: Comment;
+  isReply?: boolean;
+  replies: Comment[];
+  currentUser: CurrentUser | null | undefined;
+  allUsers: { id: string; name: string }[];
+  onDelete: (id: number) => void;
+  onReply: (comment: Comment) => void;
 }
 
-function CommentItem({ comment, isReply = false, replies, currentUser, onDelete, onReply }: CommentItemProps) {
-    return (
-        <div className={cn("flex gap-3", isReply ? "mt-4" : "mt-8 animate-in slide-in-from-left duration-300")}>
-            <Avatar className={cn("rounded-xl border shadow-sm", isReply ? "size-8" : "size-10")}>
-                <AvatarImage src={comment.user.avatarUrl || ""} />
-                <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                    {comment.user.name.charAt(0)}
-                </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-2">
-                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm shadow-gray-200/20 group relative">
-                    <div className="flex items-center justify-between gap-4 mb-1">
-                        <div className="flex items-center gap-2">
-                            <span className="font-black text-gray-800 text-sm">{comment.user.name}</span>
-                            {comment.user.role === "ADMIN" && (
-                                <Badge className="bg-blue-50 text-blue-600 border-none px-1 text-[8px] h-3 uppercase font-black">Admin</Badge>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                            {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}
-                            
-                            {(currentUser?.role === "ADMIN" || currentUser?.id === comment.user.id) && (
-                                <button 
-                                    onClick={() => onDelete(comment.id)} 
-                                    className="p-1 hover:bg-red-50 hover:text-red-500 rounded-md transition-colors opacity-0 group-hover:opacity-100"
-                                >
-                                    <Trash2 className="size-3" />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                    <p className="text-gray-600 text-sm leading-relaxed">{comment.content}</p>
+function CommentItem({
+  comment,
+  isReply = false,
+  replies,
+  currentUser,
+  allUsers,
+  onDelete,
+  onReply,
+}: CommentItemProps) {
+  const initials = comment.user.name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(-2)
+    .join("")
+    .toUpperCase();
 
-                    {!isReply && (
-                        <button 
-                            onClick={() => {
-                                onReply(comment);
-                                const el = document.getElementById('comment-input');
-                                el?.focus();
-                            }}
-                            className="absolute -bottom-6 left-0 text-[10px] font-black text-primary hover:text-blue-700 flex items-center gap-1 uppercase"
-                        >
-                            <Reply className="size-3" /> Phản hồi
-                        </button>
-                    )}
-                </div>
+  return (
+    <div className={cn(isReply ? "mt-2" : "mt-4 animate-in slide-in-from-bottom-1 duration-300")}>
+      <div className="bg-white rounded-2xl border border-[#eceef0] shadow-sm group p-4 flex gap-4">
+        {/* Avatar */}
+        <Avatar className={cn("rounded-full border border-[#eceef0] shrink-0 mt-0.5", isReply ? "size-8" : "size-10")}>
+          <AvatarImage src={comment.user.avatarUrl || ""} />
+          <AvatarFallback className="bg-[#f7f9fb] text-[#0058bc] font-black text-xs">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
 
-                {!isReply && replies.map(reply => (
-                    <CommentItem
-                        key={reply.id}
-                        comment={reply}
-                        isReply
-                        replies={[]}
-                        currentUser={currentUser}
-                        onDelete={onDelete}
-                        onReply={onReply}
-                    />
-                ))}
+        {/* Bubble */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-black text-[#191c1e] text-sm">{comment.user.name}</span>
+              {comment.user.role === "ADMIN" && (
+                <Badge className="bg-[#0058bc]/10 text-[#0058bc] border-none px-1.5 text-[9px] h-4 uppercase font-black tracking-widest">
+                  Admin
+                </Badge>
+              )}
             </div>
+            <div className="flex items-center gap-2 text-[11px] text-[#8a8d93] font-medium shrink-0">
+              <span>
+                {formatDistanceToNow(new Date(comment.createdAt), {
+                  addSuffix: true,
+                  locale: vi,
+                })}
+              </span>
+              {(currentUser?.role === "ADMIN" || currentUser?.id === comment.user.id) && (
+                <button
+                  onClick={() => onDelete(comment.id)}
+                  className="p-1 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Content */}
+          <CommentContent content={comment.content} />
         </div>
-    );
+      </div>
+
+      {/* Reply button below bubble */}
+      {!isReply && (
+        <button
+          onClick={() => onReply(comment)}
+          className="mt-2 ml-14 text-[10px] font-black text-[#8a8d93] hover:text-[#0058bc] flex items-center gap-1.5 uppercase tracking-widest transition-colors"
+        >
+          <Reply className="size-3" /> Phản hồi
+        </button>
+      )}
+
+      {/* Render replies indented */}
+      {!isReply && replies.length > 0 && (
+        <div className="mt-3 space-y-2 border-l border-[#eceef0] pl-4 ml-8">
+          <p className="text-[9px] font-black uppercase tracking-widest text-[#8a8d93] mb-2 flex items-center gap-1.5 -ml-3">
+            <Reply className="size-3" /> Phản hồi
+          </p>
+            {replies.map((reply) => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                isReply
+                replies={[]}
+                currentUser={currentUser}
+                allUsers={allUsers}
+                onDelete={onDelete}
+                onReply={onReply}
+              />
+            ))}
+          </div>
+        )}
+    </div>
+  );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────
-export function ProjectComments({ 
-    projectId, 
-    comments = [], 
-    currentUser 
-}: { 
-    projectId: number, 
-    comments: Comment[], 
-    currentUser: CurrentUser | null | undefined
+// ─── Comment Input with @mention ─────────────────────────────────
+interface CommentInputProps {
+  projectId: number;
+  currentUser: CurrentUser | null | undefined;
+  replyingTo: Comment | null;
+  allUsers: { id: string; name: string }[];
+  onCancelReply: () => void;
+  onSubmit: (content: string, parentId?: number | null) => Promise<boolean>;
+}
+
+function CommentInput({
+  projectId,
+  currentUser,
+  replyingTo,
+  allUsers,
+  onCancelReply,
+  onSubmit,
+}: CommentInputProps) {
+  const [value, setValue] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionStart, setMentionStart] = useState<number>(-1);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Auto-insert @username when reply starts
+  useEffect(() => {
+    if (replyingTo) {
+      const mention = `@${replyingTo.user.name} `;
+      setValue(mention);
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        const len = mention.length;
+        textareaRef.current?.setSelectionRange(len, len);
+      }, 50);
+    } else {
+      setValue("");
+    }
+  }, [replyingTo]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setValue(text);
+
+    // Detect @ trigger
+    const cursor = e.target.selectionStart;
+    const textBefore = text.slice(0, cursor);
+    const lastAt = textBefore.lastIndexOf("@");
+
+    if (lastAt !== -1) {
+      const segment = textBefore.slice(lastAt + 1);
+      // Only show if no space in segment (still typing the name)
+      if (!segment.includes(" ") || segment.length <= 2) {
+        setMentionQuery(segment);
+        setMentionStart(lastAt);
+        return;
+      }
+    }
+    setMentionQuery(null);
+    setMentionStart(-1);
+  };
+
+  const handleMentionSelect = (name: string) => {
+    if (mentionStart === -1) return;
+    const before = value.slice(0, mentionStart);
+    const after = value.slice(mentionStart + 1 + (mentionQuery?.length || 0));
+    const newVal = `${before}@${name} ${after}`;
+    setValue(newVal);
+    setMentionQuery(null);
+    setMentionStart(-1);
+    setTimeout(() => {
+      textareaRef.current?.focus();
+      const pos = (before + `@${name} `).length;
+      textareaRef.current?.setSelectionRange(pos, pos);
+    }, 10);
+  };
+
+  const handleSubmit = async () => {
+    if (!value.trim() || value.trim().length < 2) return;
+    setLoading(true);
+    const ok = await onSubmit(value.trim(), replyingTo?.id || null);
+    if (ok) {
+      setValue("");
+      setMentionQuery(null);
+    }
+    setLoading(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      handleSubmit();
+      return;
+    }
+    // Tab selects first mention if dropdown is open
+    if (e.key === "Tab" && mentionQuery !== null) {
+      e.preventDefault();
+      const filtered = allUsers.filter((u) =>
+        u.name.toLowerCase().includes((mentionQuery || "").toLowerCase())
+      );
+      if (filtered[0]) handleMentionSelect(filtered[0].name);
+    }
+    if (e.key === "Escape") {
+      setMentionQuery(null);
+    }
+  };
+
+
+  return (
+    <div className="bg-[#f7f9fb] p-6 rounded-2xl border border-[#eceef0] space-y-3">
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <History className="size-4 text-[#000719]" />
+        <h3 className="text-sm font-black text-[#000719] uppercase tracking-widest">
+          {replyingTo ? "Phản hồi bình luận" : "Trao đổi nội bộ"}
+        </h3>
+      </div>
+
+      {/* Reply context banner */}
+      {replyingTo && (
+        <div className="flex items-center justify-between bg-[#0058bc]/5 border border-[#0058bc]/15 px-4 py-2 rounded-xl text-[11px] font-bold text-[#0058bc]">
+          <span className="flex items-center gap-2">
+            <Reply className="size-3" /> Trả lời{" "}
+            <strong>@{replyingTo.user.name}</strong>
+          </span>
+          <button
+            onClick={onCancelReply}
+            className="hover:text-[#8a8d93] transition-colors"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Textarea wrapper with dropdown */}
+      <div className="relative" ref={wrapperRef}>
+        <textarea
+          ref={textareaRef}
+          id="comment-input"
+          value={value}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          placeholder={
+            replyingTo
+              ? `Nhập phản hồi... (@ để tag người dùng)`
+              : "Đặt câu hỏi hoặc cập nhật... (@ để tag người dùng)"
+          }
+          rows={3}
+          className="w-full bg-white rounded-xl p-4 border border-[#eceef0] text-sm text-[#191c1e] placeholder:text-[#8a8d93] focus:outline-none focus:ring-2 focus:ring-[#0058bc]/20 resize-none transition-all"
+        />
+        {/* @ hint */}
+        <div className="absolute bottom-3 left-4 text-[10px] text-[#8a8d93] flex items-center gap-1 select-none pointer-events-none">
+          <AtSign className="size-3" />
+          <span>Tag người dùng · Tab để chọn</span>
+        </div>
+
+        {/* Mention dropdown */}
+        {mentionQuery !== null && (
+          <div className="absolute left-4 bottom-full mb-1">
+            <MentionDropdown
+              query={mentionQuery}
+              users={allUsers}
+              onSelect={handleMentionSelect}
+              anchorRef={textareaRef}
+            />
+          </div>
+        )}
+
+        {/* Send button */}
+        <button
+          type="button"
+          disabled={loading || value.trim().length < 2}
+          onClick={handleSubmit}
+          className="absolute bottom-3 right-3 bg-[#000719] hover:bg-[#0d1f3c] disabled:opacity-40 disabled:cursor-not-allowed text-white h-9 px-5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all"
+        >
+          <Send className="size-3.5" />
+          {loading ? "..." : "Gửi"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────
+export function ProjectComments({
+  projectId,
+  comments = [],
+  currentUser,
+}: {
+  projectId: number;
+  comments: Comment[];
+  currentUser: CurrentUser | null | undefined;
 }) {
-    const router = useRouter();
-    const [newComment, setNewComment] = useState("");
-    const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
-    const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
 
-    useEffect(() => {
-        // Initialize Ably client-side instance — only if key is valid
-        const key = process.env.NEXT_PUBLIC_ABLY_KEY;
-        if (!key || !key.includes(':')) return; // skip if placeholder/missing key
+  // Build allUsers list from unique commenters (for @mention)
+  const allUsers = Array.from(
+    new Map(comments.map((c) => [c.user.id, { id: c.user.id, name: c.user.name }])).values()
+  );
 
-        const client = new Ably.Realtime({ key });
-        const channel = client.channels.get(`project-${projectId}`);
+  // Ably subscription for real-time updates
+  useEffect(() => {
+    const key = process.env.NEXT_PUBLIC_ABLY_KEY;
+    if (!key || !key.includes(":")) return;
 
-        channel.subscribe("new_comment", (message) => {
-            const data = message.data;
-            if (currentUser && data.userName !== currentUser.name) {
-                toast.info(`${data.userName} vừa bình luận: "${data.content.substring(0, 50)}${data.content.length > 50 ? '...' : ''}"`, {
-                    icon: <MessageSquare className="size-4" />
-                });
-                router.refresh();
-            }
-        });
+    const client = new Ably.Realtime({ key });
+    const channel = client.channels.get(`project-${projectId}`);
 
-        return () => {
-            channel.unsubscribe();
-            client.close();
-        };
-    }, [projectId, router, currentUser]);
+    channel.subscribe("new_comment", (message) => {
+      const data = message.data;
+      if (currentUser && data.userName !== currentUser.name) {
+        toast.info(
+          `${data.userName} vừa bình luận: "${data.content.substring(0, 50)}${data.content.length > 50 ? "..." : ""}"`,
+          { icon: <MessageSquare className="size-4" /> }
+        );
+        router.refresh();
+      }
+    });
 
-    const rootComments = comments.filter(c => !c.parentId);
-    const getReplies = (parentId: number) => comments.filter(c => c.parentId === parentId);
-
-    const handleSubmit = async () => {
-        if (!newComment.trim() || newComment.length < 2) return;
-        setLoading(true);
-        const res = await createComment({
-            projectId,
-            content: newComment,
-            parentId: replyingTo?.id || null
-        });
-
-        if (res.success) {
-            toast.success(replyingTo ? "Đã gửi phản hồi!" : "Đã đăng bình luận!");
-            setNewComment("");
-            setReplyingTo(null);
-        } else {
-            toast.error(res.error);
-        }
-        setLoading(false);
+    return () => {
+      channel.unsubscribe();
+      client.close();
     };
+  }, [projectId, router, currentUser]);
 
-    const handleDelete = async (commentId: number) => {
-        if (!confirm("Bạn có chắc chắn muốn xóa bình luận này?")) return;
-        const res = await deleteComment(commentId, projectId);
-        if (res.success) {
-            toast.success("Bình luận đã được xóa");
-        } else {
-            toast.error(res.error);
-        }
-    };
+  const rootComments = comments.filter((c) => !c.parentId);
+  const getReplies = (parentId: number) =>
+    comments.filter((c) => c.parentId === parentId);
 
-    return (
-        <div className="space-y-12">
-            {/* Input Section */}
-            <div className="bg-gray-50/50 p-6 rounded-[2.5rem] border border-gray-100/50 space-y-4">
-                <div className="flex items-center gap-2 px-1">
-                    <History className="size-4 text-primary" />
-                    <h3 className="text-sm font-black text-[#003466] uppercase tracking-widest">Trao đổi nội bộ</h3>
-                </div>
+  const handleSubmit = async (content: string, parentId?: number | null): Promise<boolean> => {
+    const res = await createComment({ projectId, content, parentId });
+    if (res.success) {
+      toast.success(parentId ? "Đã gửi phản hồi!" : "Đã đăng bình luận!");
+      setReplyingTo(null);
+      return true;
+    } else {
+      toast.error(res.error);
+      return false;
+    }
+  };
 
-                {replyingTo && (
-                    <div className="flex items-center justify-between bg-blue-50/50 px-4 py-2 rounded-xl text-[11px] font-bold text-primary">
-                        <span className="flex items-center gap-2">
-                           <Reply className="size-3" /> Trả lời @{replyingTo.user.name}
-                        </span>
-                        <button onClick={() => setReplyingTo(null)} className="hover:text-gray-400">
-                           <X className="size-3" />
-                        </button>
-                    </div>
-                )}
+  const handleDelete = async (commentId: number) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa bình luận này?")) return;
+    const res = await deleteComment(commentId, projectId);
+    if (res.success) {
+      toast.success("Bình luận đã được xóa");
+    } else {
+      toast.error(res.error);
+    }
+  };
 
-                <div className="relative">
-                    <Textarea 
-                        id="comment-input"
-                        placeholder={replyingTo ? "Nhập phản hồi..." : "Đặt câu hỏi hoặc cập nhật cho Admin..."} 
-                        className="min-h-[100px] bg-white rounded-2xl p-4 border-gray-100 focus:ring-primary/20 shadow-sm"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                    />
-                    <Button 
-                        disabled={loading || newComment.length < 2}
-                        onClick={handleSubmit}
-                        className="absolute bottom-3 right-3 bg-primary h-10 px-6 rounded-xl font-black shadow-lg shadow-primary/20 gap-2"
-                    >
-                        {loading ? "..." : <><Send className="size-4" /> Gửi</>}
-                    </Button>
-                </div>
-            </div>
+  return (
+    <div className="space-y-8">
+      {/* Input Section */}
+      <CommentInput
+        projectId={projectId}
+        currentUser={currentUser}
+        replyingTo={replyingTo}
+        allUsers={allUsers}
+        onCancelReply={() => setReplyingTo(null)}
+        onSubmit={handleSubmit}
+      />
 
-            {/* Comments List */}
-            <div className="space-y-6">
-                {rootComments.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-12 text-gray-400 bg-white rounded-3xl border border-dotted border-gray-200">
-                        <MessageSquare className="size-12 mb-3 opacity-10" />
-                        <p className="font-bold text-sm">Chưa có trao đổi nào trên dự án này.</p>
-                        <p className="text-[10px] uppercase font-black opacity-40 mt-1">HÃY BẮT ĐẦU CUỘC TRÒ CHUYỆN!</p>
-                    </div>
-                ) : (
-                    rootComments.map(c => (
-                        <CommentItem
-                            key={c.id}
-                            comment={c}
-                            replies={getReplies(c.id)}
-                            currentUser={currentUser}
-                            onDelete={handleDelete}
-                            onReply={setReplyingTo}
-                        />
-                    ))
-                )}
-            </div>
-        </div>
-    );
+      {/* Comments List */}
+      <div className="space-y-5">
+        {rootComments.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-14 text-[#8a8d93] bg-white rounded-2xl border border-[#eceef0] border-dashed">
+            <MessageSquare className="size-10 mb-3 opacity-20" />
+            <p className="font-bold text-sm">Chưa có trao đổi nào trên dự án này.</p>
+            <p className="text-[10px] uppercase font-black opacity-40 mt-1">
+              Hãy bắt đầu cuộc trò chuyện!
+            </p>
+          </div>
+        ) : (
+          rootComments.map((c) => (
+            <CommentItem
+              key={c.id}
+              comment={c}
+              replies={getReplies(c.id)}
+              currentUser={currentUser}
+              allUsers={allUsers}
+              onDelete={handleDelete}
+              onReply={(comment) => {
+                setReplyingTo(comment);
+                const el = document.getElementById("comment-input");
+                el?.focus();
+              }}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
 }

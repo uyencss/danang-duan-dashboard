@@ -1,6 +1,7 @@
 import { NhanSuDashboardClient } from "./nhan-su-client";
 import { getNhanSuAnalytics } from "../dashboard-actions";
 import { AlertCircle } from "lucide-react";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 
 export default async function NhanSuPage({ searchParams }: { searchParams: Promise<{ type?: string, year?: string, value?: string }> }) {
     const params = await searchParams;
@@ -26,5 +27,10 @@ export default async function NhanSuPage({ searchParams }: { searchParams: Promi
         );
     }
 
-    return <NhanSuDashboardClient initialData={res.data} />;
+    return (
+        <div className="space-y-6">
+            <Breadcrumb items={[{ label: "Thống kê" }, { label: "Nhân sự" }]} />
+            <NhanSuDashboardClient initialData={res.data} />
+        </div>
+    );
 }

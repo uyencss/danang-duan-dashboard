@@ -3,6 +3,7 @@ import { getKhachHangList } from "./actions";
 import { CustomersTable } from "./customers-table";
 import { Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 
 export default async function KhachHangPage() {
   // Ensure only Admins can access
@@ -12,7 +13,8 @@ export default async function KhachHangPage() {
   const { data = [], error } = await getKhachHangList();
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <Breadcrumb items={[{ label: "Danh mục" }, { label: "Khách hàng" }]} />
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-6">
         <div className="space-y-1">

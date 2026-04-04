@@ -11,7 +11,7 @@ export function QuickUpdateModalTrigger({ project }: { project: any }) {
   return (
     <>
       <Button 
-        className="bg-primary hover:bg-primary/90 font-black h-12 shadow-lg shadow-primary/20 rounded-2xl px-6"
+        className="bg-[#000719] hover:bg-[#000719]/90 text-white font-bold h-11 px-5 rounded-xl shadow-md"
         onClick={() => setOpen(true)}
       >
         <History className="size-4 mr-2" /> Cập nhật nhanh

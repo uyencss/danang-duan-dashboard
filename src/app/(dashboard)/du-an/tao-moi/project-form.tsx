@@ -12,7 +12,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -20,20 +19,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { LinhVuc } from "@prisma/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { createDuAn, getKhachHangOptions, getSanPhamOptions, getUserOptions } from "../actions";
+import {
+  createDuAn,
+  getKhachHangOptions,
+  getSanPhamOptions,
+  getUserOptions,
+} from "../actions";
 import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
 import { extractTimeFields } from "@/lib/utils/time-extract";
+import {
+  FileText,
+  Lock,
+  CheckCircle,
+  ArrowLeft,
+} from "lucide-react";
+import Link from "next/link";
 
 const formSchema = z.object({
   customerId: z.number().min(1, "Vui lòng chọn khách hàng"),
@@ -55,17 +58,18 @@ export default function ProjectForm() {
   const [spOptions, setSpOptions] = useState<any[]>([]);
   const [userOptions, setUserOptions] = useState<any[]>([]);
   const [timePreview, setTimePreview] = useState<any>(null);
+  const [selectedKh, setSelectedKh] = useState<any>(null);
 
   useEffect(() => {
     async function loadData() {
-        const [kh, sp, us] = await Promise.all([
-          getKhachHangOptions(),
-          getSanPhamOptions(),
-          getUserOptions()
-        ]);
-        setKhOptions(kh.data || []);
-        setSpOptions(sp.data || []);
-        setUserOptions(us.data || []);
+      const [kh, sp, us] = await Promise.all([
+        getKhachHangOptions(),
+        getSanPhamOptions(),
+        getUserOptions(),
+      ]);
+      setKhOptions(kh.data || []);
+      setSpOptions(sp.data || []);
+      setUserOptions(us.data || []);
     }
     loadData();
   }, []);
@@ -85,7 +89,7 @@ export default function ProjectForm() {
   const watchNgayBatDau = form.watch("ngayBatDau");
   useEffect(() => {
     if (watchNgayBatDau) {
-        setTimePreview(extractTimeFields(watchNgayBatDau));
+      setTimePreview(extractTimeFields(watchNgayBatDau));
     }
   }, [watchNgayBatDau]);
 
@@ -103,223 +107,370 @@ export default function ProjectForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Info */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="border-gray-100 shadow-sm rounded-2xl">
-              <CardHeader className="bg-gray-50/50 rounded-t-2xl">
-                <CardTitle className="text-lg text-primary">Thông tin chung</CardTitle>
-                <CardDescription>Nhập tiêu đề dự án và phân loại lĩnh vực.</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        {/* Single large card */}
+        <div className="bg-white rounded-2xl shadow-[0px_8px_30px_rgba(25,28,30,0.06)] overflow-hidden border border-[#eceef0]">
+
+          {/* Card Header — left-bordered accent */}
+          <div className="px-8 py-6 border-l-4 border-[#0058bc] bg-[#f2f4f6]/50 flex items-center gap-3">
+            <FileText className="size-5 text-[#0058bc]" />
+            <h3 className="text-lg font-extrabold text-[#000719]">
+              Thông tin Dự án
+            </h3>
+          </div>
+
+          <div className="p-5 space-y-4">
+
+            {/* ── Section 1: Thông tin chung ── */}
+            <div className="space-y-3">
+              <SectionTitle>Thông tin chung</SectionTitle>
+              <div className="space-y-5">
+
+                {/* Tên dự án */}
                 <FormField
                   control={form.control}
                   name="tenDuAn"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tên Dự án *</FormLabel>
+                      <FieldLabel required>Tên Dự án</FieldLabel>
                       <FormControl>
-                        <Input placeholder="Nhập tên dự án..." className="font-bold text-gray-800" {...field} />
+                        <input
+                          {...field}
+                          placeholder="Nhập tên dự án..."
+                          className="w-full bg-[#f2f4f6] border-none rounded-full px-4 h-[36px] text-[#191c1e] font-medium text-sm focus:ring-2 focus:ring-[#0058bc]/20 outline-none transition-all placeholder:text-[#8a8d93]"
+                        />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-xs text-red-500 mt-1" />
                     </FormItem>
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4 pt-2">
-                  <FormField
-                    control={form.control}
-                    name="linhVuc"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Lĩnh vực</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn lĩnh vực" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value={LinhVuc.B2B_B2G}>B2B/B2G (Cloud, IT...)</SelectItem>
-                            <SelectItem value={LinhVuc.B2A}>B2A (Police / Public Sector)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="tongDoanhThuDuKien"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Doanh thu dự kiến (Triệu VNĐ) *</FormLabel>
+                {/* Lĩnh vực */}
+                <FormField
+                  control={form.control}
+                  name="linhVuc"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel required>Lĩnh vực</FieldLabel>
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl>
-                          <Input type="number" {...field} />
+                          <SelectTrigger className="bg-[#f2f4f6] border-none rounded-full h-[36px] px-4 text-sm font-medium focus:ring-2 focus:ring-[#0058bc]/20">
+                            <SelectValue placeholder="Chọn lĩnh vực...">
+                              {field.value === LinhVuc.B2B_B2G ? "B2B/B2G (Cloud, IT...)" : field.value === LinhVuc.B2A ? "B2A (Police / Public Sector)" : undefined}
+                            </SelectValue>
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-gray-100 shadow-sm rounded-2xl">
-              <CardHeader className="bg-gray-50/50 rounded-t-2xl">
-                <CardTitle className="text-lg text-primary">Dữ liệu Master</CardTitle>
-                <CardDescription>Liên kết dự án với Khách hàng và Sản phẩm hiện có.</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="customerId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Khách hàng *</FormLabel>
-                        <Select onValueChange={(val) => field.onChange(Number(val))}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn khách hàng" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {khOptions.map(kh => (
-                                <SelectItem key={kh.id} value={kh.id.toString()}>
-                                    {kh.ten} ({kh.phanLoai})
-                                </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="productId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sản phẩm dịch vụ *</FormLabel>
-                        <Select onValueChange={(val) => field.onChange(Number(val))}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn sản phẩm" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {spOptions.map(sp => (
-                                <SelectItem key={sp.id} value={sp.id.toString()}>
-                                    [{sp.nhom}] {sp.tenChiTiet}
-                                </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Side Info */}
-          <div className="space-y-6">
-            <Card className="border-gray-100 shadow-sm rounded-2xl">
-              <CardHeader className="bg-gray-50/50 rounded-t-2xl">
-                <CardTitle className="text-lg text-primary font-black">Thời gian</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                 <FormField
-                    control={form.control}
-                    name="ngayBatDau"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ngày bắt đầu dự án *</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {timePreview && (
-                      <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100/50 text-xs text-blue-700 flex flex-wrap gap-2">
-                         <span className="font-bold">Hệ thống ghi nhận:</span>
-                         <Badge variant="outline" className="text-[10px] bg-white">Tuần {timePreview.tuan}</Badge>
-                         <Badge variant="outline" className="text-[10px] bg-white">Tháng {timePreview.thang}</Badge>
-                         <Badge variant="outline" className="text-[10px] bg-white">Quý {timePreview.quy}</Badge>
-                         <Badge variant="outline" className="text-[10px] bg-white">Năm {timePreview.nam}</Badge>
-                      </div>
+                        <SelectContent>
+                          <SelectItem value={LinhVuc.B2B_B2G}>B2B/B2G (Cloud, IT...)</SelectItem>
+                          <SelectItem value={LinhVuc.B2A}>B2A (Police / Public Sector)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="text-xs text-red-500 mt-1" />
+                    </FormItem>
                   )}
-              </CardContent>
-            </Card>
+                />
+              </div>
+            </div>
 
-            <Card className="border-gray-100 shadow-sm rounded-2xl">
-              <CardHeader className="bg-gray-50/50 rounded-t-2xl">
-                <CardTitle className="text-lg text-primary font-black">Nhân sự phụ trách</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                 <FormField
-                    control={form.control}
-                    name="amId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>AM phụ trách *</FormLabel>
-                        <Select onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn AM" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                             {userOptions.map(u => (
-                                 <SelectItem key={u.id} value={u.id}>{u.name} ({u.role})</SelectItem>
-                             ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
+            {/* ── Section 2: Khách hàng ── */}
+            <div className="space-y-3 mt-4">
+              <SectionTitle>Thông tin Khách hàng</SectionTitle>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="customerId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel required>Khách hàng</FieldLabel>
+                      <Select
+                        onValueChange={(val) => {
+                          field.onChange(Number(val));
+                          const found = khOptions.find((k) => k.id === Number(val));
+                          setSelectedKh(found || null);
+                        }}
+                        value={field.value ? field.value.toString() : undefined}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-[#f2f4f6] border-none rounded-full h-[36px] px-4 text-sm font-medium focus:ring-2 focus:ring-[#0058bc]/20">
+                            <SelectValue placeholder="Chọn khách hàng...">
+                              {khOptions.find((kh) => kh.id === field.value)?.ten}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {khOptions.map((kh) => (
+                            <SelectItem key={kh.id} value={kh.id.toString()}>
+                              {kh.ten}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="text-xs text-red-500 mt-1" />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Loại khách hàng - readonly */}
+                <div className="space-y-2">
+                  <FieldLabel>Phân loại</FieldLabel>
+                  <div className="bg-[#f2f4f6] rounded-full h-[36px] px-4 flex items-center">
+                    {selectedKh ? (
+                      <span className="bg-[#0058bc]/10 text-[#0058bc] text-[10px] font-black uppercase px-2.5 py-1 rounded-full tracking-widest">
+                        {selectedKh.phanLoai}
+                      </span>
+                    ) : (
+                      <span className="text-[#8a8d93] text-sm italic">Tự động từ khách hàng</span>
                     )}
-                  />
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                  <FormField
-                    control={form.control}
-                    name="chuyenVienId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Chuyên viên hỗ trợ</FormLabel>
-                        <Select onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn chuyên viên (nếu có)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                             <SelectItem value="none">--- Không có ---</SelectItem>
-                             {userOptions.map(u => (
-                                 <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                             ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-              </CardContent>
-            </Card>
+            {/* ── Section 3: Sản phẩm & Phân công ── */}
+            <div className="space-y-3 mt-4">
+              <SectionTitle>Sản phẩm &amp; Phân công</SectionTitle>
+              <div className="grid grid-cols-2 gap-4">
 
-            <Button type="submit" className="w-full h-12 text-lg font-black bg-primary shadow-lg shadow-primary/20 rounded-2xl" disabled={loading}>
-              {loading ? "Đang xử lý..." : "Tạo Dự án Mới"}
-            </Button>
+                <FormField
+                  control={form.control}
+                  name="productId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel required>Sản phẩm dịch vụ</FieldLabel>
+                      <Select onValueChange={(val) => field.onChange(Number(val))} value={field.value ? field.value.toString() : undefined}>
+                        <FormControl>
+                          <SelectTrigger className="bg-[#f2f4f6] border-none rounded-full h-[36px] px-4 text-sm font-medium focus:ring-2 focus:ring-[#0058bc]/20">
+                            <SelectValue placeholder="Chọn sản phẩm...">
+                              {spOptions.find((sp) => sp.id === field.value) ? `[${spOptions.find((sp) => sp.id === field.value)?.nhom}] ${spOptions.find((sp) => sp.id === field.value)?.tenChiTiet}` : undefined}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {spOptions.map((sp) => (
+                            <SelectItem key={sp.id} value={sp.id.toString()}>
+                              [{sp.nhom}] {sp.tenChiTiet}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="text-xs text-red-500 mt-1" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="amId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel required>AM phụ trách</FieldLabel>
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
+                        <FormControl>
+                          <SelectTrigger className="bg-[#f2f4f6] border-none rounded-full h-[36px] px-4 text-sm font-medium focus:ring-2 focus:ring-[#0058bc]/20">
+                            <SelectValue placeholder="Chọn AM...">
+                              {userOptions.find((u) => u.id === field.value)?.name}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {userOptions.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.name} ({u.role})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="text-xs text-red-500 mt-1" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="chuyenVienId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel>Chuyên viên kỹ thuật</FieldLabel>
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
+                        <FormControl>
+                          <SelectTrigger className="bg-[#f2f4f6] border-none rounded-full h-[36px] px-4 text-sm font-medium focus:ring-2 focus:ring-[#0058bc]/20">
+                            <SelectValue placeholder="Chọn chuyên viên (nếu có)...">
+                              {field.value === "none" ? "--- Không có ---" : userOptions.find((u) => u.id === field.value)?.name}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">--- Không có ---</SelectItem>
+                          {userOptions.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="text-xs text-red-500 mt-1" />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Ngày bắt đầu */}
+                <FormField
+                  control={form.control}
+                  name="ngayBatDau"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel required>Ngày bắt đầu</FieldLabel>
+                      <FormControl>
+                        <div>
+                          <input
+                            type="date"
+                            {...field}
+                            className="w-full bg-[#f2f4f6] border-none rounded-full h-[36px] px-4 text-[#000719] font-bold text-sm focus:ring-2 focus:ring-[#0058bc]/20 outline-none transition-all"
+                          />
+                          {timePreview && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {[
+                                `Tuần ${timePreview.tuan}`,
+                                `Tháng ${timePreview.thang}`,
+                                `Quý ${timePreview.quy}`,
+                                `Năm ${timePreview.nam}`,
+                              ].map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="bg-[#0058bc]/10 text-[#0058bc] text-[10px] font-bold px-2 py-0.5 rounded-md"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500 mt-1" />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* ── Section 4: Tài chính & Hợp đồng ── */}
+            <div className="space-y-3 mt-4">
+              <SectionTitle>Tài chính &amp; Hợp đồng</SectionTitle>
+              <div className="grid grid-cols-2 gap-4">
+
+                {/* Doanh thu */}
+                <FormField
+                  control={form.control}
+                  name="tongDoanhThuDuKien"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel required>Tổng doanh thu dự kiến</FieldLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            {...field}
+                            className="w-full bg-[#f2f4f6] border-none rounded-full h-[36px] pl-4 pr-20 text-[#000719] font-bold text-sm focus:ring-2 focus:ring-[#0058bc]/20 outline-none transition-all"
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-[#8a8d93] uppercase">
+                            Triệu đồng
+                          </span>
+                        </div>
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500 mt-1" />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Trạng thái ban đầu - readonly */}
+                <div className="space-y-2">
+                  <FieldLabel>Trạng thái ban đầu</FieldLabel>
+                  <div className="bg-[#f2f4f6] rounded-full h-[36px] px-4 flex items-center justify-between">
+                    <span className="bg-[#0058bc] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-widest">
+                      Mới
+                    </span>
+                    <Lock className="size-3.5 text-[#8a8d93]" />
+                  </div>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="soHopDong"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel>Số hợp đồng</FieldLabel>
+                      <FormControl>
+                          <input
+                            {...field}
+                            placeholder="VD: HĐ-2026-001"
+                            className="w-full bg-[#f2f4f6] border-none rounded-full h-[36px] px-4 text-[#191c1e] font-medium text-sm focus:ring-2 focus:ring-[#0058bc]/20 outline-none transition-all placeholder:text-[#8a8d93]"
+                          />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500 mt-1" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="maHopDong"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel>Mã hợp đồng</FieldLabel>
+                      <FormControl>
+                          <input
+                            {...field}
+                            placeholder="VD: MBF-DN-001"
+                            className="w-full bg-[#f2f4f6] border-none rounded-full h-[36px] px-4 text-[#191c1e] font-medium text-sm focus:ring-2 focus:ring-[#0058bc]/20 outline-none transition-all placeholder:text-[#8a8d93]"
+                          />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500 mt-1" />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* ── Bottom Actions ── */}
+            <div className="pt-5 mt-3 flex justify-end items-center gap-4 border-t border-[#eceef0]">
+              <Link
+                href="/du-an"
+                className="px-8 py-2.5 h-[40px] rounded-full border-2 border-[#c5c6ce] text-[#44474d] text-sm font-bold hover:bg-[#f2f4f6] transition-all inline-flex items-center gap-2"
+              >
+                <ArrowLeft className="size-4" />
+                Hủy
+              </Link>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-10 py-2.5 h-[40px] rounded-full bg-gradient-to-br from-[#0058bc] to-[#0070eb] text-white text-sm font-black shadow-lg shadow-[#0058bc]/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
+              >
+                <CheckCircle className="size-4" />
+                {loading ? "Đang xử lý..." : "Tạo dự án"}
+              </button>
+            </div>
           </div>
         </div>
       </form>
     </Form>
+  );
+}
+
+// ── Micro-components ────────────────────────────────────────────────
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h4 className="text-[#0058bc] font-bold text-xs uppercase tracking-widest flex items-center gap-2">
+      <div className="w-1.5 h-1.5 rounded-full bg-[#0058bc]" />
+      {children}
+    </h4>
+  );
+}
+
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
+  return (
+    <p className="block text-xs font-bold text-[#44474d] uppercase tracking-tight mb-1.5">
+      {children}
+      {required && <span className="text-red-500 ml-0.5">*</span>}
+    </p>
   );
 }

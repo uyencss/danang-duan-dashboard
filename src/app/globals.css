@@ -39,82 +39,78 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
 }
 
 :root {
-  --background: oklch(0.985 0.005 247.85); /* #F8FAFC */
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.187 0.038 259.08); /* #0D1F3C */
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.385 0.186 261.27); /* #0058BC */
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.922 0 0);
-  --muted-foreground: oklch(0.444 0 0);
-  --accent: oklch(0.488 0.243 264.376); /* #007AFF */
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.187 0.038 259.08);
-  --chart-1: oklch(0.187 0.038 259.08);
-  --chart-2: oklch(0.385 0.186 261.27);
-  --chart-3: oklch(0.488 0.243 264.376);
-  --chart-4: oklch(0.707 0.165 254.624);
-  --chart-5: oklch(0.852 0.082 248.816);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.187 0.038 259.08); /* Dark Sidebar */
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.385 0.186 261.27);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.488 0.243 264.376);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.385 0.186 261.27);
+  /* MobiFone Enterprise Design System — "Digital Monolith" */
+  --background: #f7f9fb;          /* Surface */
+  --foreground: #191c1e;          /* On Surface */
+  --card: #ffffff;                /* Surface Container Lowest */
+  --card-foreground: #191c1e;
+  --popover: #ffffff;
+  --popover-foreground: #191c1e;
+  --primary: #000719;             /* Primary / Dark Navy */
+  --primary-foreground: #ffffff;
+  --secondary: #0058bc;           /* MobiFone Blue */
+  --secondary-foreground: #ffffff;
+  --muted: #eceef0;               /* Surface Container */
+  --muted-foreground: #44474d;    /* On Surface Variant */
+  --accent: #0070eb;              /* Secondary Container */
+  --accent-foreground: #ffffff;
+  --destructive: #ba1a1a;         /* Error */
+  --destructive-foreground: #ffffff;
+  --border: #c5c6ce;              /* Outline Variant */
+  --input: #eceef0;               /* Surface Container */
+  --ring: #0058bc;
+  --chart-1: #000719;
+  --chart-2: #0058bc;
+  --chart-3: #0070eb;
+  --chart-4: #4e5e7f;
+  --chart-5: #b6c7ec;
+  --radius: 0.5rem;
+  --sidebar: #0d1f3c;             /* Primary Container Dark */
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #0058bc;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #0070eb;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255,255,255,0.1);
+  --sidebar-ring: #0058bc;
 }
 
 .dark {
-  --background: oklch(0.12 0.02 259.08); /* Deep Navy Background */
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.15 0.02 259.08);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.15 0.02 259.08);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.187 0.038 259.08);
-  --secondary: oklch(0.385 0.186 261.27);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.2 0.02 259.08);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.488 0.243 264.376);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 15%);
-  --input: oklch(1 0 0 / 20%);
-  --ring: oklch(0.385 0.186 261.27);
-  --chart-1: oklch(0.385 0.186 261.27);
-  --chart-2: oklch(0.488 0.243 264.376);
-  --chart-3: oklch(0.707 0.165 254.624);
-  --chart-4: oklch(0.2 0.02 259.08);
-  --chart-5: oklch(0.15 0.02 259.08);
-  --sidebar: oklch(0.1 0.02 259.08);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.385 0.186 261.27);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.488 0.243 264.376);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 15%);
-  --sidebar-ring: oklch(0.385 0.186 261.27);
+  --background: #191c1e;
+  --foreground: #e2e8f0;
+  --card: #1e2126;
+  --card-foreground: #e2e8f0;
+  --popover: #1e2126;
+  --popover-foreground: #e2e8f0;
+  --primary: #b6c7ec;
+  --primary-foreground: #081b38;
+  --secondary: #0058bc;
+  --secondary-foreground: #ffffff;
+  --muted: #2d3133;
+  --muted-foreground: #94a3b8;
+  --accent: #0070eb;
+  --accent-foreground: #ffffff;
+  --destructive: #ff8a80;
+  --destructive-foreground: #93000a;
+  --border: rgba(255,255,255,0.15);
+  --input: rgba(255,255,255,0.1);
+  --ring: #0058bc;
+  --sidebar: #0a1628;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #0058bc;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #0070eb;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255,255,255,0.1);
+  --sidebar-ring: #0058bc;
 }
 
 @layer base {
@@ -123,8 +119,23 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
   }
   html {
     @apply font-sans;
   }
+}
+
+/* Enterprise utility classes */
+@layer utilities {
+  .surface { background-color: #f7f9fb; }
+  .surface-container { background-color: #eceef0; }
+  .surface-container-low { background-color: #f2f4f6; }
+  .surface-container-lowest { background-color: #ffffff; }
+  .surface-container-high { background-color: #e6e8ea; }
+  .on-surface { color: #191c1e; }
+  .on-surface-variant { color: #44474d; }
+  .text-secondary-brand { color: #0058bc; }
+  .bg-secondary-brand { background-color: #0058bc; }
+  .bg-secondary-container-brand { background-color: #0070eb; }
 }

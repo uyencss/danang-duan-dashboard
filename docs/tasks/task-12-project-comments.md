@@ -18,56 +18,63 @@ Hệ thống bình luận threaded trên dự án: Admin comment, User reply —
 
 ### 1. Server Actions
 
-- [ ] Tạo `src/app/(dashboard)/du-an/[id]/comment-actions.ts`
-  - `getComments(projectId)` — lấy danh sách comments + replies (nested)
-    - Include: user (name, role, avatarUrl)
-    - Order: createdAt ASC
-  - `createComment(data)` — tạo bình luận mới (top-level)
-  - `replyComment(data)` — reply (parentId = comment gốc)
-  - `deleteComment(id)` — xóa (chỉ Admin hoặc chính chủ)
+- [x] Tạo `src/app/(dashboard)/du-an/[id]/comment-actions.ts`
+  - [x] `getComments(projectId)` — lấy danh sách comments + replies (nested)
+    - [x] Include: user (name, role, avatarUrl)
+    - [x] Order: createdAt ASC
+  - [x] `createComment(data)` — tạo bình luận mới (top-level)
+  - [x] `replyComment(data)` — reply (parentId = comment gốc)
+  - [x] `deleteComment(id)` — xóa (chỉ Admin hoặc chính chủ)
 
 ### 2. Zod Schema
 
-- [ ] `projectId`: required, number
-- [ ] `content`: required, min 2 chars, max 1000 chars
-- [ ] `parentId`: optional, number (null = top-level comment)
+- [x] `projectId`: required, number
+- [x] `content`: required, min 2 chars, max 1000 chars
+- [x] `parentId`: optional, number (null = top-level comment)
 
 ### 3. Comments Component
 
-- [ ] Tạo `src/components/du-an/project-comments.tsx`
-  - Hiển thị danh sách comments
-  - Mỗi comment:
-    - Avatar + Tên user + Role badge (Admin/User)
-    - Nội dung
-    - Timestamp (relative: "2 giờ trước", "Hôm qua")
-    - Nút "Trả lời" (reply)
-    - Nút "Xóa" (nếu có quyền)
-  - Reply: hiển thị indent dưới comment cha (1 level)
+- [x] Tạo `src/components/du-an/project-comments.tsx`
+  - [x] Hiển thị danh sách comments
+  - [x] Mỗi comment:
+    - [x] Avatar + Tên user + Role badge (Admin/User)
+    - [x] Nội dung
+    - [x] Timestamp (relative: "2 giờ trước", "Hôm qua")
+    - [x] Nút "Trả lời" (reply)
+    - [x] Nút "Xóa" (nếu có quyền)
+  - [x] Reply: hiển thị indent dưới comment cha (1 level)
 
 ### 4. Comment Input
 
-- [ ] Textarea + nút "Gửi bình luận"
-- [ ] Reply mode: textarea xuất hiện dưới comment đang reply
-  - Hiển thị "Đang trả lời @username" + nút cancel
-- [ ] Clear textarea sau khi submit thành công
+- [x] Textarea + nút "Gửi bình luận"
+- [x] Reply mode: textarea xuất hiện dưới comment đang reply
+  - [x] Hiển thị "Đang trả lời @username" + nút cancel
+- [x] Clear textarea sau khi submit thành công
 
-### 5. Empty State
+### 5. @Mention System
 
-- [ ] "Chưa có bình luận nào. Hãy bắt đầu cuộc trao đổi!"
+- [x] Người dùng gõ `@` sẽ xuất hiện autocomplete list gợi ý tên user trong các user đã tham gia bình luận.
+- [x] Phím `Tab` để chọn người dùng đang focus. Tự động chèn template `@username` thay vì chỉ name.
+- [x] Highlight text comment: nếu text có chứa string match pattern format `@username`, màu text sẽ là xanh bold để nhận diện mention.
 
-### 6. Permission
+### 6. Empty State
 
-- [ ] Admin: comment trên mọi dự án
-- [ ] User: comment trên dự án được phân công
-- [ ] Delete: chỉ Admin hoặc người viết comment
+- [x] "Chưa có bình luận nào. Hãy bắt đầu cuộc trao đổi!"
+
+### 7. Permission
+
+- [x] Admin: comment trên mọi dự án
+- [x] User: comment trên dự án được phân công
+- [x] Delete: chỉ Admin hoặc người viết comment
 
 ---
 
 ## Tiêu chí hoàn thành
 
-- [ ] Admin tạo comment trên bất kỳ dự án nào
-- [ ] User reply comment (threaded 1-level)
-- [ ] Hiển thị thread đúng: comment cha + replies indent
-- [ ] Timestamp relative hiển thị đúng
-- [ ] Delete hoạt động đúng quyền
-- [ ] Empty state hiển thị khi chưa có comment
+- [x] Admin tạo comment trên bất kỳ dự án nào
+- [x] User reply comment (threaded 1-level)
+- [x] Hiển thị thread đúng: comment cha + replies indent + highlight `@username` ở cấp 2
+- [x] Timestamp relative hiển thị đúng
+- [x] Delete hoạt động đúng quyền
+- [x] Empty state hiển thị khi chưa có comment
+- [x] Tính năng Autocomplete người dùng và mention highlighting hoạt động ổn định.

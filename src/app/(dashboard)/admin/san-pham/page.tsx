@@ -2,13 +2,15 @@ import { requireAdmin } from "@/lib/auth-utils";
 import { getSanPhamList } from "./actions";
 import { ProductsTable } from "./products-table";
 import { Package } from "lucide-react";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 
 export default async function SanPhamPage() {
   await requireAdmin();
   const { data = [], error } = await getSanPhamList();
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <Breadcrumb items={[{ label: "Danh mục" }, { label: "Sản phẩm" }]} />
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-6">
         <div className="space-y-1">
           <div className="flex items-center gap-2">

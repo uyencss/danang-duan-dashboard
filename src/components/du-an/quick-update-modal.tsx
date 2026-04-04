@@ -100,11 +100,11 @@ export function QuickUpdateModal({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-none shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-black text-[#003466] flex items-center gap-2">
-            <History className="size-6 text-primary" /> Cập nhật Tiến độ
+          <DialogTitle className="text-2xl font-black text-[#000719] flex items-center gap-2">
+            <History className="size-6 text-[#000719]" /> Cập nhật Tiến độ
           </DialogTitle>
-          <DialogDescription className="font-medium text-gray-500 pt-1">
-             Dự án: <span className="text-gray-900 font-bold">{project?.tenDuAn}</span>
+          <DialogDescription className="font-medium text-[#44474d] pt-1">
+             Dự án: <span className="text-[#191c1e] font-bold">{project?.tenDuAn}</span>
           </DialogDescription>
         </DialogHeader>
         
@@ -128,7 +128,7 @@ export function QuickUpdateModal({
                 name="trangThaiMoi"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Chuyển trạng thái sang</FormLabel>
+                    <FormLabel className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Chuyển trạng thái sang</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                         <SelectTrigger className="bg-white">
@@ -150,7 +150,7 @@ export function QuickUpdateModal({
                 name="ngayGio"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Ngày giờ thực hiện</FormLabel>
+                    <FormLabel className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Ngày giờ thực hiện</FormLabel>
                     <FormControl>
                         <Input type="datetime-local" {...field} className="bg-white" />
                     </FormControl>
@@ -165,7 +165,7 @@ export function QuickUpdateModal({
               name="noiDungChiTiet"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nội dung chi tiết *</FormLabel>
+                  <FormLabel className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Nội dung chi tiết *</FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="Mô tả công việc đã thực hiện, kết quả đạt được hoặc khó khăn..." 
@@ -182,7 +182,7 @@ export function QuickUpdateModal({
               <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={loading} className="font-bold">
                 Bỏ qua
               </Button>
-              <Button type="submit" disabled={loading} className="bg-primary hover:bg-primary/90 font-black h-12 px-8 rounded-2xl shadow-lg shadow-primary/20">
+              <Button type="submit" disabled={loading} className="bg-[#000719] hover:bg-[#000719]/90 text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-[#000719]/20">
                 {loading ? "Đang lưu..." : "Xác nhận & Lưu"}
               </Button>
             </DialogFooter>
