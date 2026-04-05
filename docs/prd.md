@@ -133,18 +133,19 @@ Hệ thống web application quản lý toàn bộ vòng đời dự án từ gi
 
 | ID | Yêu cầu | Priority |
 |----|---------|----------|
-| FR-01 | Admin CRUD danh mục Khách hàng (tên, phân loại, địa chỉ, SĐT, email) | P0 |
+| FR-01 | Admin CRUD danh mục Khách hàng (tên, phân loại, địa chỉ, SĐT, email, đầu mối/lãnh đạo) | P0 |
 | FR-02 | Admin CRUD danh mục Sản phẩm (nhóm, tên chi tiết, mô tả) | P0 |
 | FR-03 | Admin quản lý tài khoản Nhân viên (tên, email, role, địa bàn) | P0 |
 | FR-04 | Tất cả Master Data hiển thị dạng DataTable có tìm kiếm, phân trang | P0 |
+| FR-04b| Admin cấu hình chỉ tiêu KPI theo quý/tháng | P1 |
 
 ### 6.2 Quản lý Dự án (Project Management)
 
 | ID | Yêu cầu | Priority |
 |----|---------|----------|
-| FR-05 | Tạo dự án mới: chọn Khách hàng (Search & Select), Sản phẩm, AM, Chuyên viên, nhập tài chính | P0 |
+| FR-05 | Tạo dự án mới: chọn Khách hàng (Search & Select Dropup), Sản phẩm, AM (chính/hỗ trợ), CV (chính/hỗ trợ 1/2), nhập tài chính | P0 |
 | FR-06 | Auto-extract Week/Month/Quarter/Year từ `Ngày bắt đầu dự án` | P0 |
-| FR-07 | Danh sách dự án dạng DataGrid: lọc đa chiều (Loại KH, Sản phẩm, Trạng thái, Lĩnh vực), tìm kiếm nhanh | P0 |
+| FR-07 | Danh sách dự án dạng DataGrid: lọc đa chiều, tìm kiếm nhanh, Excel Export | P0 |
 | FR-08 | Trang chi tiết dự án: overview, trạng thái hiện tại, timeline CSKH, thread bình luận | P0 |
 | FR-09 | 1-Click Update: button trên list → modal (Date auto, Status dropdown, Summary text) → cập nhật `ngayChamsocCuoiCung` và `trangThaiHienTai` | P0 |
 
@@ -203,13 +204,13 @@ Hệ thống web application quản lý toàn bộ vòng đời dự án từ gi
 | Search | Full-text | Tìm kiếm nhanh theo tên KH, tên dự án |
 | CSKH Alert | Badge | Hiển thị alert trực tiếp trên mỗi row |
 
-### View 3: Tổng hợp Nhân sự
+### View 3: Theo Dõi Nhân Sự
 
 | Widget | Loại | Mô tả |
 |--------|------|-------|
 | Revenue by Staff | Bar Chart (grouped) | Doanh thu theo AM / Chuyên viên |
-| Contracts by Staff | Bar Chart | Số lượng HĐ theo AM / Chuyên viên |
-| Time Filter | Dropdown | Group by: Tháng / Quý / Năm |
+| Contracts by Staff | Bar Chart | Số lượng HĐ/Dự án theo AM / Chuyên viên |
+| Role & Time Filters | Dropdowns | Lọc theo Role, Tháng, Quý, Năm |
 
 ### View 4: KPI Thời gian
 
@@ -218,6 +219,7 @@ Hệ thống web application quản lý toàn bộ vòng đời dự án từ gi
 | Revenue Trend | Line Chart | Xu hướng doanh thu theo thời gian |
 | Project Trend | Line Chart | Xu hướng số dự án theo thời gian |
 | Granularity | Dropdown | Tuần / Tháng / Quý / Năm |
+| KPI Achievement Tracker | Card | Hiển thị % đạt chỉ tiêu KPI theo phòng ban/toàn đơn vị |
 
 ### View 5: Top Địa bàn
 

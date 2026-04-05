@@ -27,8 +27,10 @@ erDiagram
 
 ```prisma
 enum UserRole {
-  ADMIN        // Lãnh đạo — full access
-  USER         // AM / Chuyên viên — limited
+  ADMIN        // Quản trị viên
+  AM           // Account Manager
+  CV           // Chuyên viên
+  USER         // Nhân viên (Legacy)
 }
 
 enum PhanLoaiKH {
@@ -47,8 +49,9 @@ enum TrangThaiDuAn {
 }
 
 enum LinhVuc {
-  B2B_B2G   // Cloud, IT, Digital Transformation
-  B2A       // Công nghệ cho Công an
+  CHINH_PHU      // Chính phủ/ Sở ban ngành
+  DOANH_NGHIEP   // Doanh nghiệp
+  CONG_AN        // Công an
 }
 
 enum LoaiTinNhan {
@@ -97,6 +100,15 @@ enum LoaiTinNhan {
 | diaChi | String? | nullable | Địa chỉ |
 | soDienThoai | String? | nullable | SĐT |
 | email | String? | nullable | Email liên hệ |
+| dauMoiTiepCan | String? | nullable | Đầu mối tiếp cận |
+| soDienThoaiDauMoi | String? | nullable | SĐT Đầu mối |
+| ngaySinhDauMoi | DateTime? | nullable | Ngày sinh Đầu mối |
+| lanhDaoDonVi | String? | nullable | Lãnh đạo đơn vị |
+| soDienThoaiLanhDao | String? | nullable | SĐT Lãnh đạo |
+| ngaySinhLanhDao | DateTime? | nullable | Ngày sinh Lãnh đạo |
+| ngayThanhLap | DateTime? | nullable | Ngày thành lập |
+| ngayKyNiem | DateTime? | nullable | Ngày kỷ niệm |
+| ghiChu | String? | nullable | Ghi chú thêm |
 | isActive | Boolean | default: true | |
 
 **Indexes:** `phanLoai`, `ten`
@@ -120,12 +132,15 @@ enum LoaiTinNhan {
 | id | Int | PK, auto | |
 | customerId | Int | FK → KhachHang | Khách hàng |
 | productId | Int | FK → SanPham | Sản phẩm |
-| amId | String | FK → User | AM phụ trách |
-| chuyenVienId | String? | FK → User | Chuyên viên |
+| amId | String? | FK → User (SetNull) | AM phụ trách |
+| amHoTroId | String? | FK → User (SetNull) | AM Hỗ trợ |
+| chuyenVienId | String? | FK → User (SetNull) | Chuyên viên |
+| cvHoTro1Id | String? | FK → User (SetNull) | Chuyên viên hỗ trợ 1 |
+| cvHoTro2Id | String? | FK → User (SetNull) | Chuyên viên hỗ trợ 2 |
 | tenDuAn | String | required | Tên mô tả dự án |
-| linhVuc | LinhVuc | default: B2B_B2G | Lĩnh vực |
+| linhVuc | LinhVuc | default: CHINH_PHU | Lĩnh vực |
 | tongDoanhThuDuKien | Float | default: 0 | Triệu đồng |
-| soHopDong | String? | nullable | Số hợp đồng |
+| doanhThuTheoThang | Float? | default: 0 | Mức doanh thu tháng |
 | maHopDong | String? | nullable | Mã hợp đồng |
 | ngayBatDau | DateTime | required | Ngày bắt đầu |
 | tuan | Int | auto-calc | Week number |
@@ -143,7 +158,7 @@ enum LoaiTinNhan {
 |-------|------|-------------|-------------|
 | id | Int | PK, auto | |
 | projectId | Int | FK → DuAn, CASCADE | Dự án cha |
-| userId | String | FK → User | Người tạo |
+| userId | String | FK → User, CASCADE | Người tạo |
 | ngayGio | DateTime | default: now() | Thời điểm |
 | trangThaiMoi | TrangThaiDuAn | required | Trạng thái mới |
 | noiDungChiTiet | String | required | Nội dung chi tiết |
@@ -156,7 +171,7 @@ enum LoaiTinNhan {
 |-------|------|-------------|-------------|
 | id | Int | PK, auto | |
 | projectId | Int | FK → DuAn, CASCADE | Dự án |
-| userId | String | FK → User | Người viết |
+| userId | String | FK → User, CASCADE | Người viết |
 | content | String | required | Nội dung |
 | parentId | Int? | FK → BinhLuan (self) | Reply thread |
 
@@ -166,7 +181,7 @@ enum LoaiTinNhan {
 |-------|------|-------------|-------------|
 | id | Int | PK, auto | |
 | projectId | Int | FK → DuAn, CASCADE | Dự án (chat channel) |
-| userId | String | FK → User | Người gửi |
+| userId | String | FK → User, CASCADE | Người gửi |
 | content | String | required | Nội dung tin nhắn |
 | type | LoaiTinNhan | default: TEXT | Loại tin nhắn (TEXT/SYSTEM) |
 | isEdited | Boolean | default: false | Đã sửa? |
@@ -177,6 +192,22 @@ enum LoaiTinNhan {
 **Indexes:** `(projectId, createdAt)` (compound — phục vụ cursor pagination), `userId`
 
 > **📝 Note:** `TinNhan` khác `BinhLuan` ở chỗ: TinNhan là chat liên tục dạng messenger (flat, không thread), còn BinhLuan là threaded discussion theo chủ đề.
+
+### 3.9 ChiTieuKpi (KPI Tracker)
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | Int | PK, auto | |
+| nam | Int | required | Năm |
+| thang | Int | required | Tháng |
+| anNinhMang | Float | default: 0 | Mục tiêu An Ninh Mạng |
+| giaiPhapCntt | Float | default: 0 | Mục tiêu Giải pháp CNTT |
+| duAnCds | Float | default: 0 | Mục tiêu Dự án CĐS |
+| cnsAnNinh | Float | default: 0 | Mục tiêu CNS An Ninh |
+| createdAt | DateTime | auto | |
+| updatedAt | DateTime | auto | |
+
+**Indexes:** `nam`, `(nam, thang)` (unique)
 
 ---
 

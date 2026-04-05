@@ -29,7 +29,7 @@ export function TimeFilters() {
             {/* Year Filter */}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl shadow-sm border border-slate-100">
                 <Calendar className="size-4 text-slate-400" />
-                <Select value={currentYear} onValueChange={(v) => updateFilter("y", v)}>
+                <Select value={currentYear} onValueChange={(v) => v && updateFilter("y", v)}>
                     <SelectTrigger className="border-none shadow-none bg-transparent h-7 p-0 focus:ring-0 font-bold text-slate-700 w-[60px]">
                         <SelectValue />
                     </SelectTrigger>
@@ -44,7 +44,7 @@ export function TimeFilters() {
             {/* Quarter Filter */}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl shadow-sm border border-slate-100">
                 <Layers className="size-4 text-slate-400" />
-                <Select value={currentQuarter} onValueChange={(v) => updateFilter("q", v)}>
+                <Select value={currentQuarter} onValueChange={(v) => v && updateFilter("q", v)}>
                     <SelectTrigger className="border-none shadow-none bg-transparent h-7 p-0 focus:ring-0 font-bold text-slate-700 w-[100px]">
                         <SelectValue placeholder="Quý" />
                     </SelectTrigger>
@@ -61,7 +61,7 @@ export function TimeFilters() {
             {/* Month Filter */}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl shadow-sm border border-slate-100">
                 <Clock className="size-4 text-slate-400" />
-                <Select value={currentMonth} onValueChange={(v) => updateFilter("m", v)}>
+                <Select value={currentMonth} onValueChange={(v) => v && updateFilter("m", v)}>
                     <SelectTrigger className="border-none shadow-none bg-transparent h-7 p-0 focus:ring-0 font-bold text-slate-700 w-[110px]">
                         <SelectValue placeholder="Tháng" />
                     </SelectTrigger>

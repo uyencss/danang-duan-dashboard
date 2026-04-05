@@ -128,10 +128,53 @@
   html {
     @apply font-sans;
   }
+
+  /* Custom Scrollbar Design - "Digital Monolith" Slate */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--primary) 15%, transparent);
+    border-radius: 100px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--primary) 25%, transparent);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Specific containers can override if needed */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  /* Firefox Support */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--primary) 15%, transparent) transparent;
+  }
 }
 
 /* Enterprise utility classes */
 @layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
   .surface { background-color: #f7f9fb; }
   .surface-container { background-color: #eceef0; }
   .surface-container-low { background-color: #f2f4f6; }

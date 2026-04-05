@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
@@ -37,46 +37,79 @@ import {
 import { extractTimeFields } from "@/lib/utils/time-extract";
 import {
   FileText,
-  CheckCircle,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+interface FormValues {
+  tenDuAn: string;
+  linhVuc: LinhVuc;
+  tongDoanhThuDuKien: number;
+  doanhThuTheoThang: number;
+  maHopDong: string;
+  ngayBatDau: string;
+  customerId: number;
+  productId: number;
+  amId: string;
+  amHoTroId: string;
+  chuyenVienId: string;
+  cvHoTro1Id: string;
+  cvHoTro2Id: string;
+  trangThaiHienTai: TrangThaiDuAn;
+}
 
 const formSchema = z.object({
   customerId: z.number().min(1, "Vui lòng chọn khách hàng"),
   productId: z.number().min(1, "Vui lòng chọn sản phẩm"),
-  amId: z.string().optional().or(z.literal("")),
-  amHoTroId: z.string().optional().or(z.literal("")),
-  chuyenVienId: z.string().optional().or(z.literal("")),
-  cvHoTro1Id: z.string().optional().or(z.literal("")),
-  cvHoTro2Id: z.string().optional().or(z.literal("")),
+  amId: z.string(),
+  amHoTroId: z.string(),
+  chuyenVienId: z.string(),
+  cvHoTro1Id: z.string(),
+  cvHoTro2Id: z.string(),
   tenDuAn: z.string().min(5, "Tên dự án tối thiểu 5 ký tự"),
   linhVuc: z.nativeEnum(LinhVuc),
   tongDoanhThuDuKien: z.coerce.number().min(0, "Doanh thu không được âm"),
-  doanhThuTheoThang: z.coerce.number().default(0),
-  maHopDong: z.string().optional().or(z.literal("")),
+  doanhThuTheoThang: z.coerce.number(),
+  maHopDong: z.string(),
   ngayBatDau: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),
-  trangThaiHienTai: z.nativeEnum(TrangThaiDuAn).optional(),
+  trangThaiHienTai: z.nativeEnum(TrangThaiDuAn),
 });
+
+interface ProjectData {
+  id: number;
+  tenDuAn: string;
+  linhVuc: LinhVuc;
+  tongDoanhThuDuKien: number;
+  doanhThuTheoThang: number | null;
+  maHopDong: string | null;
+  ngayBatDau: string | Date;
+  customerId: number;
+  productId: number;
+  amId: string | null;
+  amHoTroId: string | null;
+  chuyenVienId: string | null;
+  cvHoTro1Id: string | null;
+  cvHoTro2Id: string | null;
+  trangThaiHienTai: TrangThaiDuAn;
+  khachHang?: { id: number; ten: string };
+}
 
 interface ProjectFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  project: any;
+  project: ProjectData;
 }
 
 export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [khOptions, setKhOptions] = useState<any[]>([]);
-  const [spOptions, setSpOptions] = useState<any[]>([]);
-  const [userOptions, setUserOptions] = useState<any[]>([]);
-  const [selectedKh, setSelectedKh] = useState<any>(null);
+  const [khOptions, setKhOptions] = useState<Array<{ id: number; ten: string; phanLoai: string }>>([]);
+  const [spOptions, setSpOptions] = useState<Array<{ id: number; nhom: string; tenChiTiet: string }>>([]);
+  const [userOptions, setUserOptions] = useState<Array<{ id: string; name: string | null; role: string }>>([]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema) as any,
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       tenDuAn: "",
-      linhVuc: LinhVuc.B2B_B2G,
+      linhVuc: LinhVuc.CHINH_PHU,
       tongDoanhThuDuKien: 0,
       doanhThuTheoThang: 0,
       maHopDong: "",
@@ -124,11 +157,10 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
         cvHoTro2Id: project.cvHoTro2Id || "",
         trangThaiHienTai: project.trangThaiHienTai,
       });
-      setSelectedKh(project.khachHang);
     }
   }, [project, open, form]);
 
-  const onSubmit = async (values: any) => {
+  const onSubmit = async (values: FormValues) => {
     setLoading(true);
     const result = await updateDuAn(project.id, values);
     if (result.success) {
@@ -140,7 +172,10 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
     setLoading(false);
   };
 
-  const watchDate = form.watch("ngayBatDau");
+  const watchDate = useWatch({
+    control: form.control,
+    name: "ngayBatDau",
+  });
   const timeInfo = watchDate ? extractTimeFields(watchDate) : null;
 
   return (
@@ -183,16 +218,16 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                         <FormControl>
                           <SelectTrigger className="rounded-xl h-10 border-slate-200">
                             <SelectValue placeholder="Chọn lĩnh vực">
-                              {(field.value as any) === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : 
-                               (field.value as any) === "DOANH_NGHIEP" ? "Doanh nghiệp" : 
-                               (field.value as any) === "CONG_AN" ? "Công an" : field.value}
+                              {field.value === LinhVuc.CHINH_PHU ? "Chính phủ/ Sở ban ngành" : 
+                               field.value === LinhVuc.DOANH_NGHIEP ? "Doanh nghiệp" : 
+                               field.value === LinhVuc.CONG_AN ? "Công an" : field.value}
                             </SelectValue>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value={LinhVuc.CHINH_PHU as any}>Chính phủ/ Sở ban ngành</SelectItem>
-                          <SelectItem value={LinhVuc.DOANH_NGHIEP as any}>Doanh nghiệp</SelectItem>
-                          <SelectItem value={LinhVuc.CONG_AN as any}>Công an</SelectItem>
+                          <SelectItem value={LinhVuc.CHINH_PHU}>Chính phủ/ Sở ban ngành</SelectItem>
+                          <SelectItem value={LinhVuc.DOANH_NGHIEP}>Doanh nghiệp</SelectItem>
+                          <SelectItem value={LinhVuc.CONG_AN}>Công an</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
