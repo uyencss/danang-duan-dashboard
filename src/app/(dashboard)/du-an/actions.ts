@@ -178,6 +178,10 @@ export async function getDuAnList(params?: {
         chuyenVien: true,
         cvHoTro1: true,
         cvHoTro2: true,
+        nhatKy: {
+          orderBy: { ngayGio: 'desc' },
+          select: { ngayGio: true, noiDungChiTiet: true, trangThaiMoi: true }
+        },
         _count: {
           select: { nhatKy: true, binhLuan: true }
         }

@@ -33,7 +33,7 @@ export default async function AMManagementPage({
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-[#191c1e] tracking-tight">Quản lý AM</h1>
-                    <p className="text-slate-500 mt-1">Phân tích hiệu suất và doanh thu chi tiết cho đội ngũ Account Manager.</p>
+                    <p className="text-slate-500 mt-1">Phân tích hiệu suất và doanh thu chi tiết cho đội ngũ AM.</p>
                 </div>
                 <TimeFilters />
             </div>

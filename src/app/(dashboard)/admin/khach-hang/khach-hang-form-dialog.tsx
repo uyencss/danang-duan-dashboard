@@ -160,7 +160,11 @@ export function KhachHangFormDialog({ open, setOpen, data }: KhachHangFormDialog
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger className="h-11 rounded-xl">
-                              <SelectValue placeholder="Chọn phân loại" />
+                              <SelectValue placeholder="Chọn phân loại">
+                                {field.value === PhanLoaiKH.CHINH_PHU ? "Chính phủ/ Sở ban ngành" : 
+                                 field.value === PhanLoaiKH.DOANH_NGHIEP ? "Doanh nghiệp" : 
+                                 field.value === PhanLoaiKH.CONG_AN ? "Công an" : field.value}
+                              </SelectValue>
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>

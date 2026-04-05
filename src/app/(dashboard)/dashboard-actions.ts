@@ -6,70 +6,70 @@ import { headers } from "next/headers";
 import { TrangThaiDuAn, UserRole } from "@prisma/client";
 
 export async function getDashboardOverview() {
-  try {
-    const sessionRes = await (auth.api as any).getSession({
-      headers: await headers()
-    });
-    const user = sessionRes?.user;
-    if (!user) return { error: "Yêu cầu đăng nhập" };
+    try {
+        const sessionRes = await (auth.api as any).getSession({
+            headers: await headers()
+        });
+        const user = sessionRes?.user;
+        if (!user) return { error: "Yêu cầu đăng nhập" };
 
-    const whereClause: any = {};
-    if (user.role !== "ADMIN") {
-        whereClause.OR = [
-            { amId: user.id },
-            { chuyenVienId: user.id }
-        ];
+        const whereClause: any = {};
+        if (user.role !== "ADMIN") {
+            whereClause.OR = [
+                { amId: user.id },
+                { chuyenVienId: user.id }
+            ];
+        }
+
+        const projects = await prisma.duAn.findMany({
+            where: whereClause,
+            include: { khachHang: true, am: true }
+        });
+
+        const totalProjects = projects.length;
+        const totalRevenue = projects.reduce((acc, p) => acc + p.tongDoanhThuDuKien, 0);
+        const signedProjects = projects.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG).length;
+
+        // Urgent care: nul or > 15 days
+        const urgentCare = projects.filter(p => {
+            if (!p.ngayChamsocCuoiCung) return true;
+            const diff = (new Date().getTime() - new Date(p.ngayChamsocCuoiCung).getTime()) / (1000 * 60 * 60 * 24);
+            return diff > 15;
+        }).length;
+
+        // Status breakdown for Funnel
+        const statusCounts = Object.values(TrangThaiDuAn).reduce((acc: any, status) => {
+            acc[status] = projects.filter(p => p.trangThaiHienTai === status).length;
+            return acc;
+        }, {});
+
+        // Top 5 urgent
+        const topUrgent = projects
+            .filter(p => !p.ngayChamsocCuoiCung || (new Date().getTime() - new Date(p.ngayChamsocCuoiCung).getTime()) / (1000 * 60 * 60 * 24) > 15)
+            .sort((a, b) => {
+                const dateA = a.ngayChamsocCuoiCung ? new Date(a.ngayChamsocCuoiCung).getTime() : 0;
+                const dateB = b.ngayChamsocCuoiCung ? new Date(b.ngayChamsocCuoiCung).getTime() : 0;
+                return dateA - dateB;
+            })
+            .slice(0, 5);
+
+        const totalCustomers = await prisma.khachHang.count();
+
+        return {
+            stats: {
+                totalProjects,
+                totalCustomers,
+                totalRevenue,
+                signedProjects,
+                urgentCare
+            },
+            statusCounts,
+            topUrgent
+        };
+    } catch (error: any) {
+        console.error("Dashboard Stats Error:", error);
+        return { error: `DEV: ${error?.message || "Unknown error"}` };
     }
-
-    const projects = await prisma.duAn.findMany({
-      where: whereClause,
-      include: { khachHang: true, am: true }
-    });
-
-    const totalProjects = projects.length;
-    const totalRevenue = projects.reduce((acc, p) => acc + p.tongDoanhThuDuKien, 0);
-    const signedProjects = projects.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG).length;
-    
-    // Urgent care: nul or > 15 days
-    const urgentCare = projects.filter(p => {
-        if (!p.ngayChamsocCuoiCung) return true;
-        const diff = (new Date().getTime() - new Date(p.ngayChamsocCuoiCung).getTime()) / (1000 * 60 * 60 * 24);
-        return diff > 15;
-    }).length;
-
-    // Status breakdown for Funnel
-    const statusCounts = Object.values(TrangThaiDuAn).reduce((acc: any, status) => {
-        acc[status] = projects.filter(p => p.trangThaiHienTai === status).length;
-        return acc;
-    }, {});
-
-    // Top 5 urgent
-    const topUrgent = projects
-        .filter(p => !p.ngayChamsocCuoiCung || (new Date().getTime() - new Date(p.ngayChamsocCuoiCung).getTime()) / (1000 * 60 * 60 * 24) > 15)
-        .sort((a, b) => {
-            const dateA = a.ngayChamsocCuoiCung ? new Date(a.ngayChamsocCuoiCung).getTime() : 0;
-            const dateB = b.ngayChamsocCuoiCung ? new Date(b.ngayChamsocCuoiCung).getTime() : 0;
-            return dateA - dateB;
-        })
-        .slice(0, 5);
-
-    const totalCustomers = await prisma.khachHang.count();
-
-    return {
-        stats: {
-            totalProjects,
-            totalCustomers,
-            totalRevenue,
-            signedProjects,
-            urgentCare
-        },
-        statusCounts,
-        topUrgent
-    };
-  } catch (error: any) {
-    console.error("Dashboard Stats Error:", error);
-    return { error: `DEV: ${error?.message || "Unknown error"}` };
-  }
 }
 
 export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 'thang', year?: number, quarter?: number, month?: number }) {
@@ -83,19 +83,23 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
         let projectFilter: any = {};
         const now = new Date();
         const currentYear = 2026;
-        let contextMonth = now.getFullYear() === currentYear ? now.getMonth() + 1 : 12;
+        const currentMonth = now.getFullYear() === currentYear ? now.getMonth() + 1 : 12;
+        let contextMonth = currentMonth;
+        let isSingleMonth = false;
 
         if (filter?.type === 'nam' && filter.year) {
             projectFilter.nam = filter.year;
-            if (filter.year !== currentYear) contextMonth = 12;
+            contextMonth = filter.year < currentYear ? 12 : currentMonth;
         } else if (filter?.type === 'quy' && filter.year && filter.quarter) {
             projectFilter.nam = filter.year;
-            projectFilter.quy = filter.quarter;
-            contextMonth = filter.quarter * 3;
+            // Fetch all projects for the year, filter manually in memory
+            const quarterEndMonth = filter.quarter * 3;
+            contextMonth = filter.year < currentYear ? quarterEndMonth : Math.min(quarterEndMonth, currentMonth);
         } else if (filter?.type === 'thang' && filter.year && filter.month) {
             projectFilter.nam = filter.year;
-            projectFilter.thang = filter.month;
+            // Fetch all projects for the year, filter manually in memory
             contextMonth = filter.month;
+            isSingleMonth = true;
         }
 
         // Fetch users who are personnel (AM, CV, USER)
@@ -124,35 +128,47 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
 
         projects.forEach(proj => {
             const involvedIds = [
-                (proj as any).amId, 
-                (proj as any).amHoTroId, 
-                (proj as any).chuyenVienId, 
-                (proj as any).cvHoTro1Id, 
+                (proj as any).amId,
+                (proj as any).amHoTroId,
+                (proj as any).chuyenVienId,
+                (proj as any).cvHoTro1Id,
                 (proj as any).cvHoTro2Id
             ].filter((id): id is string => !!id);
 
             const hasTotal = proj.tongDoanhThuDuKien && proj.tongDoanhThuDuKien > 0;
             const hasMonthly = (proj as any).doanhThuTheoThang && (proj as any).doanhThuTheoThang > 0;
+            const pThang = (proj as any).thang || 1;
 
             let projRevValue = 0;
-            let monthsPassed = 1;
-            const pThang = (proj as any).thang || 1;
-            const pNam = (proj as any).nam || currentYear;
 
-            if (pNam === currentYear) {
-                monthsPassed = contextMonth - pThang + 1;
-            } else if (pNam < currentYear) {
-                monthsPassed = (12 - pThang + 1) + contextMonth;
-            }
-            if (monthsPassed < 1) monthsPassed = 1;
+            if (isSingleMonth) {
+                // If filtering for a specific month M:
+                // 1. If it has monthly rate, it contributes 1x if it started before or during M.
+                // 2. If it is only lump sum, it contributes ONLY if it started exactly in M.
+                if (hasMonthly) {
+                    if (pThang <= contextMonth) {
+                        projRevValue = (proj as any).doanhThuTheoThang!;
+                    }
+                } else if (hasTotal) {
+                    if (pThang === contextMonth) {
+                        projRevValue = proj.tongDoanhThuDuKien;
+                    }
+                }
+            } else {
+                // Period cumulative logic (Quarter/Year):
+                if (pThang <= contextMonth) {
+                    let monthsPassed = contextMonth - pThang + 1;
+                    if (monthsPassed < 1) monthsPassed = 1;
 
-            if (hasTotal && hasMonthly) {
-                projRevValue = monthsPassed * (proj as any).doanhThuTheoThang!;
-            } else if (hasMonthly && !hasTotal) {
-                projRevValue = monthsPassed * (proj as any).doanhThuTheoThang!;
-            } else if (hasTotal && !hasMonthly) {
-                projRevValue = proj.tongDoanhThuDuKien;
+                    if (hasMonthly) {
+                        projRevValue = monthsPassed * (proj as any).doanhThuTheoThang!;
+                    } else if (hasTotal) {
+                        projRevValue = proj.tongDoanhThuDuKien;
+                    }
+                }
             }
+
+            if (projRevValue === 0) return;
 
             involvedIds.forEach(id => {
                 const stat = analytics.find(a => a.id === id);
@@ -164,7 +180,7 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
                 if (proj.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG) {
                     stat.signedRevenue += projRevValue;
                     stat.contracts += 1;
-                } else {
+                } else if (proj.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI) {
                     stat.otherRevenue += projRevValue;
                 }
             });
@@ -190,7 +206,7 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
             .filter(a => a.otherRevenue > 0)
             .sort((a, b) => b.otherRevenue - a.otherRevenue)
             .slice(0, 5);
- 
+
         // Filter and sort for CVs
         const cvAnalytics = finalAnalytics.filter(a => (a.role as string) === 'CV');
         const topCVSigned = [...cvAnalytics]
@@ -201,7 +217,7 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
             .filter(a => a.otherRevenue > 0)
             .sort((a, b) => b.otherRevenue - a.otherRevenue)
             .slice(0, 5);
- 
+
         // Lowest Revenue rankings (Bottom 5)
         const bottomAMSigned = [...amAnalytics]
             .sort((a, b) => a.signedRevenue - b.signedRevenue)
@@ -217,7 +233,7 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
             .sort((a, b) => a.otherRevenue - b.otherRevenue)
             .slice(0, 5);
 
-        return { 
+        return {
             data: analyticsSorted,
             topAMSigned,
             topAMOthers,
@@ -374,7 +390,7 @@ export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' 
 
         projects.forEach((p: any) => {
             const project = p as any;
-            
+
             const hasTotal = project.tongDoanhThuDuKien && project.tongDoanhThuDuKien > 0;
             const hasMonthly = project.doanhThuTheoThang && project.doanhThuTheoThang > 0;
 
@@ -401,13 +417,13 @@ export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' 
             const isSigned = project.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG;
 
             const involvedIds = Array.from(new Set([
-                project.amId, 
-                project.amHoTroId, 
+                project.amId,
+                project.amHoTroId,
                 project.chuyenVienId,
                 project.cvHoTro1Id,
                 project.cvHoTro2Id
             ].filter(id => !!id)));
-            
+
             // Credit EACH staff member fully in staffMap
             involvedIds.forEach(id => {
                 const staff = personals.find(u => u.id === id);
@@ -445,7 +461,7 @@ export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' 
             } else {
                 dbRef.otherRevenue += projRevValue;
             }
-            
+
             // Record all distinct staff seen in this Dia Ban
             involvedIds.forEach(id => {
                 const staff = personals.find(u => u.id === id);
@@ -462,10 +478,10 @@ export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' 
         } else if (filter?.type === 'quy' && filter.year && filter.quarter) {
             kpiFilter.nam = filter.year;
             let qMonths: number[] = [];
-            if (filter.quarter === 1) qMonths = [1,2,3];
-            else if (filter.quarter === 2) qMonths = [4,5,6];
-            else if (filter.quarter === 3) qMonths = [7,8,9];
-            else if (filter.quarter === 4) qMonths = [10,11,12];
+            if (filter.quarter === 1) qMonths = [1, 2, 3];
+            else if (filter.quarter === 2) qMonths = [4, 5, 6];
+            else if (filter.quarter === 3) qMonths = [7, 8, 9];
+            else if (filter.quarter === 4) qMonths = [10, 11, 12];
             kpiFilter.thang = { in: qMonths };
         } else if (filter?.type === 'thang' && filter.year && filter.month) {
             kpiFilter.nam = filter.year;
@@ -475,7 +491,7 @@ export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' 
         const kpiRecords = await (prisma as any).chiTieuKpi.findMany({ where: kpiFilter });
         let kpiTotal = 0;
         kpiRecords.forEach((k: any) => {
-            kpiTotal += Number(k.anNinhMang||0) + Number(k.giaiPhapCntt||0) + Number(k.duAnCds||0) + Number(k.cnsAnNinh||0);
+            kpiTotal += Number(k.anNinhMang || 0) + Number(k.giaiPhapCntt || 0) + Number(k.duAnCds || 0) + Number(k.cnsAnNinh || 0);
         });
 
         return {
@@ -500,7 +516,7 @@ export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' 
 export async function getHoanThanhKeHoachData() {
     try {
         const kpis = await (prisma.chiTieuKpi as any).findMany({ where: { nam: 2026 } });
-        const projects = await (prisma.duAn as any).findMany({ 
+        const projects = await (prisma.duAn as any).findMany({
             where: { nam: 2026 },
             select: {
                 id: true,

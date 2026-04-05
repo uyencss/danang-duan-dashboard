@@ -46,7 +46,9 @@ export function TimeFilters() {
                 <Layers className="size-4 text-slate-400" />
                 <Select value={currentQuarter} onValueChange={(v) => v && updateFilter("q", v)}>
                     <SelectTrigger className="border-none shadow-none bg-transparent h-7 p-0 focus:ring-0 font-bold text-slate-700 w-[100px]">
-                        <SelectValue placeholder="Quý" />
+                        <SelectValue placeholder="Quý">
+                            {currentQuarter === "all" ? "Tất cả Quý" : `Quý ${currentQuarter}`}
+                        </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Tất cả Quý</SelectItem>
@@ -63,7 +65,9 @@ export function TimeFilters() {
                 <Clock className="size-4 text-slate-400" />
                 <Select value={currentMonth} onValueChange={(v) => v && updateFilter("m", v)}>
                     <SelectTrigger className="border-none shadow-none bg-transparent h-7 p-0 focus:ring-0 font-bold text-slate-700 w-[110px]">
-                        <SelectValue placeholder="Tháng" />
+                        <SelectValue placeholder="Tháng">
+                            {currentMonth === "all" ? "Tất cả Tháng" : `Tháng ${currentMonth}`}
+                        </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Tất cả Tháng</SelectItem>

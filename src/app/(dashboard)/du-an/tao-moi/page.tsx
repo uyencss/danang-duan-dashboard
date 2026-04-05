@@ -23,9 +23,6 @@ export default function CreateProjectPage() {
         <h2 className="text-3xl font-black text-[#000719] tracking-tight">
           Tạo dự án mới
         </h2>
-        <p className="text-[#44474d] text-sm mt-2">
-          Khởi tạo hồ sơ dự án mới cho hệ thống Tracker.
-        </p>
       </div>
 
       {/* Info Alert */}
@@ -35,9 +32,7 @@ export default function CreateProjectPage() {
           Lưu ý quan trọng
         </AlertTitle>
         <AlertDescription className="text-[#0058bc]/80 text-sm mt-0.5">
-          Sau khi khởi tạo, dự án sẽ mặc định ở trạng thái{" "}
-          <strong>Mới (MOI)</strong>. Bạn cần cập nhật nhật ký công việc để thay
-          đổi trạng thái dự án theo quy trình.
+          Sau khi khởi tạo, dự án sẽ mặc định ở trạng thái <strong>đã chọn</strong>. Bạn cần cập nhật nhật ký công việc tại <strong>"CRM & DS dự án"</strong> để thay đổi trạng thái dự án theo quy trình.
         </AlertDescription>
       </Alert>
 

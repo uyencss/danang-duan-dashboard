@@ -22,8 +22,10 @@ import {
   Search,
   CheckCircle2,
   XCircle,
+  Download,
 } from "lucide-react";
 import * as React from "react";
+import { exportToExcel } from "@/lib/export-excel";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -64,11 +66,14 @@ export function CustomersTable({ data }: { data: any[] }) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [openForm, setOpenForm] = React.useState(false);
   const [selectedKH, setSelectedKH] = React.useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [khToBeDeleted, setKhToBeDeleted] = React.useState<any>(null);
 
   const handleDelete = async (id: number) => {
     const result = await deleteKhachHang(id);
     if (result.success) {
       toast.success("Đã xóa khách hàng thành công!");
+      setDeleteDialogOpen(false);
     } else {
       toast.error(result.error);
     }
@@ -164,34 +169,15 @@ export function CustomersTable({ data }: { data: any[] }) {
               >
                 <Pencil className="mr-2 h-4 w-4" /> Chỉnh sửa
               </DropdownMenuItem>
-              <AlertDialog>
-                <AlertDialogTrigger
-                  nativeButton={false}
-                  render={
-                    <DropdownMenuItem
-                      className="text-red-600 cursor-pointer focus:bg-red-50 focus:text-red-600"
-                      onSelect={(e) => e.preventDefault()}
-                    />
-                  }
-                >
-                  <Trash2 className="mr-2 h-4 w-4" /> Xóa Client
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Thao tác này không thể hoàn tác. Khách hàng <strong>{kh.ten}</strong> sẽ bị xóa vĩnh viễn khỏi hệ thống.
-                      Nếu khách hàng còn dự án liên quan, bạn sẽ không thể thực hiện thao tác này.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Hủy</AlertDialogCancel>
-                    <AlertDialogAction className="bg-red-600 focus:ring-red-600" onClick={() => handleDelete(kh.id)}>
-                      Xác nhận xóa
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <DropdownMenuItem
+                className="text-red-600 cursor-pointer focus:bg-red-50 focus:text-red-600"
+                onClick={() => {
+                  setKhToBeDeleted(kh);
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Xóa Client
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -214,6 +200,31 @@ export function CustomersTable({ data }: { data: any[] }) {
     },
   });
 
+  const handleExport = () => {
+    const exportData = table.getFilteredRowModel().rows.map(row => {
+      const kh = row.original as any;
+      return {
+        "Tên Khách hàng": kh.ten,
+        "Phân loại": kh.phanLoai === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : kh.phanLoai === "CONG_AN" ? "Công an" : "Doanh nghiệp",
+        "Địa chỉ": kh.diaChi || "",
+        "Số điện thoại": kh.soDienThoai || "",
+        "Email": kh.email || "",
+        "Đầu mối tiếp cận": kh.dauMoiTiepCan || "",
+        "SĐT Đầu mối": kh.soDienThoaiDauMoi || "",
+        "Ngày sinh Đầu mối": kh.ngaySinhDauMoi ? new Date(kh.ngaySinhDauMoi).toLocaleDateString("vi-VN") : "",
+        "Lãnh đạo đơn vị": kh.lanhDaoDonVi || "",
+        "SĐT Lãnh đạo": kh.soDienThoaiLanhDao || "",
+        "Ngày sinh Lãnh đạo": kh.ngaySinhLanhDao ? new Date(kh.ngaySinhLanhDao).toLocaleDateString("vi-VN") : "",
+        "Ngày thành lập": kh.ngayThanhLap ? new Date(kh.ngayThanhLap).toLocaleDateString("vi-VN") : "",
+        "Ngày kỷ niệm": kh.ngayKyNiem ? new Date(kh.ngayKyNiem).toLocaleDateString("vi-VN") : "",
+        "Số lượng dự án": kh._count?.duAns || 0,
+        "Trạng thái": kh.isActive ? "Hoạt động" : "Ngừng hoạt động",
+        "Ghi chú thêm": kh.ghiChu || ""
+      };
+    });
+    exportToExcel(exportData, "DanhSachKhachHang");
+  };
+
   return (
     <div className="w-full space-y-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -228,6 +239,13 @@ export function CustomersTable({ data }: { data: any[] }) {
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary/5 font-bold shadow-sm rounded-xl"
+            onClick={handleExport}
+          >
+            <Download className="mr-2 size-4" /> Xuất Excel
+          </Button>
           <Button
             className="bg-primary hover:bg-primary/90 font-bold shadow-md rounded-xl"
             onClick={() => {
@@ -307,6 +325,27 @@ export function CustomersTable({ data }: { data: any[] }) {
         data={selectedKH}
         key={selectedKH?.id || "create"}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Thao tác này không thể hoàn tác. Khách hàng <strong>{khToBeDeleted?.ten}</strong> sẽ bị xóa vĩnh viễn khỏi hệ thống.
+              Nếu khách hàng còn dự án liên quan, bạn sẽ không thể thực hiện thao tác này.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-600 focus:ring-red-600 font-bold" 
+              onClick={() => handleDelete(khToBeDeleted?.id)}
+            >
+              Xác nhận xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -92,7 +92,7 @@ export default async function DashboardPage() {
         />
         <KPICard
           title="Doanh thu Dự kiến"
-          value={`${stats.totalRevenue.toLocaleString()} Tr.đ`}
+          value={`${stats.totalRevenue.toLocaleString('vi-VN')} Tr.đ`}
           icon={DollarSign}
           description="Kỳ vọng tổng"
           variant="success"
@@ -143,7 +143,7 @@ export default async function DashboardPage() {
                       <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
                         <div className="flex justify-between text-xs font-bold text-[#191c1e]">
                           <span className="truncate pr-4">{am.name}</span>
-                          <span className="text-[#0058bc] font-black">{am.signedRevenue.toLocaleString()} Tr</span>
+                          <span className="text-[#0058bc] font-black">{am.signedRevenue.toLocaleString('vi-VN')} Tr</span>
                         </div>
                         <div className="h-2.5 w-full bg-[#f2f4f6] rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
@@ -166,7 +166,7 @@ export default async function DashboardPage() {
                       <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
                         <div className="flex justify-between text-xs font-bold text-[#191c1e]">
                           <span className="truncate pr-4">{am.name}</span>
-                          <span className="text-[#0058bc] font-black">{am.otherRevenue.toLocaleString()} Tr</span>
+                          <span className="text-[#0058bc] font-black">{am.otherRevenue.toLocaleString('vi-VN')} Tr</span>
                         </div>
                         <div className="h-2.5 w-full bg-[#f2f4f6] rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-[#0058bc] to-[#004493] rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
@@ -210,7 +210,7 @@ export default async function DashboardPage() {
                       <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
                         <div className="flex justify-between text-xs font-bold text-[#191c1e]">
                           <span className="truncate pr-4">{cv.name}</span>
-                          <span className="text-purple-600 font-black">{cv.signedRevenue.toLocaleString()} Tr</span>
+                          <span className="text-purple-600 font-black">{cv.signedRevenue.toLocaleString('vi-VN')} Tr</span>
                         </div>
                         <div className="h-2.5 w-full bg-[#f2f4f6] rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
@@ -233,7 +233,7 @@ export default async function DashboardPage() {
                       <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
                         <div className="flex justify-between text-xs font-bold text-[#191c1e]">
                           <span className="truncate pr-4">{cv.name}</span>
-                          <span className="text-purple-600 font-black">{cv.otherRevenue.toLocaleString()} Tr</span>
+                          <span className="text-purple-600 font-black">{cv.otherRevenue.toLocaleString('vi-VN')} Tr</span>
                         </div>
                         <div className="h-2.5 w-full bg-[#f2f4f6] rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-purple-500 to-purple-700 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
@@ -282,7 +282,7 @@ export default async function DashboardPage() {
                       <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
                         <div className="flex justify-between text-xs font-bold text-[#191c1e]">
                           <span className="truncate pr-4">{am.name}</span>
-                          <span className="text-red-600 font-black">{am.signedRevenue.toLocaleString()} Tr</span>
+                          <span className="text-red-600 font-black">{am.signedRevenue.toLocaleString('vi-VN')} Tr</span>
                         </div>
                         <div className="h-2.5 w-full bg-red-50 rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-red-400 to-red-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
@@ -305,7 +305,7 @@ export default async function DashboardPage() {
                       <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
                         <div className="flex justify-between text-xs font-bold text-[#191c1e]">
                           <span className="truncate pr-4">{am.name}</span>
-                          <span className="text-red-600 font-black">{am.otherRevenue.toLocaleString()} Tr</span>
+                          <span className="text-red-600 font-black">{am.otherRevenue.toLocaleString('vi-VN')} Tr</span>
                         </div>
                         <div className="h-2.5 w-full bg-red-50 rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-red-400 to-red-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
@@ -349,7 +349,7 @@ export default async function DashboardPage() {
                       <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
                         <div className="flex justify-between text-xs font-bold text-[#191c1e]">
                           <span className="truncate pr-4">{cv.name}</span>
-                          <span className="text-orange-600 font-black">{cv.signedRevenue.toLocaleString()} Tr</span>
+                          <span className="text-orange-600 font-black">{cv.signedRevenue.toLocaleString('vi-VN')} Tr</span>
                         </div>
                         <div className="h-2.5 w-full bg-orange-50 rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
@@ -372,7 +372,7 @@ export default async function DashboardPage() {
                       <div key={i} className="space-y-2 animate-in slide-in-from-right-1 duration-300">
                         <div className="flex justify-between text-xs font-bold text-[#191c1e]">
                           <span className="truncate pr-4">{cv.name}</span>
-                          <span className="text-orange-600 font-black">{cv.otherRevenue.toLocaleString()} Tr</span>
+                          <span className="text-orange-600 font-black">{cv.otherRevenue.toLocaleString('vi-VN')} Tr</span>
                         </div>
                         <div className="h-2.5 w-full bg-orange-50 rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />

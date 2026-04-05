@@ -129,7 +129,7 @@ export function ProductsTable({ data }: { data: any[] }) {
               </DropdownMenuItem>
               <AlertDialog>
                 <AlertDialogTrigger
-                  nativeButton={false}
+                  nativeButton={true}
                   render={
                     <DropdownMenuItem 
                       className="text-red-600 focus:text-red-600 focus:bg-red-50"

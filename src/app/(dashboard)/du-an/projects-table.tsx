@@ -57,10 +57,16 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   THAT_BAI: { label: "Thất bại", className: "bg-red-100 text-red-700" },
 };
 
-export function ProjectsTable({ data }: { data: any[] }) {
+export function ProjectsTable({ 
+  data, 
+  initialSearch = "" 
+}: { 
+  data: any[]; 
+  initialSearch?: string 
+}) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [globalFilter, setGlobalFilter] = React.useState("");
+  const [globalFilter, setGlobalFilter] = React.useState(initialSearch);
   const [selectedProject, setSelectedProject] = React.useState<any>(null);
   const [openUpdateModal, setOpenUpdateModal] = React.useState(false);
   const [openEditModal, setOpenEditModal] = React.useState(false);
@@ -75,16 +81,16 @@ export function ProjectsTable({ data }: { data: any[] }) {
     },
     {
       accessorKey: "khachHang",
-      header: "Khách hàng",
+      header: "Khách hàng & Dự án",
       cell: ({ row }) => (
-        <div>
+        <div className="max-w-[200px] lg:max-w-[300px] whitespace-normal">
           <Link
             href={`/du-an/${(row.original as any).id}`}
-            className="font-bold text-sm text-[#191c1e] hover:text-[#0058bc] transition-colors"
+            className="font-bold text-[13px] text-[#191c1e] hover:text-[#0058bc] transition-colors leading-tight line-clamp-2"
           >
             {(row.original as any).khachHang.ten}
           </Link>
-          <p className="text-[10px] text-slate-500 mt-0.5">{(row.original as any).tenDuAn}</p>
+          <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{(row.original as any).tenDuAn}</p>
         </div>
       ),
       filterFn: (row, id, value) => {
@@ -119,9 +125,9 @@ export function ProjectsTable({ data }: { data: any[] }) {
     },
     {
       accessorKey: "am",
-      header: "AM phụ trách",
+      header: "AM",
       cell: ({ row }) => (
-        <span className="text-sm">{(row.original as any).am?.name || "—"}</span>
+        <span className="text-xs">{(row.original as any).am?.name || "—"}</span>
       ),
       filterFn: (row, id, value) => {
         return (row.original.am?.name || "").toLowerCase().includes(value.toLowerCase());
@@ -129,9 +135,9 @@ export function ProjectsTable({ data }: { data: any[] }) {
     },
     {
       accessorKey: "chuyenVien",
-      header: "Chuyên viên",
+      header: "CV",
       cell: ({ row }) => (
-        <span className="text-sm">{(row.original as any).chuyenVien?.name || "—"}</span>
+        <span className="text-xs">{(row.original as any).chuyenVien?.name || "—"}</span>
       ),
       filterFn: (row, id, value) => {
         return (row.original.chuyenVien?.name || "").toLowerCase().includes(value.toLowerCase());
@@ -155,9 +161,9 @@ export function ProjectsTable({ data }: { data: any[] }) {
     },
     {
       accessorKey: "tongDoanhThuDuKien",
-      header: "Tổng DT",
+      header: "DT dự kiến",
       cell: ({ row }) => (
-        <span className="text-sm font-bold">{(row.getValue("tongDoanhThuDuKien") as number).toLocaleString()}</span>
+        <span className="text-xs font-bold">{(row.getValue("tongDoanhThuDuKien") as number).toLocaleString()}</span>
       ),
     },
     {
@@ -197,12 +203,12 @@ export function ProjectsTable({ data }: { data: any[] }) {
     },
     {
       id: "actions",
-      header: "Thao tác",
+      header: "Tùy chọn",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <button className="p-2 hover:bg-slate-100 rounded-lg text-[#0058bc]" onClick={() => { setSelectedProject(row.original); setOpenEditModal(true); }}><Pencil className="size-4" /></button>
-          <button className="p-2 hover:bg-slate-100 rounded-lg text-amber-600" onClick={() => { setSelectedProject(row.original); setOpenUpdateModal(true); }}><HistoryIcon className="size-4" /></button>
-          <Link href={`/du-an/${(row.original as any).id}`} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500"><Eye className="size-4" /></Link>
+        <div className="flex items-center gap-1">
+          <button className="p-1.5 hover:bg-slate-100 rounded-lg text-[#0058bc]" onClick={() => { setSelectedProject(row.original); setOpenEditModal(true); }}><Pencil className="size-3.5" /></button>
+          <button className="p-1.5 hover:bg-slate-100 rounded-lg text-amber-600" onClick={() => { setSelectedProject(row.original); setOpenUpdateModal(true); }}><HistoryIcon className="size-3.5" /></button>
+          <Link href={`/du-an/${(row.original as any).id}`} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500"><Eye className="size-3.5" /></Link>
         </div>
       ),
     },
@@ -222,11 +228,12 @@ export function ProjectsTable({ data }: { data: any[] }) {
       const value = filterValue.toLowerCase();
       const project = row.original as any;
       return (
-        project.tenDuAn?.toLowerCase().includes(value) ||
-        project.khachHang?.ten?.toLowerCase().includes(value) ||
-        project.sanPham?.tenChiTiet?.toLowerCase().includes(value) ||
-        project.am?.name?.toLowerCase().includes(value) ||
-        LINH_VUC_LABELS[project.linhVuc]?.toLowerCase().includes(value)
+        project.tenDuAn?.toLowerCase()?.includes(value) ||
+        project.khachHang?.ten?.toLowerCase()?.includes(value) ||
+        project.sanPham?.tenChiTiet?.toLowerCase()?.includes(value) ||
+        project.am?.name?.toLowerCase()?.includes(value) ||
+        LINH_VUC_LABELS[project.linhVuc]?.toLowerCase()?.includes(value) ||
+        false
       );
     },
     state: { sorting, columnFilters, globalFilter },
@@ -236,6 +243,12 @@ export function ProjectsTable({ data }: { data: any[] }) {
   const handleExport = () => {
     const exportData = table.getFilteredRowModel().rows.map(row => {
       const p = row.original as any;
+      const logs = p.nhatKy?.map((log: any) => {
+        const date = new Date(log.ngayGio).toLocaleDateString("vi-VN");
+        const status = STATUS_STYLES[log.trangThaiMoi]?.label || log.trangThaiMoi;
+        return `[${date}] (${status}) ${log.noiDungChiTiet}`;
+      }).join("\n") || "";
+
       return {
         "Tên Dự Án": p.tenDuAn,
         "Khách Hàng": p.khachHang?.ten || "",
@@ -246,7 +259,7 @@ export function ProjectsTable({ data }: { data: any[] }) {
         "Trạng Thái": STATUS_STYLES[p.trangThaiHienTai]?.label || p.trangThaiHienTai,
         "Tổng DT Dự Kiến": p.tongDoanhThuDuKien,
         "Doanh Thu Theo Tháng": p.doanhThuTheoThang,
-        "Ghi Chú": p.ghiChu || "",
+        "Nhật ký công việc": logs,
         "Ngày CSKH Cuối": p.ngayChamsocCuoiCung ? new Date(p.ngayChamsocCuoiCung).toLocaleDateString("vi-VN") : "Chưa CSKH"
       };
     });
@@ -279,7 +292,7 @@ export function ProjectsTable({ data }: { data: any[] }) {
       </div>
 
       <div className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-x-auto shadow-2xl shadow-blue-900/5 border border-blue-100/50">
-        <table className="w-full min-w-[1400px] text-left border-collapse">
+        <table className="w-full text-left border-collapse table-auto text-xs md:text-sm">
           <thead className="bg-gradient-to-r from-[#0058bc] via-blue-600 to-cyan-500 text-white">
             <tr>
               {table.getHeaderGroups().map((hg) =>
@@ -290,7 +303,7 @@ export function ProjectsTable({ data }: { data: any[] }) {
                   return (
                     <th
                       key={header.id}
-                      className="py-4 px-6 font-black text-[10px] uppercase tracking-widest whitespace-nowrap group border-b border-white/20"
+                      className="py-3 px-2 md:px-3 font-bold text-[9px] md:text-[10px] uppercase tracking-wider whitespace-nowrap group border-b border-white/20 align-middle"
                     >
                       <div className="flex items-center gap-2">
                         {header.isPlaceholder
@@ -377,7 +390,7 @@ export function ProjectsTable({ data }: { data: any[] }) {
                     )}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="py-4 px-6">
+                      <td key={cell.id} className="py-2.5 px-2 md:px-3 align-middle">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}

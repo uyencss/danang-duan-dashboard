@@ -19,6 +19,7 @@ import {
   UserCheck,
   GraduationCap,
   Target,
+  Globe,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -111,26 +112,21 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
           <div className="flex items-center gap-3">
             <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0058bc] via-blue-500 to-cyan-400 flex items-center justify-center overflow-hidden shadow-[0_0_20px_rgba(0,180,216,0.4)] ring-1 ring-cyan-200/50">
               <div className="absolute inset-0 bg-white/20 animate-pulse mix-blend-overlay"></div>
-              <svg className="w-6 h-6 text-white relative z-10 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 21V5a2 2 0 0 1 2-2h3l3 6 3-6h3a2 2 0 0 1 2 2v16" />
-                <circle cx="12" cy="11" r="1.5" fill="currentColor" />
-                <circle cx="7" cy="18" r="1.5" fill="currentColor" />
-                <circle cx="17" cy="18" r="1.5" fill="currentColor" />
-              </svg>
+              <Globe className="w-6 h-6 text-white relative z-10 drop-shadow-md" />
             </div>
             <div>
-              <h1 className="text-white font-black text-xl tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-white to-cyan-200">MobiFone</h1>
-              <p className="text-cyan-400 text-[10px] mt-0.5 uppercase tracking-widest font-black drop-shadow-sm">
-                Dự án
+              <h1 className="font-extrabold text-2xl tracking-tighter leading-none flex items-baseline">
+                <span className="text-white">mobi</span><span className="text-red-500">fone</span>
+              </h1>
+              <p className="text-cyan-400 text-sm mt-1 uppercase tracking-[0.2em] font-black drop-shadow-sm leading-none">
+                DỰ ÁN
               </p>
             </div>
           </div>
         ) : (
           <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0058bc] via-blue-500 to-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(0,180,216,0.3)] ring-1 ring-cyan-200/50">
             <div className="absolute inset-0 bg-white/20 animate-pulse mix-blend-overlay"></div>
-            <svg className="w-5 h-5 text-white relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 21V5a2 2 0 0 1 2-2h3l3 6 3-6h3a2 2 0 0 1 2 2v16" />
-            </svg>
+            <Globe className="w-5 h-5 text-white relative z-10" />
           </div>
         )}
       </div>

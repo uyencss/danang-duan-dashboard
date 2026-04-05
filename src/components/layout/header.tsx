@@ -29,7 +29,7 @@ interface HeaderProps {
 
 const roleLabels: Record<string, string> = {
   ADMIN: "Ban Công Nghệ",
-  AM: "Account Manager",
+  AM: "AM",
   CV: "Chuyên viên giải pháp",
   USER: "Nhân viên",
 };
@@ -61,6 +61,13 @@ export function Header({ user }: HeaderProps) {
     .join("")
     .toUpperCase();
 
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && search.trim()) {
+      router.push(`/du-an?search=${encodeURIComponent(search.trim())}`);
+      setSearch("");
+    }
+  };
+
   return (
     <header className="h-16 flex items-center justify-between px-8 bg-[#f7f9fb]/80 backdrop-blur-md border-b border-[#c5c6ce]/30 sticky top-0 z-40">
       {/* Search */}
@@ -71,6 +78,7 @@ export function Header({ user }: HeaderProps) {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={handleSearch}
             placeholder="Tìm kiếm dự án, khách hàng..."
             className="w-full bg-[#f2f4f6] border-none rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#0058bc] outline-none transition-all placeholder:text-slate-400"
           />

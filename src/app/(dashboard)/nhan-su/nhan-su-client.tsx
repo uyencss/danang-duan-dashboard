@@ -24,7 +24,7 @@ type SortField = "signedRevenue" | "otherRevenue" | "contracts" | "convRate" | n
 type SortDir = "asc" | "desc";
 
 const ROLE_LABELS: Record<string, string> = {
-    AM: "Account Manager",
+    AM: "AM",
     CV: "Chuyên viên",
     USER: "Nhân viên",
 };
@@ -141,20 +141,27 @@ export function NhanSuDashboardClient({ initialData }: { initialData: AnalyticsD
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-[#0D1F3C] tracking-tight">Tổng Hợp Nhân Sự</h1>
-                    <p className="text-slate-500 mt-1 font-medium">Bảng vàng xếp hạng AM & Chuyên viên theo hiệu suất</p>
                 </div>
                 <div className="flex bg-white/50 border border-gray-200/60 p-1.5 rounded-2xl shadow-sm">
                     <Select onValueChange={handleFilterChange} value={selectedValue}>
                         <SelectTrigger className="w-[180px] border-none bg-transparent shadow-none font-bold text-gray-700">
-                            <SelectValue placeholder="Toàn thời gian" />
+                            <SelectValue placeholder="Toàn thời gian">
+                                {selectedValue === "all" ? "Toàn thời gian" : 
+                                 selectedValue.startsWith("quy-") ? `Quý ${selectedValue.split("-")[1]} / 2026` :
+                                 selectedValue.startsWith("thang-") ? `Tháng ${selectedValue.split("-")[1]} / 2026` :
+                                 selectedValue}
+                            </SelectValue>
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                            <SelectItem value="all" className="font-bold cursor-pointer">Toàn thời gian</SelectItem>
-                            <SelectItem value="quy-1" className="font-bold cursor-pointer">Quý 1 / 2026</SelectItem>
-                            <SelectItem value="quy-2" className="font-bold cursor-pointer">Quý 2 / 2026</SelectItem>
-                            <SelectItem value="quy-3" className="font-bold cursor-pointer">Quý 3 / 2026</SelectItem>
-                            <SelectItem value="quy-4" className="font-bold cursor-pointer">Quý 4 / 2026</SelectItem>
-                            <SelectItem value="thang-1" className="font-bold cursor-pointer">Tháng 1 / 2026</SelectItem>
+                        <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-80">
+                            <SelectItem value="all" className="font-bold cursor-pointer text-[#0058bc]">Toàn thời gian</SelectItem>
+                            <div className="px-2 py-1.5 text-xs font-black text-slate-400 tracking-widest uppercase mt-1">Theo Quý</div>
+                            {Array.from({ length: 4 }, (_, i) => i + 1).map(q => (
+                                <SelectItem key={`quy-${q}`} value={`quy-${q}`} className="font-bold cursor-pointer">Quý {q} / 2026</SelectItem>
+                            ))}
+                            <div className="px-2 py-1.5 text-xs font-black text-slate-400 tracking-widest uppercase mt-1 border-t border-slate-50 pt-2">Theo Tháng</div>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                <SelectItem key={`thang-${m}`} value={`thang-${m}`} className="font-bold cursor-pointer">Tháng {m} / 2026</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
@@ -383,7 +390,7 @@ function RoleFilterDropdown({ value, onChange }: { value: string; onChange: (v: 
     const [open, setOpen] = useState(false);
     const options = [
         { value: "all", label: "Tất cả" },
-        { value: "AM", label: "Account Manager" },
+        { value: "AM", label: "AM" },
         { value: "CV", label: "Chuyên viên" },
         { value: "USER", label: "Nhân viên" },
     ];

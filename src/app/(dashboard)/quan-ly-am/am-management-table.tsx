@@ -70,7 +70,7 @@ export function AMManagementTable({ data }: { data: AMStat[] }) {
                     <TableHeader className="bg-gradient-to-r from-[#0058bc]/95 via-blue-600/95 to-cyan-500/95 backdrop-blur-sm">
                         <TableRow className="border-b border-white/10 hover:bg-transparent">
                              <TableHead className="w-16 text-center font-black text-white/70 uppercase tracking-widest text-[10px]">#</TableHead>
-                             <TableHead className="font-black text-white uppercase tracking-widest text-[10px]">Account Manager</TableHead>
+                             <TableHead className="font-black text-white uppercase tracking-widest text-[10px]">AM</TableHead>
                              <TableHead className="font-black text-white uppercase tracking-widest text-[10px]">Tổ / Địa bàn</TableHead>
                              <TableHead className="font-black text-cyan-200 uppercase tracking-widest text-[10px] text-center">Tỷ lệ Chuyển đổi</TableHead>
                              

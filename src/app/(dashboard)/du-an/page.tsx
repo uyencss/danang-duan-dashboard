@@ -57,7 +57,7 @@ export default async function DuAnPage({
           <p className="text-sm font-medium opacity-80 mt-2">{error}</p>
         </div>
       ) : (
-        <ProjectsTable data={data} />
+        <ProjectsTable data={data} initialSearch={filters.search} />
       )}
     </div>
   );

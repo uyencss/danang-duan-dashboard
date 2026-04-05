@@ -180,7 +180,7 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
                         </FormControl>
                         <SelectContent>
                           <SelectItem value={"ADMIN" as any}>Quản trị viên (Admin)</SelectItem>
-                          <SelectItem value={"AM" as any}>Account Manager (AM)</SelectItem>
+                          <SelectItem value={"AM" as any}>AM</SelectItem>
                           <SelectItem value={"CV" as any}>Chuyên viên (CV)</SelectItem>
                         </SelectContent>
                     </Select>
@@ -230,7 +230,7 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
 
                   <AlertDialog>
                     <AlertDialogTrigger
-                      nativeButton={false}
+                      nativeButton={true}
                       render={
                         <Button type="button" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-100 rounded-xl font-bold h-9 px-4 flex items-center gap-2 border border-red-200" />
                       }
