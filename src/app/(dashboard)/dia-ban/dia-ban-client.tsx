@@ -158,15 +158,20 @@ export function DiaBanDashboardClient({ diaBanData, topStaffData, kpiTotal }: { 
                         <div className="bg-[#f7f9fb] p-1.5 rounded-2xl border border-gray-200/50 shadow-inner">
                             <Select onValueChange={handleFilterChange} value={selectedTimePeriod}>
                                 <SelectTrigger className="w-full border-none bg-transparent shadow-none font-black text-[#0D1F3C] focus:ring-0 truncate">
-                                    <SelectValue placeholder="Toàn thời gian" />
+                                    <SelectValue placeholder="Toàn thời gian">
+                                        {selectedTimePeriod === "all" ? "Toàn thời gian" : 
+                                         selectedTimePeriod.startsWith("quarter-") ? `Quý ${selectedTimePeriod.split("-")[1]} / 2026` :
+                                         selectedTimePeriod.startsWith("month-") ? `Tháng ${selectedTimePeriod.split("-")[1]} / 2026` :
+                                         selectedTimePeriod}
+                                    </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent className="rounded-xl border-gray-100 shadow-2xl">
                                     <SelectItem value="all" className="font-bold">Toàn thời gian</SelectItem>
-                                    <SelectItem value="quy-1" className="font-bold">Quý 1 / 2026</SelectItem>
-                                    <SelectItem value="quy-2" className="font-bold">Quý 2 / 2026</SelectItem>
-                                    <SelectItem value="quy-3" className="font-bold">Quý 3 / 2026</SelectItem>
-                                    <SelectItem value="quy-4" className="font-bold">Quý 4 / 2026</SelectItem>
-                                    <SelectItem value="thang-1" className="font-bold">Tháng 1 / 2026</SelectItem>
+                                    <SelectItem value="quarter-1" className="font-bold">Quý 1 / 2026</SelectItem>
+                                    <SelectItem value="quarter-2" className="font-bold">Quý 2 / 2026</SelectItem>
+                                    <SelectItem value="quarter-3" className="font-bold">Quý 3 / 2026</SelectItem>
+                                    <SelectItem value="quarter-4" className="font-bold">Quý 4 / 2026</SelectItem>
+                                    <SelectItem value="month-1" className="font-bold">Tháng 1 / 2026</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

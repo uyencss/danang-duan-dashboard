@@ -9,9 +9,10 @@ export default async function DiaBanPage({ searchParams }: { searchParams: Promi
 
     if (params.type === 'nam' && params.year) {
         filterArgs = { type: 'nam', year: Number(params.year) };
-    } else if (params.type === 'quy' && params.year && params.value) {
+    } else if (params.type === 'quarter' && params.year && params.value) {
+        // map to legacy 'quy' param for server action
         filterArgs = { type: 'quy', year: Number(params.year), quarter: Number(params.value) };
-    } else if (params.type === 'thang' && params.year && params.value) {
+    } else if (params.type === 'month' && params.year && params.value) {
         filterArgs = { type: 'thang', year: Number(params.year), month: Number(params.value) };
     }
 
