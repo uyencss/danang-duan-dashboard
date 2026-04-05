@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "seed:reset": "SEED_RESET=true tsx prisma/seed.ts",
+    "db:migrate:reset": "tsx scripts/migrate-reset-safe.ts",
+    "db:migrate:reset:unsafe": "prisma migrate reset --force",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "npm run seed"

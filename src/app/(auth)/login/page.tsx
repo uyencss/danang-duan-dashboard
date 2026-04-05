@@ -40,8 +40,8 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setLoading(true);
       await authClient.signIn.email({
-        email: values.email,
-        password: values.password,
+        email: values.email.trim().toLowerCase(),
+        password: values.password.trim(),
         callbackURL: "/",
       }, {
         onSuccess: () => {

@@ -1,4 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) dashboard project with Prisma + Better Auth.
+
+## Database Safety (Important)
+
+Seeding is now safe by default:
+
+- `npm run seed` will **not** delete data.
+- If data already exists, seed will skip.
+- Destructive reset is opt-in only via `npm run seed:reset` (sets `SEED_RESET=true`).
+- Every destructive reset now runs mandatory preflight checks and creates backup files under `.backups/seed/` before deleting any rows.
+- Use `npm run db:migrate:reset` for schema reset; it also runs backup/preflight first under `.backups/migrate-reset/`.
+- If reset or reseed fails in `db:migrate:reset`, the script automatically restores `dev.db` from the backup snapshot.
+
+Use `seed:reset` only for local/dev environments where data loss is acceptable.
+
+Unsafe bypass (not recommended): `npm run db:migrate:reset:unsafe`
+
+## Database Environments
+
+- Local development: SQLite/libSQL for fast local iteration.
+- Staging/production: managed PostgreSQL.
+
+Recommended default path:
+
+1. Start local with SQLite while building.
+2. Move to managed Postgres (Supabase or Neon) for shared/online data.
+3. Run Prisma migrations against that Postgres database.
+
+Why this path:
+
+- Better reliability and backups than self-hosting too early.
+- Simpler operations than running your own Postgres over Cloudflare tunnel.
+- Keeps relational SQL model and Prisma migrations unchanged.
+
+Firebase is best when you want a document/NoSQL model and Firebase-native stack. For this project's current Prisma + relational schema, Postgres is the better fit.
 
 ## Getting Started
 

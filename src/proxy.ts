@@ -1,10 +1,18 @@
-import { auth } from "@/lib/auth";
+
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function proxy(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
+  let session = null;
+  try {
+    const res = await fetch(new URL("/api/auth/get-session", request.url).toString(), {
+      headers: { cookie: request.headers.get("cookie") || "" },
+    });
+    if (res.ok) {
+      session = await res.json();
+    }
+  } catch (e) {
+    console.error("Failed to fetch session in middleware", e);
+  }
 
   const path = request.nextUrl.pathname;
 
