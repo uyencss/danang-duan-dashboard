@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface Notification {
   id: string;
@@ -36,16 +37,19 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     // For simplicity, we listen for the notification channel per user
     const channel = client.channels.get(`notifications`);
 
-    channel.subscribe("new_comment", (msg) => {
+    channel.subscribe("mention", (msg) => {
       const data = msg.data;
-      if (data.userId === userId) return; // skip own comments
+      if (data.mentionedUserId !== userId) return; // only for me
+      
+      const cleanContent = data.content || "";
       const notif: Notification = {
-        id: `${Date.now()}`,
-        message: `${data.userName} vừa bình luận: "${data.content?.substring(0, 60)}${(data.content?.length ?? 0) > 60 ? "..." : ""}"`,
+        id: `mention-${Date.now()}`,
+        message: `${data.userName} đã nhắc đến bạn: "${cleanContent.substring(0, 60)}${cleanContent.length > 60 ? "..." : ""}"`,
         timestamp: new Date(),
         read: false,
       };
       setNotifications((prev) => [notif, ...prev].slice(0, 20));
+      toast.info(`${data.userName} đã nhắc đến bạn!`, { icon: <Bell className="size-4" /> });
     });
 
     channel.subscribe("new-message", (msg) => {

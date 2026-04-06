@@ -37,10 +37,39 @@ export async function createComment(data: { projectId: number, content: string, 
              await channel.publish('new_comment', {
                  commentId: comment.id,
                  userName: user.name,
+                 userId: user.id,
                  content: data.content,
                  createdAt: comment.createdAt,
                  parentId: data.parentId
              });
+
+             const globalChannel = ablyServerClient.channels.get(`notifications`);
+             
+             // Extract mentions: @Name
+             const allUsers = await prisma.user.findMany({ select: { id: true, name: true }});
+             const mentions: string[] = [];
+             for (const u of allUsers) {
+                 if (data.content.includes(`@${u.name}`)) {
+                     mentions.push(u.id);
+                 }
+             }
+
+             // Phát mention
+             const uniqueMentions = Array.from(new Set(mentions));
+             for (const mentionedId of uniqueMentions) {
+                 if (mentionedId !== user.id) {
+                     await globalChannel.publish('mention', {
+                         mentionedUserId: mentionedId,
+                         userName: user.name,
+                         content: data.content,
+                         projectId: data.projectId,
+                     });
+                 }
+             }
+
+             // Tuỳ chọn có thể publish new_comment chung để ai đăng ký channel notifications biết
+             // nhưng theo code NotificationBell hiện tại nó sẽ hiện notif cho tất cả.
+             // Nếu để trống thì chỉ ai có Tag mới nhận được unless channel subscribe specific user.
         }
 
         revalidatePath(`/du-an/${data.projectId}`);

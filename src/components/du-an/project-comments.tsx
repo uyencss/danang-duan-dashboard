@@ -47,7 +47,7 @@ interface CurrentUser {
 interface MentionDropdownProps {
   query: string;
   users: { id: string; name: string }[];
-  onSelect: (name: string) => void;
+  onSelect: (user: { id: string; name: string }) => void;
   anchorRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
@@ -66,7 +66,7 @@ function MentionDropdown({ query, users, onSelect, anchorRef }: MentionDropdownP
           type="button"
           onMouseDown={(e) => {
             e.preventDefault();
-            onSelect(u.name);
+            onSelect(u);
           }}
           className="w-full text-left px-4 py-3 text-sm font-medium text-[#191c1e] hover:bg-[#f2f4f6] flex items-center gap-2 transition-colors"
         >
@@ -81,16 +81,42 @@ function MentionDropdown({ query, users, onSelect, anchorRef }: MentionDropdownP
 }
 
 // ─── Render content with @mention highlighting ───────────────────
-function CommentContent({ content }: { content: string }) {
-  const parts = content.split(/(@[\w\sÀ-ỹ]+?)(?=\s|$|[.,!?])/g);
+function CommentContent({ content, allUsers }: { content: string, allUsers: { id: string; name: string }[] }) {
+  // Normalize legacy markdown mentions "@[Name](id)" to just "@Name"
+  const normalizedContent = content.replace(/@\[([^\]]+)\]\([^)]+\)/g, '@$1');
+
+  const names = allUsers.map((u) => u.name).sort((a, b) => b.length - a.length);
+  
+  if (names.length === 0) {
+    const parts = normalizedContent.split(/(@[\w\sÀ-ỹ]+?)(?=\s|$|[.,!?])/g);
+    return (
+      <p className="text-[#44474d] text-sm leading-relaxed whitespace-pre-wrap">
+        {parts.map((part, i) => {
+          if (part.startsWith("@")) {
+             return (
+              <span key={i} className="text-[#0058bc] font-bold bg-[#EBF3FF] px-1.5 py-0.5 rounded text-[13px] mr-1 mb-0.5 mt-0.5 inline-flex items-center">
+                {part}
+              </span>
+            );
+          }
+          return part;
+        })}
+      </p>
+    );
+  }
+
+  const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const matchStr = names.map(n => `@${escapeRegExp(n)}`).join('|');
+  const parts = normalizedContent.split(new RegExp(`(${matchStr})`, 'g'));
+
   return (
-    <p className="text-[#44474d] text-sm leading-relaxed whitespace-pre-wrap">
+    <p className="text-[#44474d] text-sm leading-relaxed whitespace-pre-wrap break-words">
       {parts.map((part, i) => {
-        if (part.startsWith("@")) {
+        if (part.startsWith("@") && names.some(n => `@${n}` === part)) {
           return (
             <span
               key={i}
-              className="text-[#0058bc] font-bold bg-[#EBF3FF] px-2 py-0.5 rounded-md text-[13px] mr-0.5"
+              className="text-[#0058bc] font-bold bg-[#EBF3FF] px-1.5 py-0.5 rounded text-[13px] mr-1 mb-0.5 mt-0.5 inline-flex items-center"
             >
               {part}
             </span>
@@ -170,7 +196,7 @@ function CommentItem({
           </div>
 
           {/* Content */}
-          <CommentContent content={comment.content} />
+          <CommentContent content={comment.content} allUsers={allUsers} />
         </div>
       </div>
 
@@ -259,8 +285,8 @@ function CommentInput({
 
     if (lastAt !== -1) {
       const segment = textBefore.slice(lastAt + 1);
-      // Only show if no space in segment (still typing the name)
-      if (!segment.includes(" ") || segment.length <= 2) {
+      // Allow spaces but limit length to e.g. 50 characters to avoid infinite dropdown matching
+      if (!segment.includes("\n") && !segment.includes("@") && segment.length <= 50) {
         setMentionQuery(segment);
         setMentionStart(lastAt);
         return;
@@ -270,17 +296,18 @@ function CommentInput({
     setMentionStart(-1);
   };
 
-  const handleMentionSelect = (name: string) => {
+  const handleMentionSelect = (user: { id: string; name: string }) => {
     if (mentionStart === -1) return;
     const before = value.slice(0, mentionStart);
     const after = value.slice(mentionStart + 1 + (mentionQuery?.length || 0));
-    const newVal = `${before}@${name} ${after}`;
+    const mentionText = `@${user.name}`;
+    const newVal = `${before}${mentionText} ${after}`;
     setValue(newVal);
     setMentionQuery(null);
     setMentionStart(-1);
     setTimeout(() => {
       textareaRef.current?.focus();
-      const pos = (before + `@${name} `).length;
+      const pos = (before + mentionText + " ").length;
       textareaRef.current?.setSelectionRange(pos, pos);
     }, 10);
   };
@@ -308,7 +335,7 @@ function CommentInput({
       const filtered = allUsers.filter((u) =>
         u.name.toLowerCase().includes((mentionQuery || "").toLowerCase())
       );
-      if (filtered[0]) handleMentionSelect(filtered[0].name);
+      if (filtered[0]) handleMentionSelect(filtered[0]);
     }
     if (e.key === "Escape") {
       setMentionQuery(null);
@@ -396,18 +423,24 @@ export function ProjectComments({
   projectId,
   comments = [],
   currentUser,
+  allSystemUsers = [],
 }: {
   projectId: number;
   comments: Comment[];
   currentUser: CurrentUser | null | undefined;
+  allSystemUsers?: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
 
-  // Build allUsers list from unique commenters (for @mention)
-  const allUsers = Array.from(
-    new Map(comments.map((c) => [c.user.id, { id: c.user.id, name: c.user.name }])).values()
-  );
+  // Build allUsers list from system users + commenters (for @mention)
+  const allUsersMap = new Map(allSystemUsers.map((u) => [u.id, u]));
+  comments.forEach((c) => {
+    if (!allUsersMap.has(c.user.id)) {
+      allUsersMap.set(c.user.id, { id: c.user.id, name: c.user.name });
+    }
+  });
+  const allUsers = Array.from(allUsersMap.values());
 
   // Ably subscription for real-time updates
   useEffect(() => {

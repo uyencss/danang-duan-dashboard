@@ -110,9 +110,8 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
       <div className={cn("px-4 py-8 mb-2", isCollapsed ? "flex justify-center" : "px-8")}>
         {!isCollapsed ? (
           <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0058bc] via-blue-500 to-cyan-400 flex items-center justify-center overflow-hidden shadow-[0_0_20px_rgba(0,180,216,0.4)] ring-1 ring-cyan-200/50">
-              <div className="absolute inset-0 bg-white/20 animate-pulse mix-blend-overlay"></div>
-              <Globe className="w-6 h-6 text-white relative z-10 drop-shadow-md" />
+            <div className="relative w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-[0_0_20px_rgba(0,180,216,0.4)] ring-1 ring-cyan-200/50">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="font-extrabold text-2xl tracking-tighter leading-none flex items-baseline">
@@ -124,9 +123,8 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
             </div>
           </div>
         ) : (
-          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0058bc] via-blue-500 to-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(0,180,216,0.3)] ring-1 ring-cyan-200/50">
-            <div className="absolute inset-0 bg-white/20 animate-pulse mix-blend-overlay"></div>
-            <Globe className="w-5 h-5 text-white relative z-10" />
+          <div className="relative w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-[0_0_15px_rgba(0,180,216,0.3)] ring-1 ring-cyan-200/50 overflow-hidden">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
         )}
       </div>

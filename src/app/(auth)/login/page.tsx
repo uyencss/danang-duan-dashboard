@@ -68,8 +68,8 @@ export default function LoginPage() {
     <Card className="shadow-lg border-primary/20">
       <CardHeader className="space-y-1">
         <div className="flex justify-center mb-4">
-          <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl">M</span>
+          <div className="h-16 w-16 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-md ring-1 ring-primary/20">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
         </div>
         <CardTitle className="text-2xl text-center text-primary font-bold">

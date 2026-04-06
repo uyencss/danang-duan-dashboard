@@ -28,6 +28,7 @@ import { ProjectComments } from "@/components/du-an/project-comments";
 import { ProjectChat } from "@/components/du-an/project-chat";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { EditProjectTrigger } from "./edit-project-trigger";
+import prisma from "@/lib/prisma";
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   MOI: { label: "Mới", className: "bg-blue-100 text-blue-700" },
@@ -49,6 +50,10 @@ export default async function ProjectDetailPage({
 
   const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
   const currentUser = sessionRes?.user;
+
+  const allSystemUsers = await prisma.user.findMany({
+    select: { id: true, name: true }
+  });
 
   if (error || !project) {
     return (
@@ -263,6 +268,7 @@ export default async function ProjectDetailPage({
                 projectId={project.id}
                 comments={project.binhLuan as any}
                 currentUser={currentUser}
+                allSystemUsers={allSystemUsers}
               />
             </TabsContent>
 
