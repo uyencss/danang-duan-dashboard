@@ -16,6 +16,7 @@ import {
   Activity,
   ChevronRight,
   Pencil,
+  Star,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -90,8 +91,8 @@ export default async function ProjectDetailPage({
 
           {/* Title */}
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-[#000719] to-[#0d1f3c] rounded-2xl text-white shadow-lg">
-              <Package className="size-7" />
+            <div className="p-3 bg-gradient-to-r from-[#0058bc] to-[#0070eb] shadow-[0_8px_16px_rgba(0,180,216,0.25)] border border-blue-400/20 rounded-2xl text-white">
+              <Package className="size-7 drop-shadow-md" />
             </div>
             <div>
               <h1 className="text-3xl font-black tracking-tight text-[#191c1e] leading-tight">
@@ -292,8 +293,10 @@ export default async function ProjectDetailPage({
         {/* Right Column */}
         <div className="space-y-6">
           {/* Financial Card */}
-          <div className="bg-[#0D1F3C] text-white p-6 rounded-xl shadow-lg">
-            <p className="text-xs font-black uppercase tracking-widest text-white/50 mb-2">
+          <div className="bg-gradient-to-br from-[#0058bc] to-[#0d2a52] text-white p-6 rounded-xl shadow-[0_10px_20px_rgba(0,180,216,0.15)] relative overflow-hidden border border-blue-400/10">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-cyan-400/5 rounded-full blur-xl -ml-10 -mb-10 pointer-events-none"></div>
+            <p className="relative z-10 text-xs font-black uppercase tracking-widest text-cyan-200/70 mb-2 drop-shadow-sm">
               Doanh thu dự kiến
             </p>
             <h2 className="text-4xl font-black text-white leading-none">
@@ -313,6 +316,21 @@ export default async function ProjectDetailPage({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Key Project Status */}
+          <div className={cn(
+            "p-4 rounded-xl flex items-center justify-center gap-3 border shadow-sm",
+            project.isTrongDiem 
+              ? "bg-red-50 border-red-200 text-red-600" 
+              : "bg-blue-50/50 border-blue-100/50 text-blue-600/30"
+          )}>
+            <Star className={cn("size-6", project.isTrongDiem ? "fill-current" : "")} />
+            {project.isTrongDiem && (
+              <span className="font-black uppercase tracking-widest text-sm">
+                Dự án Trọng điểm
+              </span>
+            )}
           </div>
 
           {/* Health Card */}

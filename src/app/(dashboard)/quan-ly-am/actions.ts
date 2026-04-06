@@ -65,25 +65,46 @@ export async function getAMManagementData(filters?: { year?: number, quarter?: n
         const hasTotal = p.tongDoanhThuDuKien && p.tongDoanhThuDuKien > 0;
         const hasMonthly = (p as any).doanhThuTheoThang && (p as any).doanhThuTheoThang > 0;
 
+        const ngayKetThuc = (p as any).ngayKetThuc ? new Date((p as any).ngayKetThuc) : null;
+        let isDeadThisMonth = false;
+        let activeQuarterMonths = contextMonth;
+        let activeYearlyMonths = 12;
+
+        if (ngayKetThuc) {
+            const eY = ngayKetThuc.getFullYear();
+            const eM = ngayKetThuc.getMonth() + 1;
+            
+            if (eY < contextYear || (eY === contextYear && eM < contextMonth)) {
+                isDeadThisMonth = true;
+            }
+            if (eY === contextYear) {
+                if (eM < contextMonth) activeQuarterMonths = eM;
+                activeYearlyMonths = eM;
+            } else if (eY < contextYear) {
+                activeQuarterMonths = 0;
+                activeYearlyMonths = 0;
+            }
+        }
+
         let projMonthly = 0;
         let projQuarterly = 0;
         let projYearly = 0;
 
         // Case 1: Both "Tổng doanh thu" and "Doanh thu theo tháng" are provided
         if (hasTotal && hasMonthly) {
-            projMonthly = (p as any).doanhThuTheoThang!;
-            projQuarterly = contextMonth * (p as any).doanhThuTheoThang!;
+            projMonthly = isDeadThisMonth ? 0 : (p as any).doanhThuTheoThang!;
+            projQuarterly = activeQuarterMonths * (p as any).doanhThuTheoThang!;
             projYearly = p.tongDoanhThuDuKien;
         } 
         // Case 2: Only "Doanh thu theo tháng" is provided
         else if (hasMonthly) {
-            projMonthly = (p as any).doanhThuTheoThang!;
-            projQuarterly = contextMonth * (p as any).doanhThuTheoThang!;
-            projYearly = 12 * (p as any).doanhThuTheoThang!;
+            projMonthly = isDeadThisMonth ? 0 : (p as any).doanhThuTheoThang!;
+            projQuarterly = activeQuarterMonths * (p as any).doanhThuTheoThang!;
+            projYearly = activeYearlyMonths * (p as any).doanhThuTheoThang!;
         }
         // Case 3: Only "Tổng doanh thu dự kiến" is provided
         else if (hasTotal) {
-            projMonthly = p.tongDoanhThuDuKien;
+            projMonthly = isDeadThisMonth ? 0 : p.tongDoanhThuDuKien;
             projQuarterly = p.tongDoanhThuDuKien;
             projYearly = p.tongDoanhThuDuKien;
         }

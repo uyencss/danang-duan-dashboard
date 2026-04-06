@@ -185,6 +185,10 @@ model DuAn {
   doanhThuTheoThang     Float?        @default(0)
   maHopDong             String?
   ngayBatDau            DateTime
+  ngayKetThuc           DateTime?
+  isTrongDiem           Boolean       @default(false)
+  isPendingDelete       Boolean       @default(false)
+  deleteRequestedAt     DateTime?
   tuan                  Int
   thang                 Int
   quy                   Int

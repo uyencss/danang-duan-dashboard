@@ -30,12 +30,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TrangThaiDuAn } from "@prisma/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createTaskLog } from "@/app/(dashboard)/du-an/actions";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, History } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 const formSchema = z.object({
   trangThaiMoi: z.nativeEnum(TrangThaiDuAn),
@@ -59,9 +60,19 @@ export function QuickUpdateModal({
     defaultValues: {
       trangThaiMoi: project?.trangThaiHienTai || TrangThaiDuAn.MOI,
       noiDungChiTiet: "",
-      ngayGio: new Date().toISOString().substring(0, 16),
+      ngayGio: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        trangThaiMoi: project?.trangThaiHienTai || TrangThaiDuAn.MOI,
+        noiDungChiTiet: "",
+        ngayGio: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+      });
+    }
+  }, [open, project, form]);
 
   const onSubmit = async (values: any) => {
     setLoading(true);
@@ -82,6 +93,15 @@ export function QuickUpdateModal({
     setLoading(false);
   };
 
+  const TRANG_THAI_LABELS: Record<string, string> = {
+    MOI: "Mới",
+    DANG_LAM_VIEC: "Đang làm việc",
+    DA_DEMO: "Đã demo",
+    DA_GUI_BAO_GIA: "Đã gửi báo giá",
+    DA_KY_HOP_DONG: "Đã ký hợp đồng",
+    THAT_BAI: "Thất bại",
+  };
+
   const getStatusBadge = (state: TrangThaiDuAn) => {
     if (!state) return null;
     const colors: any = {
@@ -93,7 +113,7 @@ export function QuickUpdateModal({
         THAT_BAI: "bg-red-100 text-red-600",
     };
     const colorClass = colors[state] || "bg-gray-100 text-gray-600";
-    return <Badge className={cn("text-[10px] h-5", colorClass)}>{state?.replace(/_/g, ' ') || '...'}</Badge>;
+    return <Badge className={cn("text-[11px] h-6 font-bold tracking-tight", colorClass)}>{TRANG_THAI_LABELS[state] || '...'}</Badge>;
   }
 
   return (
@@ -132,12 +152,14 @@ export function QuickUpdateModal({
                     <Select key={field.name} onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                         <SelectTrigger className="bg-white">
-                            <SelectValue placeholder="Chọn trạng thái" />
+                            <SelectValue placeholder="Chọn trạng thái">
+                              {field.value ? (TRANG_THAI_LABELS[field.value] || field.value) : "Chọn trạng thái"}
+                            </SelectValue>
                         </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                             {Object.values(TrangThaiDuAn).map(state => (
-                                <SelectItem key={state} value={state}>{state.replace(/_/g, ' ')}</SelectItem>
+                                <SelectItem key={state} value={state}>{TRANG_THAI_LABELS[state] || state}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>

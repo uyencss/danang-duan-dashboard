@@ -126,6 +126,11 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
             where: projectFilter
         });
 
+        let uniqueSignedRevenue = 0;
+        let uniqueOtherRevenue = 0;
+        let uniqueContracts = 0;
+        let uniqueProjects = 0;
+
         projects.forEach(proj => {
             const involvedIds = [
                 (proj as any).amId,
@@ -141,34 +146,62 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
 
             let projRevValue = 0;
 
+            const ngayKetThuc = (proj as any).ngayKetThuc ? new Date((proj as any).ngayKetThuc) : null;
+
             if (isSingleMonth) {
-                // If filtering for a specific month M:
-                // 1. If it has monthly rate, it contributes 1x if it started before or during M.
-                // 2. If it is only lump sum, it contributes ONLY if it started exactly in M.
-                if (hasMonthly) {
-                    if (pThang <= contextMonth) {
-                        projRevValue = (proj as any).doanhThuTheoThang!;
-                    }
-                } else if (hasTotal) {
-                    if (pThang === contextMonth) {
-                        projRevValue = proj.tongDoanhThuDuKien;
+                // Check if project ended before this context month
+                const isEndedBeforeM = ngayKetThuc && (
+                    ngayKetThuc.getFullYear() < (filter?.year || currentYear) ||
+                    (ngayKetThuc.getFullYear() === (filter?.year || currentYear) && (ngayKetThuc.getMonth() + 1) < contextMonth)
+                );
+
+                if (!isEndedBeforeM) {
+                    if (hasMonthly) {
+                        if (pThang <= contextMonth) {
+                            projRevValue = (proj as any).doanhThuTheoThang!;
+                        }
+                    } else if (hasTotal) {
+                        if (pThang === contextMonth) {
+                            projRevValue = proj.tongDoanhThuDuKien;
+                        }
                     }
                 }
             } else {
-                // Period cumulative logic (Quarter/Year):
+                // Period cumulative logic
                 if (pThang <= contextMonth) {
                     let monthsPassed = contextMonth - pThang + 1;
-                    if (monthsPassed < 1) monthsPassed = 1;
+                    
+                    if (ngayKetThuc && ngayKetThuc.getFullYear() <= (filter?.year || currentYear)) {
+                       const endM = ngayKetThuc.getMonth() + 1;
+                       const maxActive = endM - pThang + 1;
+                       if (ngayKetThuc.getFullYear() < (filter?.year || currentYear)) {
+                           monthsPassed = 0;
+                       } else if (monthsPassed > maxActive) {
+                           monthsPassed = Math.max(0, maxActive);
+                       }
+                    }
 
-                    if (hasMonthly) {
-                        projRevValue = monthsPassed * (proj as any).doanhThuTheoThang!;
-                    } else if (hasTotal) {
-                        projRevValue = proj.tongDoanhThuDuKien;
+                    if (monthsPassed < 1 && !ngayKetThuc) monthsPassed = 1;
+
+                    if (monthsPassed > 0) {
+                        if (hasMonthly) {
+                            projRevValue = monthsPassed * (proj as any).doanhThuTheoThang!;
+                        } else if (hasTotal) {
+                            projRevValue = proj.tongDoanhThuDuKien;
+                        }
                     }
                 }
             }
 
             if (projRevValue === 0) return;
+
+            uniqueProjects++;
+            if (proj.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG) {
+                uniqueSignedRevenue += projRevValue;
+                uniqueContracts++;
+            } else if (proj.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI) {
+                uniqueOtherRevenue += projRevValue;
+            }
 
             involvedIds.forEach(id => {
                 const stat = analytics.find(a => a.id === id);
@@ -235,6 +268,12 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
 
         return {
             data: analyticsSorted,
+            summary: {
+                totalSignedRevenue: uniqueSignedRevenue,
+                totalOtherRevenue: uniqueOtherRevenue,
+                totalContracts: uniqueContracts,
+                totalProjects: uniqueProjects
+            },
             topAMSigned,
             topAMOthers,
             topCVSigned,
@@ -381,7 +420,8 @@ export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' 
                 amHoTroId: true,
                 chuyenVienId: true,
                 cvHoTro1Id: true,
-                cvHoTro2Id: true
+                cvHoTro2Id: true,
+                ngayKetThuc: true
             }
         });
 
@@ -398,6 +438,7 @@ export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' 
             let monthsPassed = 1;
             const pThang = project.thang || 1;
             const pNam = project.nam || currentYear;
+            const ngayKetThuc = project.ngayKetThuc ? new Date(project.ngayKetThuc) : null;
 
             if (pNam === currentYear) {
                 monthsPassed = contextMonth - pThang + 1;
@@ -406,12 +447,30 @@ export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' 
             }
             if (monthsPassed < 1) monthsPassed = 1;
 
-            if (hasTotal && hasMonthly) {
-                projRevValue = monthsPassed * (project.doanhThuTheoThang || 0);
-            } else if (hasMonthly && !hasTotal) {
-                projRevValue = monthsPassed * (project.doanhThuTheoThang || 0);
-            } else if (hasTotal && !hasMonthly) {
-                projRevValue = project.tongDoanhThuDuKien;
+            if (ngayKetThuc) {
+                const endY = ngayKetThuc.getFullYear();
+                const endM = ngayKetThuc.getMonth() + 1;
+                let maxMonths = monthsPassed;
+                if (endY < currentYear) {
+                   maxMonths = 0; 
+                } else if (endY === currentYear) {
+                   if (pNam === currentYear) {
+                       maxMonths = endM - pThang + 1;
+                   } else {
+                       maxMonths = (12 - pThang + 1) + endM;
+                   }
+                }
+                if (monthsPassed > maxMonths) monthsPassed = Math.max(0, maxMonths);
+            }
+
+            if (monthsPassed > 0) {
+                if (hasTotal && hasMonthly) {
+                    projRevValue = monthsPassed * (project.doanhThuTheoThang || 0);
+                } else if (hasMonthly && !hasTotal) {
+                    projRevValue = monthsPassed * (project.doanhThuTheoThang || 0);
+                } else if (hasTotal && !hasMonthly) {
+                    projRevValue = project.tongDoanhThuDuKien;
+                }
             }
 
             const isSigned = project.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG;

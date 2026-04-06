@@ -214,7 +214,7 @@ export function UsersTable({ data }: { data: any[] }) {
         </div>
         
         <Button 
-          className="bg-primary hover:bg-primary/90 font-bold"
+          className="bg-gradient-to-r from-[#0058bc] to-blue-500 hover:from-blue-600 hover:to-cyan-500 text-white font-bold shadow-lg shadow-blue-500/30 rounded-xl border-none"
           onClick={() => {
             setSelectedUser(null);
             setOpenForm(true);

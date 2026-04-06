@@ -20,6 +20,7 @@ import {
   GraduationCap,
   Target,
   Globe,
+  Trash2,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -30,20 +31,21 @@ interface SidebarItem {
 }
 
 const mainNavItems: SidebarItem[] = [
-  { label: "Dashboard Tổng quan", href: "/", icon: LayoutDashboard, role: "ALL" },
+  { label: "Dashboard Tổng quan", href: "/", icon: LayoutDashboard, role: "ADMIN" },
   { label: "CRM & DS Dự án", href: "/du-an", icon: FolderKanban, role: "ALL" },
-  { label: "Tổng hợp Nhân sự", href: "/nhan-su", icon: Users, role: "ALL" },
-  { label: "Phân tích & KPI", href: "/kpi", icon: TrendingUp, role: "ALL" },
-  { label: "Top Địa bàn", href: "/dia-ban", icon: MapPin, role: "ALL" },
-  { label: "Quản lý AM", href: "/quan-ly-am", icon: UserCheck, role: "ALL" },
-  { label: "Quản lý Chuyên viên", href: "/quan-ly-cv", icon: GraduationCap, role: "ALL" },
+  { label: "Khách hàng", href: "/admin/khach-hang", icon: Building2, role: "ALL" },
+  { label: "Tổng hợp Nhân sự", href: "/nhan-su", icon: Users, role: "ADMIN" },
+  { label: "Phân tích & KPI", href: "/kpi", icon: TrendingUp, role: "ADMIN" },
+  { label: "Top Địa bàn", href: "/dia-ban", icon: MapPin, role: "ADMIN" },
+  { label: "Quản lý AM", href: "/quan-ly-am", icon: UserCheck, role: "ADMIN" },
+  { label: "Quản lý Chuyên viên", href: "/quan-ly-cv", icon: GraduationCap, role: "ADMIN" },
 ];
 
 const adminNavItems: SidebarItem[] = [
-  { label: "Khách hàng", href: "/admin/khach-hang", icon: Building2, role: "ADMIN" },
   { label: "Sản phẩm", href: "/admin/san-pham", icon: Package, role: "ADMIN" },
   { label: "Quản lý User", href: "/admin/users", icon: UserCog, role: "ADMIN" },
   { label: "Giao KPI", href: "/admin/kpi", icon: Target, role: "ADMIN" },
+  { label: "Dự án đã xoá", href: "/admin/du-an-da-xoa", icon: Trash2, role: "ADMIN" },
 ];
 
 interface SidebarProps {
@@ -71,7 +73,7 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
             href={item.href}
             title={isCollapsed ? item.label : undefined}
             className={cn(
-              "flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 group relative",
+              "flex items-center gap-4 px-4 py-2.5 rounded-lg transition-all duration-200 group relative",
               active
                 ? "bg-white/10 text-white font-bold scale-[0.98]"
                 : "text-slate-400 hover:text-white hover:bg-white/5"
@@ -107,7 +109,7 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
       )}
     >
       {/* Brand */}
-      <div className={cn("px-4 py-8 mb-2", isCollapsed ? "flex justify-center" : "px-8")}>
+      <div className={cn("px-4 py-5 mb-0", isCollapsed ? "flex justify-center" : "px-8")}>
         {!isCollapsed ? (
           <div className="flex items-center gap-3">
             <div className="relative w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-[0_0_20px_rgba(0,180,216,0.4)] ring-1 ring-cyan-200/50">
@@ -134,13 +136,13 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
         {renderNavItems(mainNavItems)}
 
         {userRole === "ADMIN" && (
-          <div className="mt-8 space-y-1">
+          <div className="mt-4 space-y-1">
             {!isCollapsed && (
-              <p className="px-4 text-[10px] uppercase font-black text-slate-500 tracking-widest mb-2">
+              <p className="px-4 text-[10px] uppercase font-black text-slate-500 tracking-widest mb-1.5">
                 Admin
               </p>
             )}
-            <div className="border-t border-white/5 pt-4">
+            <div className="border-t border-white/5 pt-2">
               {renderNavItems(adminNavItems)}
             </div>
           </div>
@@ -148,7 +150,7 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
       </nav>
 
       {/* CTA Button */}
-      <div className={cn("p-4 border-t border-white/5", isCollapsed ? "flex justify-center" : "px-4")}>
+      <div className={cn("p-3 border-t border-white/5", isCollapsed ? "flex justify-center" : "px-4")}>
         {!isCollapsed ? (
           <Link
             href="/du-an/tao-moi"

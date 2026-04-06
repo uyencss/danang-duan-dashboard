@@ -29,7 +29,18 @@ const ROLE_LABELS: Record<string, string> = {
     USER: "Nhân viên",
 };
 
-export function NhanSuDashboardClient({ initialData }: { initialData: AnalyticsData[] }) {
+export function NhanSuDashboardClient({ 
+    initialData, 
+    summary 
+}: { 
+    initialData: AnalyticsData[];
+    summary: {
+        totalSignedRevenue: number;
+        totalOtherRevenue: number;
+        totalContracts: number;
+        totalProjects: number;
+    }
+}) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [searchTerm, setSearchTerm] = useState("");
@@ -130,10 +141,8 @@ export function NhanSuDashboardClient({ initialData }: { initialData: AnalyticsD
     const totalUsers = initialData.length;
     const totalAMs = initialData.filter(d => d.role === "AM").length;
     const totalCVs = initialData.filter(d => d.role === "CV").length;
-    const totalSignedRevenue = initialData.reduce((sum, d) => sum + (d.signedRevenue || 0), 0);
-    const totalOtherRevenue = initialData.reduce((sum, d) => sum + (d.otherRevenue || 0), 0);
-    const totalContracts = initialData.reduce((sum, d) => sum + (d.contracts || 0), 0);
-    const totalProjects = initialData.reduce((sum, d) => sum + (d.projects || 0), 0);
+    
+    const { totalSignedRevenue, totalOtherRevenue, totalContracts, totalProjects } = summary;
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">

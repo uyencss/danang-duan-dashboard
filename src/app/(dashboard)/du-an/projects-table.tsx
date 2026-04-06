@@ -22,8 +22,9 @@ import {
   Pencil,
   Filter,
   X,
-  ChevronDown,
   Download,
+  Star,
+  Trash2,
 } from "lucide-react";
 import * as React from "react";
 import Link from "next/link";
@@ -35,6 +36,18 @@ import { ProjectFormDialog } from "@/components/du-an/project-form-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { exportToExcel } from "@/lib/export-excel";
+import { toast } from "sonner";
+import { requestDeleteDuAn } from "./actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const LINH_VUC_COLORS: Record<string, string> = {
   CHINH_PHU: "bg-blue-50 text-blue-600 border-blue-100",
@@ -51,9 +64,9 @@ const LINH_VUC_LABELS: Record<string, string> = {
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   MOI: { label: "Mới", className: "bg-blue-100 text-blue-700" },
   DANG_LAM_VIEC: { label: "Đang làm việc", className: "bg-amber-100 text-amber-700" },
-  DA_DEMO: { label: "Đã Demo", className: "bg-purple-100 text-purple-700" },
-  DA_GUI_BAO_GIA: { label: "Gửi báo giá", className: "bg-blue-100 text-blue-700" },
-  DA_KY_HOP_DONG: { label: "Đã ký HĐ", className: "bg-green-100 text-green-700" },
+  DA_DEMO: { label: "Đã demo", className: "bg-purple-100 text-purple-700" },
+  DA_GUI_BAO_GIA: { label: "Đã gửi báo giá", className: "bg-blue-100 text-blue-700" },
+  DA_KY_HOP_DONG: { label: "Đã ký hợp đồng", className: "bg-green-100 text-green-700" },
   THAT_BAI: { label: "Thất bại", className: "bg-red-100 text-red-700" },
 };
 
@@ -70,6 +83,16 @@ export function ProjectsTable({
   const [selectedProject, setSelectedProject] = React.useState<any>(null);
   const [openUpdateModal, setOpenUpdateModal] = React.useState(false);
   const [openEditModal, setOpenEditModal] = React.useState(false);
+  const [deleteProject, setDeleteProject] = React.useState<any>(null);
+
+  const handleDeleteRequest = async (id: number) => {
+    const res = await requestDeleteDuAn(id);
+    if (res.success) {
+      toast.success("Đã gửi yêu cầu xoá dự án! Chờ Admin phê duyệt.");
+    } else {
+      toast.error(res.error || "Gửi yêu cầu thất bại");
+    }
+  };
 
   const columns: ColumnDef<any>[] = [
     {
@@ -90,7 +113,12 @@ export function ProjectsTable({
           >
             {(row.original as any).khachHang.ten}
           </Link>
-          <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{(row.original as any).tenDuAn}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {(row.original as any).isTrongDiem && (
+              <Star className="size-3.5 fill-red-500 text-red-500 shrink-0" />
+            )}
+            <p className="text-[11px] text-slate-500 line-clamp-2">{(row.original as any).tenDuAn}</p>
+          </div>
         </div>
       ),
       filterFn: (row, id, value) => {
@@ -150,7 +178,7 @@ export function ProjectsTable({
         const state = row.getValue("trangThaiHienTai") as TrangThaiDuAn;
         const style = STATUS_STYLES[state] || STATUS_STYLES.MOI;
         return (
-          <span className={cn("px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter", style.className)}>
+          <span className={cn("px-2 py-1 rounded text-[11px] font-bold tracking-tight", style.className)}>
             {style.label}
           </span>
         );
@@ -209,6 +237,7 @@ export function ProjectsTable({
           <button className="p-1.5 hover:bg-slate-100 rounded-lg text-[#0058bc]" onClick={() => { setSelectedProject(row.original); setOpenEditModal(true); }}><Pencil className="size-3.5" /></button>
           <button className="p-1.5 hover:bg-slate-100 rounded-lg text-amber-600" onClick={() => { setSelectedProject(row.original); setOpenUpdateModal(true); }}><HistoryIcon className="size-3.5" /></button>
           <Link href={`/du-an/${(row.original as any).id}`} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500"><Eye className="size-3.5" /></Link>
+          <button className="p-1.5 hover:bg-red-50 rounded-lg text-red-500 transition-colors" onClick={() => setDeleteProject(row.original)}><Trash2 className="size-3.5" /></button>
         </div>
       ),
     },
@@ -461,6 +490,29 @@ export function ProjectsTable({
         project={selectedProject}
         key={selectedProject?.id ? `edit-${selectedProject.id}` : "edit-form"}
       />
+
+      {/* Xác nhận xóa dự án (Soft Delete) */}
+      <AlertDialog open={!!deleteProject} onOpenChange={(open) => !open && setDeleteProject(null)}>
+        <AlertDialogContent>
+           <AlertDialogHeader>
+              <AlertDialogTitle>Xóa dự án này?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Dự án <strong className="text-red-600">{deleteProject?.tenDuAn}</strong> sẽ bị tạm ẩn và chờ Admin duyệt để xóa vĩnh viễn khỏi hệ thống.
+              </AlertDialogDescription>
+           </AlertDialogHeader>
+           <AlertDialogFooter>
+              <AlertDialogCancel>Hủy</AlertDialogCancel>
+              <AlertDialogAction className="bg-red-600 focus:ring-red-600 text-white" onClick={() => {
+                if (deleteProject) {
+                  handleDeleteRequest(deleteProject.id);
+                  setDeleteProject(null);
+                }
+              }}>
+                Gửi yêu cầu xóa
+              </AlertDialogAction>
+           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

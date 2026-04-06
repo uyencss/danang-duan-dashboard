@@ -32,7 +32,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Protected Admin-only routes
-  if (path.startsWith("/admin") && session?.user.role !== "ADMIN") {
+  if (path.startsWith("/admin") && !path.startsWith("/admin/khach-hang") && session?.user.role !== "ADMIN") {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

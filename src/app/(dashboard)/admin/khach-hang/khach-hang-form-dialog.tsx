@@ -61,6 +61,7 @@ interface KhachHangFormDialogProps {
 
 export function KhachHangFormDialog({ open, setOpen, data }: KhachHangFormDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [saveAction, setSaveAction] = useState<"close" | "keep">("close");
   const isEdit = !!data;
 
   const formatDateForInput = (date: any) => {
@@ -113,9 +114,31 @@ export function KhachHangFormDialog({ open, setOpen, data }: KhachHangFormDialog
       : await createKhachHang(values);
 
     if (result.success) {
-      toast.success(isEdit ? "Cập nhật thành công!" : "Tạo khách hàng thành công!");
-      setOpen(false);
-      form.reset();
+      if (isEdit) {
+        toast.success("Cập nhật thành công!");
+        setOpen(false);
+      } else {
+        toast.success("Tạo khách hàng thành công!");
+        if (saveAction === "keep") {
+          form.reset({
+            ten: "",
+            phanLoai: PhanLoaiKH.CHINH_PHU,
+            diaChi: "",
+            dauMoiTiepCan: "",
+            soDienThoaiDauMoi: "",
+            ngaySinhDauMoi: "",
+            lanhDaoDonVi: "",
+            soDienThoaiLanhDao: "",
+            ngaySinhLanhDao: "",
+            ngayThanhLap: "",
+            ngayKyNiem: "",
+            ghiChu: "",
+          });
+        } else {
+          setOpen(false);
+          form.reset();
+        }
+      }
     } else {
       toast.error(result.error);
     }
@@ -332,9 +355,20 @@ export function KhachHangFormDialog({ open, setOpen, data }: KhachHangFormDialog
               <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={loading} className="rounded-xl font-bold">
                 Hủy
               </Button>
-              <Button type="submit" disabled={loading} className="bg-gradient-to-r from-[#000719] to-[#0d1f3c] text-white px-8 rounded-xl font-bold shadow-lg shadow-black/20 hover:scale-[1.02] transition-all">
-                {isEdit ? "Cập nhật" : "Lưu thay đổi"}
-              </Button>
+              {isEdit ? (
+                <Button type="submit" disabled={loading} className="bg-gradient-to-r from-[#000719] to-[#0d1f3c] text-white px-8 rounded-xl font-bold shadow-lg shadow-black/20 hover:scale-[1.02] transition-all" onClick={() => setSaveAction("close")}>
+                  Cập nhật
+                </Button>
+              ) : (
+                <>
+                  <Button type="submit" variant="outline" disabled={loading} className="px-6 rounded-xl font-bold text-[#0058bc] border-[#0058bc] hover:bg-[#0058bc]/5 bg-white" onClick={() => setSaveAction("keep")}>
+                    Lưu & thêm KH mới
+                  </Button>
+                  <Button type="submit" disabled={loading} className="bg-gradient-to-r from-[#000719] to-[#0d1f3c] text-white px-8 rounded-xl font-bold shadow-lg shadow-black/20 hover:scale-[1.02] transition-all" onClick={() => setSaveAction("close")}>
+                    Lưu & Thoát
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </form>
         </Form>

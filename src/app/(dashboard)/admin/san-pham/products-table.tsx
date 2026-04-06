@@ -60,6 +60,7 @@ export function ProductsTable({ data }: { data: any[] }) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [openForm, setOpenForm] = React.useState(false);
   const [selectedSP, setSelectedSP] = React.useState<any>(null);
+  const [deleteSP, setDeleteSP] = React.useState<any>(null);
 
   const handleDelete = async (id: number) => {
     const result = await deleteSanPham(id);
@@ -127,34 +128,12 @@ export function ProductsTable({ data }: { data: any[] }) {
               >
                 <Pencil className="mr-2 h-4 w-4" /> Sửa
               </DropdownMenuItem>
-              <AlertDialog>
-                <AlertDialogTrigger
-                  nativeButton={true}
-                  render={
-                    <DropdownMenuItem 
-                      className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                      onSelect={(e) => e.preventDefault()}
-                    />
-                  }
-                >
-                  <Trash2 className="mr-2 h-4 w-4" /> Xóa
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                   <AlertDialogHeader>
-                      <AlertDialogTitle>Xác nhận xóa sản phẩm</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Dữ liệu sản phẩm <strong>{sp.tenChiTiet}</strong> sẽ bị xóa vĩnh viễn. 
-                        Bạn không thể xóa nếu sản phẩm đã được gắn vào dự án.
-                      </AlertDialogDescription>
-                   </AlertDialogHeader>
-                   <AlertDialogFooter>
-                      <AlertDialogCancel>Bỏ qua</AlertDialogCancel>
-                      <AlertDialogAction className="bg-red-600" onClick={() => handleDelete(sp.id)}>
-                        Đồng ý xóa
-                      </AlertDialogAction>
-                   </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <DropdownMenuItem 
+                className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                onClick={() => setDeleteSP(sp)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Xóa
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -188,6 +167,7 @@ export function ProductsTable({ data }: { data: any[] }) {
         </div>
         
         <Button 
+          className="bg-gradient-to-r from-[#0058bc] to-blue-500 hover:from-blue-600 hover:to-cyan-500 text-white font-bold shadow-lg shadow-blue-500/30 rounded-xl border-none"
           onClick={() => {
             setSelectedSP(null);
             setOpenForm(true);
@@ -238,6 +218,30 @@ export function ProductsTable({ data }: { data: any[] }) {
         data={selectedSP} 
         key={selectedSP?.id || "product-create"}
       />
+
+      {/* Delete Confirmation Alert Dialog */}
+      <AlertDialog open={!!deleteSP} onOpenChange={(open) => !open && setDeleteSP(null)}>
+        <AlertDialogContent>
+           <AlertDialogHeader>
+              <AlertDialogTitle>Xác nhận xóa sản phẩm</AlertDialogTitle>
+              <AlertDialogDescription>
+                Dữ liệu sản phẩm <strong className="text-red-600">{deleteSP?.tenChiTiet}</strong> sẽ bị xóa vĩnh viễn. 
+                Bạn không thể xóa nếu sản phẩm này đã được gắn vào dự án.
+              </AlertDialogDescription>
+           </AlertDialogHeader>
+           <AlertDialogFooter>
+              <AlertDialogCancel>Bỏ qua</AlertDialogCancel>
+              <AlertDialogAction className="bg-red-600 focus:ring-red-600 text-white" onClick={() => {
+                if (deleteSP) {
+                  handleDelete(deleteSP.id);
+                  setDeleteSP(null);
+                }
+              }}>
+                Đồng ý xóa
+              </AlertDialogAction>
+           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

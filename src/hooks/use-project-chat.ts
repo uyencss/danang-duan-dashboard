@@ -77,10 +77,34 @@ export function useProjectChat(projectId: number, currentUserId?: string) {
     });
 
     return () => {
-      channel.unsubscribe();
-      client.close();
+      // safely unsubscribe if created
+      if (client.connection.state !== "closed") {
+        channel.unsubscribe();
+        client.close();
+      }
     };
   }, [projectId]);
+
+  // Polling fallback when Ably is offline
+  useEffect(() => {
+    if (isConnected) return;
+    const interval = setInterval(async () => {
+      const res = await getMessages(projectId, undefined, 50);
+      if (res.success && res.data) {
+        setMessages((prev) => {
+          const fetched = res.data as ChatMessage[];
+          // Only update state if something actually changed to prevent DOM jumping
+          if (fetched.length === 0) return prev;
+          if (prev.length === 0 || fetched[fetched.length - 1].id !== prev[prev.length - 1].id) {
+             return fetched;
+          }
+          return prev;
+        });
+      }
+    }, 3000); // 3 seconds polling
+    
+    return () => clearInterval(interval);
+  }, [projectId, isConnected]);
 
   async function loadInitialMessages() {
     setIsLoading(true);

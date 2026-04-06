@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/auth-utils";
+import { requireAuth } from "@/lib/auth-utils";
 import { getKhachHangList } from "./actions";
 import { CustomersTable } from "./customers-table";
 import { Building2 } from "lucide-react";
@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 
 export default async function KhachHangPage() {
-  // Ensure only Admins can access
-  await requireAdmin();
+  // Ensure Authenticated users can access
+  await requireAuth();
 
   // Fetch initial data
   const { data = [], error } = await getKhachHangList();

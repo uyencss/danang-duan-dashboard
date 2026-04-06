@@ -55,6 +55,8 @@ interface FormValues {
   cvHoTro1Id: string;
   cvHoTro2Id: string;
   trangThaiHienTai: TrangThaiDuAn;
+  ngayKetThuc?: string | null;
+  isTrongDiem: boolean;
 }
 
 const formSchema = z.object({
@@ -71,7 +73,9 @@ const formSchema = z.object({
   doanhThuTheoThang: z.coerce.number(),
   maHopDong: z.string(),
   ngayBatDau: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),
+  ngayKetThuc: z.string().optional().nullable().or(z.literal("")),
   trangThaiHienTai: z.nativeEnum(TrangThaiDuAn),
+  isTrongDiem: z.boolean(),
 });
 
 interface ProjectData {
@@ -91,6 +95,8 @@ interface ProjectData {
   cvHoTro2Id: string | null;
   trangThaiHienTai: TrangThaiDuAn;
   khachHang?: { id: number; ten: string };
+  ngayKetThuc?: Date | string | null;
+  isTrongDiem?: boolean;
 }
 
 interface ProjectFormDialogProps {
@@ -122,6 +128,8 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
       cvHoTro1Id: "",
       cvHoTro2Id: "",
       trangThaiHienTai: TrangThaiDuAn.MOI,
+      ngayKetThuc: "",
+      isTrongDiem: false,
     },
   });
 
@@ -156,6 +164,8 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
         cvHoTro1Id: project.cvHoTro1Id || "",
         cvHoTro2Id: project.cvHoTro2Id || "",
         trangThaiHienTai: project.trangThaiHienTai,
+        ngayKetThuc: project.ngayKetThuc ? new Date(project.ngayKetThuc).toISOString().split("T")[0] : "",
+        isTrongDiem: project.isTrongDiem || false,
       });
     }
   }, [project, open, form]);
@@ -180,7 +190,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-2xl border-none">
+      <DialogContent className="max-w-5xl sm:max-w-5xl p-0 overflow-hidden rounded-2xl border-none">
         <DialogHeader className="px-6 py-4 bg-[#f2f4f6] border-b border-[#eceef0]">
           <div className="flex items-center gap-3">
              <div className="p-2 bg-[#0058bc]/10 text-[#0058bc] rounded-lg">
@@ -193,17 +203,38 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
         <div className="p-6 overflow-y-auto max-h-[85vh]">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <FormField
                   control={form.control}
                   name="tenDuAn"
                   render={({ field }) => (
-                    <FormItem className="col-span-2">
+                    <FormItem className="col-span-1 md:col-span-3">
                       <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Tên dự án *</FormLabel>
                       <FormControl>
                         <Input className="rounded-xl h-10 border-slate-200" placeholder="Tên dự án..." {...field} />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="isTrongDiem"
+                  render={({ field }) => (
+                    <FormItem className="col-span-1 md:col-span-1 flex flex-col pt-[26px]">
+                      <div className="flex items-center space-x-2 h-10 px-3 bg-red-50/50 border border-red-100 rounded-xl cursor-pointer" onClick={() => field.onChange(!field.value)}>
+                        <input 
+                          type="checkbox" 
+                          checked={!!field.value} 
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          className="size-4 rounded text-red-600 focus:ring-red-600 outline-none border-red-300 accent-red-600 cursor-pointer"
+                        />
+                        <span className={`text-sm font-bold flex items-center gap-1.5 ${field.value ? 'text-red-600' : 'text-slate-500'}`}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={field.value ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                          Trọng điểm
+                        </span>
+                      </div>
                     </FormItem>
                   )}
                 />
@@ -244,7 +275,14 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="rounded-xl h-10 border-slate-200">
-                            <SelectValue placeholder="Chọn trạng thái" />
+                            <SelectValue placeholder="Chọn trạng thái">
+                              {field.value === TrangThaiDuAn.MOI ? "Mới" :
+                               field.value === TrangThaiDuAn.DANG_LAM_VIEC ? "Đang làm việc" :
+                               field.value === TrangThaiDuAn.DA_DEMO ? "Đã Demo" :
+                               field.value === TrangThaiDuAn.DA_GUI_BAO_GIA ? "Đã gửi báo giá" :
+                               field.value === TrangThaiDuAn.DA_KY_HOP_DONG ? "Đã ký hợp đồng" :
+                               field.value === TrangThaiDuAn.THAT_BAI ? "Thất bại" : field.value}
+                            </SelectValue>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -313,162 +351,199 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                   )}
                 />
 
-                <div className="col-span-2 grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                   <h4 className="col-span-2 text-[10px] font-black uppercase text-[#0058bc]">Nhân sự phụ trách</h4>
-                   
-                   <FormField
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6 pt-6 border-t border-slate-100">
+                 <h4 className="col-span-1 md:col-span-5 text-[10px] font-black uppercase text-[#0058bc]">Nhân sự phụ trách</h4>
+                 
+                 <FormField
+                  control={form.control}
+                  name="amId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">AM phụ trách</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-xl h-10 border-slate-200">
+                        <SelectValue placeholder="Chọn AM">
+                          {userOptions.find(u => u.id === field.value)?.name}
+                        </SelectValue>
+                      </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                           <SelectItem value="">Trống</SelectItem>
+                           {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                 />
+
+                 <FormField
+                  control={form.control}
+                  name="amHoTroId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">AM Hỗ trợ</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-xl h-10 border-slate-200">
+                        <SelectValue placeholder="Chọn AM">
+                          {userOptions.find(u => u.id === field.value)?.name}
+                        </SelectValue>
+                      </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                           <SelectItem value="">Trống</SelectItem>
+                           {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                 />
+
+                 <FormField
+                  control={form.control}
+                  name="chuyenVienId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">CV Chủ trì</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-xl h-10 border-slate-200">
+                        <SelectValue placeholder="Chọn CV">
+                          {userOptions.find(u => u.id === field.value)?.name}
+                        </SelectValue>
+                      </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                           <SelectItem value="">Trống</SelectItem>
+                           {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                 />
+
+                 <FormField
+                  control={form.control}
+                  name="cvHoTro1Id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">CV Hỗ trợ 1</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-xl h-10 border-slate-200">
+                        <SelectValue placeholder="Chọn CV">
+                          {userOptions.find(u => u.id === field.value)?.name}
+                        </SelectValue>
+                      </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                           <SelectItem value="">Trống</SelectItem>
+                           {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                 />
+
+                 <FormField
+                  control={form.control}
+                  name="cvHoTro2Id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">CV Hỗ trợ 2</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-xl h-10 border-slate-200">
+                        <SelectValue placeholder="Chọn CV">
+                          {userOptions.find(u => u.id === field.value)?.name}
+                        </SelectValue>
+                      </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                           <SelectItem value="">Trống</SelectItem>
+                           {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6 pt-6 border-t border-slate-100">
+                  <h4 className="col-span-1 md:col-span-5 text-[10px] font-black uppercase text-[#0058bc]">Tài chính & Thời gian</h4>
+                  
+                  <FormField
                     control={form.control}
-                    name="amId"
+                    name="ngayBatDau"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">AM phụ trách</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="rounded-xl h-10 border-slate-200">
-                          <SelectValue placeholder="Chọn AM">
-                            {userOptions.find(u => u.id === field.value)?.name}
-                          </SelectValue>
-                        </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                             <SelectItem value="">Trống</SelectItem>
-                             {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Ngày bắt đầu *</FormLabel>
+                        <FormControl>
+                          <Input type="date" className="rounded-xl h-10 border-slate-200" {...field} />
+                        </FormControl>
+                        {timeInfo && (
+                          <p className="text-[9px] font-bold text-[#0058bc] uppercase mt-1">
+                            Tuần {timeInfo.tuan} • Tháng {timeInfo.thang} • Q{timeInfo.quy}/{timeInfo.nam}
+                          </p>
+                        )}
                       </FormItem>
                     )}
-                   />
+                  />
 
-                   <FormField
+                  <FormField
                     control={form.control}
-                    name="amHoTroId"
+                    name="ngayKetThuc"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">AM Hỗ trợ</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="rounded-xl h-10 border-slate-200">
-                          <SelectValue placeholder="Chọn AM">
-                            {userOptions.find(u => u.id === field.value)?.name}
-                          </SelectValue>
-                        </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                             <SelectItem value="">Trống</SelectItem>
-                             {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Ngày kết thúc</FormLabel>
+                        <FormControl>
+                          <Input type="date" value={field.value || ""} onChange={field.onChange} className="rounded-xl h-10 border-slate-200" />
+                        </FormControl>
                       </FormItem>
                     )}
-                   />
+                  />
 
-                   <FormField
+                  <FormField
                     control={form.control}
-                    name="chuyenVienId"
+                    name="tongDoanhThuDuKien"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">CV Chủ trì</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="rounded-xl h-10 border-slate-200">
-                          <SelectValue placeholder="Chọn CV">
-                            {userOptions.find(u => u.id === field.value)?.name}
-                          </SelectValue>
-                        </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                             <SelectItem value="">Trống</SelectItem>
-                             {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Tổng doanh thu (Tr.đ)</FormLabel>
+                        <FormControl>
+                          <Input type="number" className="rounded-xl h-10 border-slate-200" {...field} />
+                        </FormControl>
                       </FormItem>
                     )}
-                   />
+                  />
 
-                   <FormField
+                  <FormField
                     control={form.control}
-                    name="cvHoTro1Id"
+                    name="doanhThuTheoThang"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">CV Hỗ trợ 1</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="rounded-xl h-10 border-slate-200">
-                          <SelectValue placeholder="Chọn CV">
-                            {userOptions.find(u => u.id === field.value)?.name}
-                          </SelectValue>
-                        </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                             <SelectItem value="">Trống</SelectItem>
-                             {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Thu theo tháng (Tr.đ)</FormLabel>
+                        <FormControl>
+                          <Input type="number" className="rounded-xl h-10 border-slate-200" {...field} />
+                        </FormControl>
                       </FormItem>
                     )}
-                   />
-                </div>
+                  />
 
-                <div className="col-span-2 grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                    <h4 className="col-span-2 text-[10px] font-black uppercase text-[#0058bc]">Tài chính & Thời gian</h4>
-                    
-                    <FormField
-                      control={form.control}
-                      name="ngayBatDau"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Ngày bắt đầu *</FormLabel>
-                          <FormControl>
-                            <Input type="date" className="rounded-xl h-10 border-slate-200" {...field} />
-                          </FormControl>
-                          {timeInfo && (
-                            <p className="text-[9px] font-bold text-[#0058bc] uppercase mt-1">
-                              Tuần {timeInfo.tuan} • Tháng {timeInfo.thang} • Q{timeInfo.quy}/{timeInfo.nam}
-                            </p>
-                          )}
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="tongDoanhThuDuKien"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Tổng doanh thu (Tr.đ)</FormLabel>
-                          <FormControl>
-                            <Input type="number" className="rounded-xl h-10 border-slate-200" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="doanhThuTheoThang"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Thu theo tháng (Tr.đ)</FormLabel>
-                          <FormControl>
-                            <Input type="number" className="rounded-xl h-10 border-slate-200" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="maHopDong"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Mã hợp đồng</FormLabel>
-                          <FormControl>
-                            <Input className="rounded-xl h-10 border-slate-200" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                </div>
+                  <FormField
+                    control={form.control}
+                    name="maHopDong"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Mã hợp đồng</FormLabel>
+                        <FormControl>
+                          <Input className="rounded-xl h-10 border-slate-200" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
               </div>
 
               <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">

@@ -247,7 +247,7 @@ export function CustomersTable({ data }: { data: any[] }) {
             <Download className="mr-2 size-4" /> Xuất Excel
           </Button>
           <Button
-            className="bg-primary hover:bg-primary/90 font-bold shadow-md rounded-xl"
+            className="bg-gradient-to-r from-[#0058bc] to-blue-500 hover:from-blue-600 hover:to-cyan-500 text-white font-bold shadow-lg shadow-blue-500/30 rounded-xl border-none"
             onClick={() => {
               setSelectedKH(null);
               setOpenForm(true);
