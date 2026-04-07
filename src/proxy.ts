@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 export async function proxy(request: NextRequest) {
   let session = null;
   try {
-    const res = await fetch(new URL("/api/auth/get-session", request.url).toString(), {
+    const res = await fetch("http://localhost:3000/api/auth/get-session", {
       headers: { cookie: request.headers.get("cookie") || "" },
     });
     if (res.ok) {
@@ -32,7 +32,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Protected Admin-only routes
-  if (path.startsWith("/admin") && !path.startsWith("/admin/khach-hang") && session?.user.role !== "ADMIN") {
+  if (path.startsWith("/admin") && !path.startsWith("/admin/khach-hang") && (session?.user as any)?.role !== "ADMIN") {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

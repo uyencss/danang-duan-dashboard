@@ -11,7 +11,6 @@ export const auth = betterAuth({
         enabled: true,
     },
     session: {
-        strategy: "database",
         expiresIn: 60 * 60 * 24 * 7, // 7 days
     },
     user: {
@@ -25,5 +24,8 @@ export const auth = betterAuth({
                 required: false,
             }
         }
-    }
+    },
+    advanced: {
+        trustHost: true
+    } as any
 });

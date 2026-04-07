@@ -8,8 +8,10 @@ ENV TZ=Asia/Ho_Chi_Minh
 
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
+# Install dependencies
 COPY package.json package-lock.json* ./
+# Copy Prisma schema for the generate step (it's called in npm ci postinstall)
+COPY prisma ./prisma
 RUN npm ci
 
 # Copy all files
