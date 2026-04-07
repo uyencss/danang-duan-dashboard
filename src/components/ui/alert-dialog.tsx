@@ -14,7 +14,7 @@ function AlertDialogTrigger({ ...props }: AlertDialogPrimitive.Trigger.Props) {
   return (
     <AlertDialogPrimitive.Trigger
       data-slot="alert-dialog-trigger"
-      nativeButton={false}
+      nativeButton={true}
       {...props}
     />
   )
@@ -169,7 +169,7 @@ function AlertDialogCancel({
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-cancel"
       className={cn(className)}
-      nativeButton={false}
+      nativeButton={true}
       render={<Button variant={variant} size={size} />}
       {...props}
     />

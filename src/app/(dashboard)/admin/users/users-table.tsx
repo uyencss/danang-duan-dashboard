@@ -25,6 +25,10 @@ import {
   Unlock,
   Upload,
   Download,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -37,8 +41,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { deleteUser, resetUserPassword } from "./actions";
+import { deleteUser, resetUserPassword, bulkCreateUsers } from "./actions";
 import * as React from "react";
+import * as XLSX from "xlsx";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -209,6 +214,11 @@ export function UsersTable({ data }: { data: any[] }) {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     state: { sorting, columnFilters },
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
   });
 
   return (
@@ -247,10 +257,50 @@ export function UsersTable({ data }: { data: any[] }) {
                     type="file" 
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     accept=".xlsx,.xls,.csv"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                            toast.success(`Đã nhận file ${file.name}. Tính năng đang hoàn thiện.`);
+                            const reader = new FileReader();
+                            reader.onload = async (evt) => {
+                                try {
+                                    const bstr = evt.target?.result;
+                                    const wb = XLSX.read(bstr, { type: 'binary' });
+                                    const wsname = wb.SheetNames[0];
+                                    const ws = wb.Sheets[wsname];
+                                    const dataArr = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[];
+
+                                    // Skip header row
+                                    const rows = dataArr.slice(1);
+                                    const usersToCreate = rows.map(row => ({
+                                        name: row[0],
+                                        email: row[1],
+                                        password: row[2]?.toString() || "123456",
+                                        role: row[3] || "USER",
+                                        diaBan: row[4]
+                                    })).filter(u => u.name && u.email);
+
+                                    if (usersToCreate.length === 0) {
+                                        toast.error("Không tìm thấy dữ liệu hợp lệ trong file");
+                                        return;
+                                    }
+
+                                    const toastId = toast.loading(`Đang xử lý ${usersToCreate.length} tài khoản...`);
+                                    const res = await bulkCreateUsers(usersToCreate);
+                                    
+                                    if (res.success) {
+                                        toast.success(`Đã tạo thành công ${res.results?.successCount}/${res.results?.total} tài khoản`, { id: toastId });
+                                        if (res.results?.errorCount > 0) {
+                                            console.error("Lỗi khi tạo một số tài khoản:", res.results.errors);
+                                        }
+                                    } else {
+                                        toast.error(res.error || "Lỗi khi tải lên danh sách", { id: toastId });
+                                    }
+                                } catch (err) {
+                                    console.error("Parse error:", err);
+                                    toast.error("Lỗi khi đọc file. Vui lòng kiểm tra định dạng file.");
+                                }
+                            };
+                            reader.readAsBinaryString(file);
                         }
                     }}
                 />
@@ -300,6 +350,71 @@ export function UsersTable({ data }: { data: any[] }) {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <span>Hiển thị</span>
+          <select
+            className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 cursor-pointer"
+            value={table.getState().pagination.pageSize}
+            onChange={(e) => table.setPageSize(Number(e.target.value))}
+          >
+            {[10, 20, 50].map((size) => (
+              <option key={size} value={size}>{size}</option>
+            ))}
+          </select>
+          <span>/ {table.getFilteredRowModel().rows.length} tài khoản</span>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            className="h-9 w-9 p-0 rounded-lg border-gray-200 disabled:opacity-40"
+            onClick={() => table.setPageIndex(0)}
+            disabled={!table.getCanPreviousPage()}
+          >
+            <ChevronsLeft className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            className="h-9 px-3 rounded-lg border-gray-200 font-medium text-sm gap-1 disabled:opacity-40"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            <ChevronLeft className="size-4" />
+            <span className="hidden sm:inline">Trước</span>
+          </Button>
+
+          <div className="flex items-center gap-1 px-2">
+            <span className="text-sm font-bold text-gray-700">
+              {table.getState().pagination.pageIndex + 1}
+            </span>
+            <span className="text-sm text-gray-400">/</span>
+            <span className="text-sm text-gray-500">
+              {table.getPageCount()}
+            </span>
+          </div>
+
+          <Button
+            variant="outline"
+            className="h-9 px-3 rounded-lg border-gray-200 font-medium text-sm gap-1 disabled:opacity-40"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            <span className="hidden sm:inline">Sau</span>
+            <ChevronRight className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            className="h-9 w-9 p-0 rounded-lg border-gray-200 disabled:opacity-40"
+            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+            disabled={!table.getCanNextPage()}
+          >
+            <ChevronsRight className="size-4" />
+          </Button>
+        </div>
       </div>
       
       <UserFormDialog 

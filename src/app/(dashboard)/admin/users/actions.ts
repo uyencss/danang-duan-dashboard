@@ -11,7 +11,7 @@ import { syncReplica } from "@/lib/utils/sync";
 const UserSchema = z.object({
   name: z.string().min(2, "Họ tên tối thiểu 2 ký tự"),
   email: z.string().min(1, "Tên đăng nhập là bắt buộc"), // Removed .email() to accept phone/name
-  password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự").optional().or(z.literal("")),
+  password: z.string().min(3, "Mật khẩu tối thiểu 3 ký tự").optional().or(z.literal("")),
   role: z.any(),
   diaBan: z.string().optional().or(z.literal("")),
 });
@@ -44,35 +44,57 @@ export async function createUser(data: any) {
     const validated = UserSchema.parse(data);
     if (!validated.password) return { error: "Mật khẩu là bắt buộc khi tạo mới" };
 
-    // Use Better Auth API to create user with hashed password
-    const res = await (auth.api as any).signUpEmail({
+    // Ensure email is in valid format for Better Auth
+    let email = validated.email.trim().toLowerCase();
+    if (!email.includes("@")) {
+        email = `${email}@mobifone.vn`;
+    }
+
+    console.log(`[createUser] Creating user: ${email} (${validated.name})...`);
+
+    // Normalize role value
+    const normalizedRole = (validated.role || "USER").toString().toUpperCase().trim() === "ADMN" ? "ADMIN" : (validated.role || "USER").toString().toUpperCase().trim();
+
+    // Use Better Auth Admin API to create user
+    // The admin plugin exposes endpoints directly on auth.api (e.g., auth.api.createUser)
+    const res = await (auth.api as any).createUser({
         body: {
-            email: validated.email,
+            email: email,
             password: validated.password,
             name: validated.name,
-        }
+            role: normalizedRole,
+            data: {
+              diaBan: validated.diaBan || ""
+            }
+        },
     });
 
-    if (res.error) {
+    if (res?.error) {
+        console.error("[createUser] Better Auth Error:", res.error);
         return { error: res.error.message || "Lỗi khi tạo tài khoản" };
     }
 
-    // Update metadata fields if signUpEmail didn't handle them
-    await prisma.user.update({
-        where: { email: validated.email },
-        data: {
-            role: validated.role,
-            diaBan: validated.diaBan || null,
-            emailVerified: true
-        }
-    });
+    console.log(`[createUser] Created successfully: ${email}`);
+
+    // Re-verify if needed (signUpEmail does it automatically, admin might not)
+    try {
+        await prisma.user.update({
+            where: { email: email },
+            data: {
+                emailVerified: true
+            }
+        });
+    } catch (verifyErr) {
+        console.warn(`[createUser] Could not set emailVerified for ${email}, but user was created.`);
+    }
 
     revalidatePath("/admin/users");
     await syncReplica();
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
+    console.error("[createUser] Exception:", error);
     if (error instanceof z.ZodError) return { error: error.errors[0].message };
-    return { error: "Lỗi hệ thống khi tạo nhân viên" };
+    return { error: error.message || "Lỗi hệ thống khi tạo nhân viên" };
   }
 }
 
@@ -165,4 +187,36 @@ export async function resetUserPassword(id: string) {
     console.error("Reset pwd err:", error);
     return { error: "Lỗi hệ thống khi reset mật khẩu" };
   }
+}
+
+export async function bulkCreateUsers(users: any[]) {
+    try {
+        const results = {
+            total: users.length,
+            successCount: 0,
+            errorCount: 0,
+            errors: [] as string[]
+        };
+
+        for (const userData of users) {
+            try {
+                const res = await createUser(userData);
+                if (res.success) {
+                    results.successCount++;
+                } else {
+                    results.errorCount++;
+                    results.errors.push(`${userData.email}: ${res.error}`);
+                }
+            } catch (err: any) {
+                results.errorCount++;
+                results.errors.push(`${userData.email}: ${err.message}`);
+            }
+        }
+
+        revalidatePath("/admin/users");
+        await syncReplica();
+        return { success: true, results };
+    } catch (error) {
+        return { error: "Lỗi hệ thống khi tải lên danh sách" };
+    }
 }
