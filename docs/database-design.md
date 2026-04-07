@@ -127,7 +127,7 @@ enum LoaiTinNhan {
 
 ### 3.5 DuAn (Project Master — CORE)
 
-| Field | Type | Constraints | Description |
+| ID | Type | Constraints | Description |
 |-------|------|-------------|-------------|
 | id | Int | PK, auto | |
 | customerId | Int | FK → KhachHang | Khách hàng |
@@ -143,6 +143,10 @@ enum LoaiTinNhan {
 | doanhThuTheoThang | Float? | default: 0 | Mức doanh thu tháng |
 | maHopDong | String? | nullable | Mã hợp đồng |
 | ngayBatDau | DateTime | required | Ngày bắt đầu |
+| ngayKetThuc | DateTime? | nullable | Ngày kết thúc |
+| isTrongDiem | Boolean | default: false | Dự án trọng điểm |
+| isPendingDelete | Boolean | default: false | Cờ xóa mềm (Recycle Bin) |
+| deleteRequestedAt | DateTime? | nullable | Thời điểm yêu cầu xóa |
 | tuan | Int | auto-calc | Week number |
 | thang | Int | auto-calc | 1-12 |
 | quy | Int | auto-calc | 1-4 |

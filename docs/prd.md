@@ -82,6 +82,7 @@ Hệ thống web application quản lý toàn bộ vòng đời dự án từ gi
 
 - Quản lý danh mục (Master Data): Khách hàng, Sản phẩm, Nhân viên
 - Quản lý vòng đời dự án (Project Lifecycle Management)
+- Thùng rác dự án (Recycle Bin - Soft Delete)
 - Nhật ký công việc hàng ngày (Daily Task Logs)
 - Bình luận & trao đổi trên dự án (Project Comments)
 - Chat thời gian thực theo dự án (Real-time Project Chat)
@@ -143,7 +144,8 @@ Hệ thống web application quản lý toàn bộ vòng đời dự án từ gi
 
 | ID | Yêu cầu | Priority |
 |----|---------|----------|
-| FR-05 | Tạo dự án mới: chọn Khách hàng (Search & Select Dropup), Sản phẩm, AM (chính/hỗ trợ), CV (chính/hỗ trợ 1/2), nhập tài chính | P0 |
+| FR-05 | Tạo/Cập nhật dự án: chọn Khách hàng, Sản phẩm (Hỗ trợ Creatable-Select để thêm mới inline), gán AM/CV, nhập tài chính, tick Dự án trọng điểm, và Ngày kết thúc | P0 |
+| FR-05b| Soft Delete (Xóa mềm): Lưu trữ dự án vào Thùng rác đối với Admin (Khôi phục hoặc Xóa vĩnh viễn) thay vì xóa ngay | P1 |
 | FR-06 | Auto-extract Week/Month/Quarter/Year từ `Ngày bắt đầu dự án` | P0 |
 | FR-07 | Danh sách dự án dạng DataGrid: lọc đa chiều, tìm kiếm nhanh, Excel Export | P0 |
 | FR-08 | Trang chi tiết dự án: overview, trạng thái hiện tại, timeline CSKH, thread bình luận | P0 |
@@ -273,10 +275,10 @@ User click "Cập nhật" trên Project List
 |---|------------|---------------|
 | NFR-01 | Performance | Page load < 2 giây cho tất cả trang chính |
 | NFR-02 | Responsiveness | Desktop/Laptop (primary), Tablet portrait (secondary) |
-| NFR-03 | Data Integrity | Ràng buộc FK nghiêm ngặt, không cho phép nhân đôi doanh thu |
-| NFR-04 | Security | Role-based access control (Admin vs User), mật khẩu mã hóa |
-| NFR-05 | Scalability | SQLite cho dev → PostgreSQL cho production |
-| NFR-06 | Availability | Hệ thống hoạt động liên tục trong giờ làm việc |
+| NFR-03 | Data Integrity | Ràng buộc FK nghiêm ngặt, không cho phép nhân đôi doanh tự |
+| NFR-04 | Security | Role-based access control, mật khẩu mã hóa, Cloudflare Tunnels (Zero Trust) |
+| NFR-05 | Scalability | SQLite cục bộ (Dev) → Turso DB/PostgreSQL (Production) bằng Docker container |
+| NFR-06 | Availability | Có sẵn hệ thống backup DB, quản lý cấu hình safe db-reset qua script quản trị |
 
 ---
 
