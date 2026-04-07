@@ -50,23 +50,27 @@ Admin quản lý tài khoản nhân sự: tạo user mới, cập nhật thông 
 
 ### 5. User Actions
 
-- [ ] Edit: cập nhật name, email, diaBan, role
-- [ ] Reset Password: confirm dialog → generate hoặc input mật khẩu mới
-- [ ] Toggle Active: khóa/mở tài khoản (không xóa)
-- [ ] Không cho phép Admin tự khóa chính mình
+- [x] Edit: cập nhật name, email, diaBan, role
+- [x] Reset Password / Toggle Active: khóa/mở tài khoản thông qua Better-Auth Admin API (banned fields)
+- [x] Không cho phép Admin tự khóa chính mình
 
 ### 6. Toast Notifications
 
-- [ ] CRUD success / error messages
-- [ ] "Không thể khóa tài khoản đang đăng nhập"
+- [x] CRUD success / error messages
+- [x] "Không thể khóa tài khoản đang đăng nhập"
+
+### 7. Import Dữ liệu
+
+- [x] Tính năng Bulk Import (Nhập từ file CSV) cho tài khoản nhân viên
 
 ---
 
 ## Tiêu chí hoàn thành
 
-- [ ] Admin tạo/sửa/khóa tài khoản nhân viên
-- [ ] Password được hash trước khi lưu
-- [ ] Role assignment hoạt động đúng
-- [ ] DataTable search + filter (role, địa bàn) + pagination
-- [ ] Admin không thể tự khóa chính mình
-- [ ] User bị khóa không thể đăng nhập
+- [x] Admin tạo/sửa/khóa tài khoản nhân viên
+- [x] Password được hash trước khi lưu
+- [x] Role assignment và role-based visibility hoạt động đúng
+- [x] DataTable search + filter (role, địa bàn) + pagination
+- [x] Admin không thể tự khóa chính mình
+- [x] User bị khóa không thể đăng nhập
+- [x] Import CSV hàng loạt hoạt động ổn định

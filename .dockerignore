@@ -12,6 +12,8 @@ README.md
 .DS_Store
 dev.db
 dev_dump.sql
+data/
+*.db*
 scripts/turso-db
 scripts/diagnostics
 scripts/prisma-tests

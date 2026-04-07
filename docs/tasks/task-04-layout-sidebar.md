@@ -17,7 +17,7 @@ Xây dựng layout chính với Sidebar navigation theo MobiFone theme, responsi
 
 ### 1. Dashboard Layout
 
-- [ ] Tạo `src/app/(dashboard)/layout.tsx`
+- [x] Tạo `src/app/(dashboard)/layout.tsx`
   - Sidebar (left) + Main content (right)
   - Header bar với user info, role badge, sign-out
   - MobiFone gradient: Dark Blue → Light Blue cho sidebar
@@ -25,29 +25,32 @@ Xây dựng layout chính với Sidebar navigation theo MobiFone theme, responsi
 
 ### 2. Sidebar Component
 
-- [ ] Tạo `src/components/layout/sidebar.tsx`
-- [ ] Navigation items (theo PRD Section 7 + routing):
+- [x] Tạo `src/components/layout/sidebar.tsx`
+- [x] Navigation items (theo PRD Section 7 + routing):
 
   | Label | Route | Icon | Role |
   |-------|-------|------|------|
-  | Tổng quan | `/` | LayoutDashboard | ALL |
-  | Dự án | `/du-an` | FolderKanban | ALL |
-  | Nhân sự | `/nhan-su` | Users | ALL |
-  | KPI | `/kpi` | TrendingUp | ALL |
-  | Địa bàn | `/dia-ban` | MapPin | ALL |
-  | --- Quản lý --- | | | ADMIN |
-  | Khách hàng | `/admin/khach-hang` | Building2 | ADMIN |
-  | Sản phẩm | `/admin/san-pham` | Package | ADMIN |
-  | Nhân viên | `/admin/nhan-vien` | UserCog | ADMIN |
-  | Tài khoản | `/admin/users` | Shield | ADMIN |
+  | Dashboard Tổng quan | `/` | LayoutDashboard | ADMIN, USER |
+  | CRM & DS Dự án | `/du-an` | FolderKanban | ALL |
+  | Khách hàng | `/admin/khach-hang` | Building2 | ALL |
+  | Tổng hợp Nhân sự | `/nhan-su` | Users | ADMIN, USER |
+  | Phân tích & KPI | `/kpi` | TrendingUp | ADMIN, USER |
+  | Top Địa bàn | `/dia-ban` | MapPin | ADMIN, USER |
+  | Quản lý AM | `/quan-ly-am` | UserCheck | ADMIN |
+  | Quản lý Chuyên viên | `/quan-ly-cv` | GraduationCap | ADMIN |
+  | --- Quản trị --- | | | |
+  | Sản phẩm | `/admin/san-pham` | Package | ADMIN, USER |
+  | Quản lý User | `/admin/users` | UserCog | ADMIN |
+  | Giao KPI | `/admin/kpi` | Target | ADMIN, USER |
+  | Dự án đã xoá | `/admin/du-an-da-xoa` | Trash2 | ADMIN, USER |
 
-- [ ] Active state highlight cho route hiện tại
-- [ ] Admin section chỉ hiển thị khi role = ADMIN
-- [ ] Collapse/expand sidebar trên tablet
+- [x] Active state highlight cho route hiện tại
+- [x] Admin section chỉ hiển thị khi có quyền hiển thị
+- [x] Collapse/expand sidebar trên tablet
 
 ### 3. Header Component
 
-- [ ] Tạo `src/components/layout/header.tsx`
+- [x] Tạo `src/components/layout/header.tsx`
   - Logo / App title: "MobiFone Project Tracker"
   - Breadcrumb navigation
   - User avatar + tên + role badge
@@ -55,15 +58,15 @@ Xây dựng layout chính với Sidebar navigation theo MobiFone theme, responsi
 
 ### 4. Responsive Design
 
-- [ ] Desktop (≥1024px): Sidebar expanded + full content
-- [ ] Tablet (≥768px): Sidebar collapsible (icon only) + full content
-- [ ] Mobile (<768px): Sidebar ẩn, hiển thị qua hamburger menu (optional — out of scope v1)
+- [x] Desktop (≥1024px): Sidebar expanded + full content
+- [x] Tablet (≥768px): Sidebar collapsible (icon only) + full content
+- [x] Mobile (<768px): Sidebar ẩn, hiển thị qua hamburger menu (optional — out of scope v1)
 
 ### 5. Loading & Error States
 
-- [ ] Tạo `src/app/(dashboard)/loading.tsx` — skeleton loading
-- [ ] Tạo `src/app/(dashboard)/error.tsx` — error boundary
-- [ ] Tạo `src/app/not-found.tsx` — 404 page
+- [x] Tạo `src/app/(dashboard)/loading.tsx` — skeleton loading
+- [x] Tạo `src/app/(dashboard)/error.tsx` — error boundary
+- [x] Tạo `src/app/not-found.tsx` — 404 page
 
 ---
 
