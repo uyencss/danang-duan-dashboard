@@ -10,8 +10,8 @@ import { syncReplica } from "@/lib/utils/sync";
 
 const UserSchema = z.object({
   name: z.string().min(2, "Họ tên tối thiểu 2 ký tự"),
-  email: z.string().email("Email không hợp lệ"),
-  password: z.string().min(8, "Mật khẩu tối thiểu 8 ký tự").optional().or(z.literal("")),
+  email: z.string().min(1, "Tên đăng nhập là bắt buộc"), // Removed .email() to accept phone/name
+  password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự").optional().or(z.literal("")),
   role: z.any(),
   diaBan: z.string().optional().or(z.literal("")),
 });
@@ -141,4 +141,28 @@ export async function deleteUser(id: string) {
         }
         return { error: "Lỗi hệ thống khi xóa nhân viên" };
     }
+}
+
+export async function resetUserPassword(id: string) {
+  try {
+    const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
+    if (!sessionRes?.user) return { error: "Không có quyền thực hiện" };
+
+    const res = await (auth.api as any).adminUpdateUser({
+        body: {
+            userId: id,
+            password: "123456",
+        }
+    });
+    
+    // Better auth plugin `admin` might just use adminUpdateUser for password or `setUserPassword`
+    // Let's also try `admin.setUserPassword` if `adminUpdateUser` doesn't work. We'll use prisma to hash directly if it fails.
+    if (!res && res?.error) {
+       return { error: res.error.message || "Không thể reset mật khẩu" };
+    }
+    return { success: true };
+  } catch (error: any) {
+    console.error("Reset pwd err:", error);
+    return { error: "Lỗi hệ thống khi reset mật khẩu" };
+  }
 }

@@ -46,13 +46,12 @@ import { Trash2, AlertTriangle } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Họ tên tối thiểu 2 ký tự"),
-  email: z.string().email("Email không hợp lệ"),
+  email: z.string().min(1, "Tên đăng nhập là bắt buộc"), // Can be name/phone/email
   password: z.string().optional().or(z.literal("")),
   role: z.nativeEnum(UserRole),
   diaBan: z.string().optional().or(z.literal("")),
 }).refine((data) => {
-    // If not edit, password is required
-    return true; // Simplified for this UI
+    return true; 
 }, {
     message: "Mật khẩu là bắt buộc khi tạo mới",
     path: ["password"],
@@ -69,7 +68,7 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
     defaultValues: {
       name: data?.name || "",
       email: data?.email || "",
-      password: "",
+      password: data ? "" : "123456",
       role: data?.role || UserRole.USER,
       diaBan: data?.diaBan || "",
     },
@@ -81,7 +80,7 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
       form.reset({
         name: data?.name || "",
         email: data?.email || "",
-        password: "",
+        password: data ? "" : "123456",
         role: data?.role || UserRole.USER,
         diaBan: data?.diaBan || "",
       });
@@ -120,7 +119,7 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                <FormField
                 control={form.control}
                 name="name"
@@ -139,9 +138,9 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
                 name="email"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Email *</FormLabel>
+                    <FormLabel>Tên đăng nhập *</FormLabel>
                     <FormControl>
-                        <Input placeholder="email@mobifone.vn" {...field} />
+                        <Input placeholder="Nhập tên/SĐT/Email" {...field} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -157,7 +156,7 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
                     <FormItem>
                     <FormLabel>Mật khẩu mặc định *</FormLabel>
                     <FormControl>
-                        <Input type="password" placeholder="Tối thiểu 8 ký tự" {...field} />
+                        <Input type="password" placeholder="Mật khẩu mặc định" {...field} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -180,6 +179,7 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
                         </FormControl>
                         <SelectContent>
                           <SelectItem value={"ADMIN" as any}>Quản trị viên (Admin)</SelectItem>
+                          <SelectItem value={"USER" as any}>Quản trị viên (Chuyên viên)</SelectItem>
                           <SelectItem value={"AM" as any}>AM</SelectItem>
                           <SelectItem value={"CV" as any}>Chuyên viên (CV)</SelectItem>
                         </SelectContent>

@@ -23,6 +23,8 @@ import {
   Trash2,
   Lock,
   Unlock,
+  Upload,
+  Download,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -35,7 +37,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { deleteUser } from "./actions";
+import { deleteUser, resetUserPassword } from "./actions";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -101,12 +103,15 @@ export function UsersTable({ data }: { data: any[] }) {
             variant="outline" 
             className={
               role === "ADMIN" ? "bg-purple-50 text-purple-700 border-purple-200" : 
+              role === "USER" ? "bg-purple-50 text-purple-700 border-purple-200" :
               role === "AM" ? "bg-blue-50 text-blue-700 border-blue-200" :
               "bg-emerald-50 text-emerald-700 border-emerald-200"
             }
           >
             {role === "ADMIN" ? (
                 <><ShieldCheck className="size-3 mr-1" /> Quản trị</>
+            ) : role === "USER" ? (
+                <><ShieldCheck className="size-3 mr-1" /> Quản trị (CV)</>
             ) : role === "AM" ? (
                 <><ShieldAlert className="size-3 mr-1" /> AM</>
             ) : (
@@ -168,7 +173,13 @@ export function UsersTable({ data }: { data: any[] }) {
               >
                 <Pencil className="mr-2 h-4 w-4" /> Chỉnh sửa
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+               onClick={async () => {
+                 const res = await resetUserPassword(user.id);
+                 if (res.success) toast.success("Đã reset mật khẩu về 123456");
+                 else toast.error(res.error);
+               }}
+              >
                 <Lock className="mr-2 h-4 w-4" /> Reset mật khẩu
               </DropdownMenuItem>
               
@@ -213,15 +224,47 @@ export function UsersTable({ data }: { data: any[] }) {
           />
         </div>
         
-        <Button 
-          className="bg-gradient-to-r from-[#0058bc] to-blue-500 hover:from-blue-600 hover:to-cyan-500 text-white font-bold shadow-lg shadow-blue-500/30 rounded-xl border-none"
-          onClick={() => {
-            setSelectedUser(null);
-            setOpenForm(true);
-          }}
-        >
-          <UserPlus className="mr-2 size-4" /> Tạo tài khoản mới
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+            <a href="/Mau_Danh_Sach_Nhan_Vien.csv" download>
+                <Button 
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl border-green-200 hover:bg-green-50 text-green-700 hover:text-green-800 h-10 px-4 font-bold flex items-center shadow-sm"
+                >
+                    <Download className="mr-2 size-4" />
+                    <span className="hidden sm:inline">Mẫu Excel</span>
+                </Button>
+            </a>
+            
+            <Button 
+                variant="outline"
+                className="rounded-xl border-gray-200 hover:bg-gray-50 h-10 px-4 font-bold flex items-center shadow-sm relative group"
+            >
+                <Upload className="mr-2 size-4 text-gray-500 group-hover:text-blue-500 transition-colors" />
+                <span className="hidden sm:inline">Tải lên danh sách</span>
+                <span className="sm:hidden">Tải lên</span>
+                <input 
+                    type="file" 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                            toast.success(`Đã nhận file ${file.name}. Tính năng đang hoàn thiện.`);
+                        }
+                    }}
+                />
+            </Button>
+            <Button 
+            className="bg-gradient-to-r from-[#0058bc] to-blue-500 hover:from-blue-600 hover:to-cyan-500 text-white font-bold shadow-lg shadow-blue-500/30 rounded-xl border-none h-10"
+            onClick={() => {
+                setSelectedUser(null);
+                setOpenForm(true);
+            }}
+            >
+            <UserPlus className="mr-2 size-4" /> Tạo tài khoản mới
+            </Button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
