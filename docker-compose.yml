@@ -1,15 +1,17 @@
 services:
-  web:
+  web-1:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: danang-dashboard-web
+    container_name: danang-dashboard-web-1
     restart: always
     environment:
       - TZ=Asia/Ho_Chi_Minh
-      # Make sure your container reads the required environment variables.
-      # You can supply them natively in the shell or via .env file to docker-compose.
       - DATABASE_URL=${DATABASE_URL}
+      - TURSO_DATABASE_URL=${TURSO_DATABASE_URL}
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN}
+      - TURSO_SYNC_PERIOD=${TURSO_SYNC_PERIOD:-60}
+      - LOCAL_REPLICA_PATH=/app/data/local-replica.db
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
       - BETTER_AUTH_URL=${BETTER_AUTH_URL}
@@ -17,6 +19,31 @@ services:
       - NEXT_PUBLIC_ABLY_KEY=${NEXT_PUBLIC_ABLY_KEY}
     ports:
       - "3000:3000"
+    volumes:
+      - replica-data-1:/app/data
+
+  web-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: danang-dashboard-web-2
+    restart: always
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - DATABASE_URL=${DATABASE_URL}
+      - TURSO_DATABASE_URL=${TURSO_DATABASE_URL}
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN}
+      - TURSO_SYNC_PERIOD=${TURSO_SYNC_PERIOD:-60}
+      - LOCAL_REPLICA_PATH=/app/data/local-replica.db
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL}
+      - ABLY_API_KEY=${ABLY_API_KEY}
+      - NEXT_PUBLIC_ABLY_KEY=${NEXT_PUBLIC_ABLY_KEY}
+    ports:
+      - "3001:3000"
+    volumes:
+      - replica-data-2:/app/data
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -28,4 +55,9 @@ services:
       tunnel --no-autoupdate run
       --token ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
-      - web
+      - web-1
+      - web-2
+
+volumes:
+  replica-data-1:
+  replica-data-2:

@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { PhanLoaiKH } from "@prisma/client";
+import { syncReplica } from "@/lib/utils/sync";
 
 // Zod Schema for Validation
 const KhachHangSchema = z.object({
@@ -75,6 +76,7 @@ export async function createKhachHang(data: any) {
     });
 
     revalidatePath("/admin/khach-hang");
+    await syncReplica();
     return { success: true };
   } catch (error: any) {
     console.error("Create KhachHang Error:", error);
@@ -103,6 +105,7 @@ export async function updateKhachHang(id: number, data: any) {
     });
 
     revalidatePath("/admin/khach-hang");
+    await syncReplica();
     return { success: true };
   } catch (error: any) {
     console.error("Update KhachHang Error:", error);
@@ -120,6 +123,7 @@ export async function toggleKhachHangStatus(id: number, isActive: boolean) {
       data: { isActive },
     });
     revalidatePath("/admin/khach-hang");
+    await syncReplica();
     return { success: true };
   } catch (error) {
     return { error: "Lỗi khi thay đổi trạng thái" };
@@ -142,6 +146,7 @@ export async function deleteKhachHang(id: number) {
     });
 
     revalidatePath("/admin/khach-hang");
+    await syncReplica();
     return { success: true };
   } catch (error) {
     return { error: "Lỗi khi xóa khách hàng" };

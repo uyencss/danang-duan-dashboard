@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { ablyServerClient } from "@/lib/realtime";
 import { z } from "zod";
+import { syncReplica } from "@/lib/utils/sync";
 
 const CHAT_CHANNEL = (projectId: number) => `project-chat-${projectId}`;
 
@@ -98,7 +99,7 @@ export async function sendMessage(data: { projectId: number; content: string }) 
         updatedAt: message.updatedAt.toISOString(),
       });
     }
-
+    await syncReplica();
     return { success: true, data: message };
   } catch (error: any) {
     return { error: `Lỗi: ${error?.message}` };
@@ -148,7 +149,7 @@ export async function editMessage(messageId: number, content: string) {
         updatedAt: updated.updatedAt.toISOString(),
       });
     }
-
+    await syncReplica();
     return { success: true, data: updated };
   } catch (error: any) {
     return { error: `Lỗi: ${error?.message}` };
@@ -178,7 +179,7 @@ export async function deleteMessage(messageId: number) {
       const channel = ablyServerClient.channels.get(CHAT_CHANNEL(existing.projectId));
       await channel.publish("delete-message", { messageId });
     }
-
+    await syncReplica();
     return { success: true };
   } catch (error: any) {
     return { error: `Lỗi: ${error?.message}` };

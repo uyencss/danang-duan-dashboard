@@ -1,6 +1,6 @@
 # Database Design — MobiFone Project Tracker
-**Version:** 1.1.0 | **Updated:** 2026-04-04  
-**ORM:** Prisma v7.6.x | **Database:** SQLite (dev) → PostgreSQL (prod)
+**Version:** 1.2.0 | **Updated:** 2026-04-07  
+**ORM:** Prisma v7.6.x | **Database:** SQLite (dev) → Turso Embedded Replicas (prod)
 
 ---
 
@@ -261,15 +261,62 @@ export function isNeedsCare(lastCare: Date | null): boolean {
 
 ## 5. Migration Strategy
 
+### 5.1 Development (Direct SQLite)
 ```bash
-# Development (SQLite)
 npx prisma migrate dev --name init
+```
 
-# Production (PostgreSQL)
-# 1. Change provider to "postgresql"
-# 2. Update DATABASE_URL
+### 5.2 Production (Turso Embedded Replicas)
+```bash
+# Prisma CLI still connects to remote Turso for migrations
+# DATABASE_URL points to remote libsql:// URL
 npx prisma migrate deploy
 ```
+
+### 5.3 Embedded Replica Architecture
+
+Production sử dụng **Turso Embedded Replicas** thay vì kết nối trực tiếp:
+
+| Aspect | Detail |
+|--------|--------|
+| **Local File** | `./data/local-replica.db` — SQLite file trên disk |
+| **Remote Primary** | Turso Cloud (AWS ap-northeast-1) |
+| **Reads** | Từ local file — zero latency, miễn phí, không giới hạn |
+| **Writes** | Forward lên remote primary → sync ngược về local |
+| **Sync Period** | Tự động mỗi 60 giây (configurable via `TURSO_SYNC_PERIOD`) |
+| **Bandwidth** | < 3GB/tháng (free tier), ước tính sử dụng ~2MB/tháng |
+| **Multi-Instance** | 2 instances, mỗi instance có replica riêng, eventually consistent |
+
+**Environment Variables:**
+```env
+TURSO_DATABASE_URL="libsql://xxx.turso.io"    # Remote primary
+TURSO_AUTH_TOKEN="eyJhbG..."                   # Auth token
+LOCAL_REPLICA_PATH="file:./data/local-replica.db"  # Local file
+TURSO_SYNC_PERIOD=60                           # Auto-sync interval
+DATABASE_URL="libsql://xxx?authToken=xxx"      # Legacy — Prisma CLI only
+```
+
+**Client Configuration:**
+```typescript
+import { createClient } from "@libsql/client";
+
+const libsqlClient = createClient({
+  url: process.env.LOCAL_REPLICA_PATH!,      // Read from local
+  syncUrl: process.env.TURSO_DATABASE_URL!,  // Sync with remote
+  authToken: process.env.TURSO_AUTH_TOKEN!,
+  syncPeriod: Number(process.env.TURSO_SYNC_PERIOD) || 60,
+});
+```
+
+**Consistency Model:**
+
+| Scenario | Behavior |
+|----------|----------|
+| Read sau write (cùng instance) | Consistent ngay (manual `sync()` after write) |
+| Read sau write (khác instance) | Eventually consistent (≤ `syncPeriod` seconds) |
+| Chat messages | Real-time qua Ably — không phụ thuộc sync |
+
+---
 
 ## 6. Seed Data
 

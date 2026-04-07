@@ -6,7 +6,7 @@
 
 ## Tổng quan
 
-18 tasks chia theo 5 phases, mỗi task map trực tiếp đến functional requirements (FR) trong PRD.
+24 tasks chia theo 6 phases, mỗi task map trực tiếp đến functional requirements (FR) trong PRD.
 
 ---
 
@@ -53,6 +53,12 @@
 | 17 | [Thông báo Thời gian thực](./task-17-realtime-notifications.md) | NFR-03 | P1 | ✅ Done |
 | 18 | [Chat Dự án Thời gian thực](./task-18-project-chat.md) | FR-19 ~ FR-22 | P1 | ⏳ Todo |
 
+## Phase 6 — Infrastructure: Embedded Replicas
+
+| # | Task | FR Ref | Priority | Status |
+|---|------|--------|----------|--------|
+| 23 | [Turso Embedded Replicas & Multi-Instance Sync](./task-23-turso-embedded-replicas.md) | NFR-05, NFR-06, NFR-07 | P0 | ⏳ Todo |
+
 ---
 
 ## Dependency Graph
@@ -63,9 +69,11 @@ Phase 2: [04] → [05, 06, 07] (parallel)
 Phase 3: [08] → [09] → [10, 11] (parallel) → [12]
 Phase 4: [13, 14, 15, 16] (parallel, depend on Phase 3 data)
 Phase 5: [17] → [18] (chat depends on real-time infra from 17)
+Phase 6: [23] (depends on Phase 1 DB setup, independent of Phases 2-5)
 ```
 
 > **Note:** View 2 (CRM & DS Dự án) đã được tích hợp vào Task 09 (Danh sách Dự án) vì về bản chất là cùng một trang DataGrid.
+> **Note:** Task 23 (Embedded Replicas) có thể thực hiện song song với các Phase khác vì chỉ thay đổi tầng data access.
 
 ---
 

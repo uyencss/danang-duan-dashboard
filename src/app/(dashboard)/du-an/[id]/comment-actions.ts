@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { ablyServerClient } from "@/lib/realtime";
+import { syncReplica } from "@/lib/utils/sync";
 
 /**
  * Tạo bình luận mới
@@ -77,6 +78,7 @@ export async function createComment(data: { projectId: number, content: string, 
         }
 
         revalidatePath(`/du-an/${data.projectId}`);
+        await syncReplica();
         return { success: true, data: comment };
     } catch (error: any) {
         console.error("Create Comment Error:", error);
@@ -119,6 +121,7 @@ export async function deleteComment(commentId: number, projectId: number) {
         });
 
         revalidatePath(`/du-an/${projectId}`);
+        await syncReplica();
         return { success: true };
     } catch (error: any) {
         console.error("Delete Comment Error:", error);

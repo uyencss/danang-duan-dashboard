@@ -7,6 +7,7 @@ import { LinhVuc, TrangThaiDuAn, PhanLoaiKH } from "@prisma/client";
 import { extractTimeFields } from "@/lib/utils/time-extract";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { syncReplica } from "@/lib/utils/sync";
 
 // ── Schema for the NEW creation flow ────────────────────────────────
 // Customer can be an existing ID or a new inline entry
@@ -193,6 +194,7 @@ export async function createDuAn(data: any) {
     revalidatePath("/du-an");
     revalidatePath("/admin/khach-hang");
     revalidatePath("/admin/san-pham");
+    await syncReplica();
     return { success: true, id: project.id };
   } catch (error) {
     if (error instanceof z.ZodError) return { error: error.errors[0].message };
@@ -231,6 +233,7 @@ export async function updateDuAn(id: number, data: any) {
 
         revalidatePath("/du-an");
         revalidatePath(`/du-an/${id}`);
+        await syncReplica();
         return { success: true };
     } catch (error) {
         if (error instanceof z.ZodError) return { error: error.errors[0].message };
@@ -250,6 +253,7 @@ export async function updateNhatKy(id: number, content: string, status?: TrangTh
             }
         });
         revalidatePath("/du-an/[id]", "page");
+        await syncReplica();
         return { success: true };
     } catch (error) {
         console.error("Update Log Error:", error);
@@ -263,6 +267,7 @@ export async function deleteNhatKy(id: number) {
             where: { id }
         });
         revalidatePath("/du-an/[id]", "page");
+        await syncReplica();
         return { success: true };
     } catch (error) {
         console.error("Delete Log Error:", error);
@@ -441,6 +446,7 @@ export async function createTaskLog(data: {
 
     revalidatePath("/du-an");
     revalidatePath(`/du-an/${data.projectId}`);
+    await syncReplica();
     return { success: true, data: result };
   } catch (error: any) {
     console.error("Create Task Log Error:", error);
@@ -501,6 +507,7 @@ export async function requestDeleteDuAn(id: number) {
       data: { isPendingDelete: true, deleteRequestedAt: new Date() }
     });
     revalidatePath("/du-an");
+    await syncReplica();
     return { success: true };
   } catch (error) {
     return { error: "Xoá thất bại" };
@@ -518,6 +525,7 @@ export async function approveDeleteDuAn(id: number) {
     await prisma.duAn.delete({ where: { id }});
     revalidatePath("/admin/du-an-da-xoa");
     revalidatePath("/du-an");
+    await syncReplica();
     return { success: true };
   } catch (error) {
     return { error: "Xoá vĩnh viễn thất bại" };
@@ -538,6 +546,7 @@ export async function restoreDuAn(id: number) {
     });
     revalidatePath("/admin/du-an-da-xoa");
     revalidatePath("/du-an");
+    await syncReplica();
     return { success: true };
   } catch (error) {
     return { error: "Khôi phục thất bại" };

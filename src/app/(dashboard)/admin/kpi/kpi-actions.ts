@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { syncReplica } from "@/lib/utils/sync";
 
 export async function getKpiTargets(year: number) {
     try {
@@ -29,6 +30,7 @@ export async function updateKpiTarget(year: number, month: number, data: { anNin
                 ...data
             }
         });
+        await syncReplica();
         return { success: true };
     } catch (error: any) {
         return { error: error.message };

@@ -1,38 +1,49 @@
 # System Architecture — MobiFone Project Tracker
-**Version:** 1.1.0 | **Updated:** 2026-04-04
+**Version:** 1.2.0 | **Updated:** 2026-04-07
 
 ---
 
 ## 1. Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    CLIENT (Browser)                      │
-│   React 19.2 + Tailwind CSS 4 + shadcn/ui + Recharts   │
-└──────────────────────┬──────────────────────────────────┘
-                       │ HTTPS
-┌──────────────────────▼──────────────────────────────────┐
-│                  NEXT.JS 16 SERVER                       │
-│  ┌─────────────┐ ┌──────────────┐ ┌──────────────────┐  │
-│  │  proxy.ts   │ │ App Router   │ │  Server Actions  │  │
-│  │ (Auth Gate) │ │ (Pages/API)  │ │    SSE / Chat    │  │
-│  │             │ │              │ │     Streams      │  │
-│  └──────┬──────┘ └──────┬───────┘ └────────┬─────────┘  │
-│         │               │                  │             │
-│  ┌──────▼───────────────▼──────────────────▼─────────┐  │
-│  │              Service Layer (Business Logic)        │  │
-│  │  projectService │ analyticsService │ chatService   │  │
-│  └──────────────────────┬────────────────────────────┘  │
-│                         │                                │
-│  ┌──────────────────────▼────────────────────────────┐  │
-│  │            Prisma Client v7 (ORM)                  │  │
-│  └──────────────────────┬────────────────────────────┘  │
-└─────────────────────────┼────────────────────────────────┘
-                          │
-           ┌──────────────▼──────────────┐
-           │   SQLite (dev) / PostgreSQL  │
-           │        (production)          │
-           └─────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                    CLIENT (Browser)                       │
+│    React 19.2 + Tailwind CSS 4 + shadcn/ui + Recharts   │
+└──────────────────────┬───────────────────────────────────┘
+                       │ HTTPS (via Cloudflare Tunnel)
+┌──────────────────────▼───────────────────────────────────┐
+│              NEXT.JS 16 SERVER (Instance 1 / 2)          │
+│  ┌─────────────┐ ┌──────────────┐ ┌──────────────────┐   │
+│  │  proxy.ts   │ │ App Router   │ │  Server Actions  │   │
+│  │ (Auth Gate) │ │ (Pages/API)  │ │    SSE / Chat    │   │
+│  └──────┬──────┘ └──────┬───────┘ └────────┬─────────┘   │
+│         │               │                  │              │
+│  ┌──────▼───────────────▼──────────────────▼──────────┐   │
+│  │              Service Layer (Business Logic)         │   │
+│  │  projectService │ analyticsService │ chatService    │   │
+│  └──────────────────────┬─────────────────────────────┘   │
+│                         │                                 │
+│  ┌──────────────────────▼─────────────────────────────┐   │
+│  │            Prisma Client v7 (ORM)                   │   │
+│  │         + @prisma/adapter-libsql                    │   │
+│  └──────────────────────┬─────────────────────────────┘   │
+│                         │                                 │
+│  ┌──────────────────────▼─────────────────────────────┐   │
+│  │          libSQL Client (Embedded Replica)           │   │
+│  │  ┌─────────────┐         ┌──────────────────────┐  │   │
+│  │  │ READ (local)│         │ WRITE (→ remote)     │  │   │
+│  │  │ local.db    │         │ forwarded to Turso   │  │   │
+│  │  │ (0 latency) │         │ cloud primary        │  │   │
+│  │  └──────▲──────┘         └──────────┬───────────┘  │   │
+│  │         │ auto-sync (60s)           │              │   │
+│  └─────────┼───────────────────────────┼──────────────┘   │
+└────────────┼───────────────────────────┼──────────────────┘
+             │                           │
+             │         ┌─────────────────▼──────────────┐
+             └─────────│      Turso Cloud Primary       │
+                       │  (AWS ap-northeast-1 — remote) │
+                       │  Syncs changes to all replicas │
+                       └────────────────────────────────┘
 ```
 
 ---
@@ -49,7 +60,8 @@ Hệ thống sử dụng **Layered Monolith** pattern trong Next.js 16 App Route
 | **Server Actions** | `src/actions/` | Direct server mutations |
 | **Real-time** | `src/app/api/*/stream/` | SSE streams for chat & notifications |
 | **Service** | `src/lib/services/` | Business logic, validation |
-| **Data Access** | `src/lib/prisma.ts` | Prisma Client, DB queries |
+| **Data Access** | `src/lib/prisma.ts` | Prisma Client + libSQL Embedded Replica |
+| **Sync** | `src/lib/utils/sync.ts` | Replica sync utilities (syncReplica, withSync) |
 | **Database** | `prisma/` | Schema, migrations, seed |
 
 ---
@@ -148,7 +160,7 @@ danang-dashboard/
 │   │       ├── StatusBadge.tsx
 │   │       └── LoadingSkeleton.tsx
 │   ├── lib/
-│   │   ├── prisma.ts              # Prisma singleton
+│   │   ├── prisma.ts              # Prisma + libSQL Embedded Replica singleton
 │   │   ├── auth.ts                # Better Auth config
 │   │   ├── services/
 │   │   │   ├── project.service.ts
@@ -161,7 +173,8 @@ danang-dashboard/
 │   │       ├── chatUnread.ts      # Unread message tracking
 │   │       ├── dateExtract.ts     # Week/Month/Quarter/Year
 │   │       ├── formatters.ts      # Currency, date formatting
-│   │       └── permissions.ts     # Role-based access helpers
+│   │       ├── permissions.ts     # Role-based access helpers
+│   │       └── sync.ts           # Turso Embedded Replica sync utilities
 │   ├── hooks/
 │   │   ├── use-project-chat.ts    # Chat state & SSE connection
 │   │   ├── use-typing-indicator.ts # Typing broadcast hook
@@ -196,35 +209,50 @@ danang-dashboard/
 | **Chat UI** | Client Component (SSE) | ProjectChat, ChatInput |
 | **Typing/Presence** | Client Component (SSE) | TypingIndicator, OnlineUsers |
 
-### 4.2 Data Flow
+### 4.2 Data Flow (Embedded Replica)
 
 ```
-User Action
+// READ FLOW — Zero Latency
+User Action (read)
     │
     ▼
 Client Component (React 19)
     │
-    ├── Server Action (mutation)  ──→  Service Layer ──→ Prisma ──→ DB
-    │                                                       │
-    │                                                 revalidatePath()
-    │
-    └── Route Handler (read)  ──→  Service Layer ──→ Prisma ──→ DB
-                                                       │
-                                                 JSON Response
+    └── Route Handler / Server Component
+            ──→ Service Layer
+                ──→ Prisma
+                    ──→ libSQL Client
+                        ──→ local-replica.db (microsecond reads, FREE)
+                            │
+                      JSON Response
 
-// Real-time Chat Flow
-User types message
+// WRITE FLOW — Forward to Cloud + Sync Back
+User Action (mutation)
     │
     ▼
-Client Component → Server Action (sendMessage) → Prisma → DB
-    │                                                │
-    │                                          SSE Broadcast
-    │                                                │
-    ▼                                                ▼
-SSE EventSource ← ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  SSE Stream
+Client Component → Server Action
+    ──→ Service Layer
+        ──→ Prisma
+            ──→ libSQL Client
+                ──→ WRITE forwarded to Turso Cloud Primary
+                        │
+                  syncReplica() ← force immediate sync
+                        │
+                  revalidatePath()
+
+// CROSS-INSTANCE SYNC
+Instance A writes ──→ Turso Cloud
+                        │
+                  auto-sync (every 60s)
+                        │
+                        ▼
+                  Instance B local-replica.db updated
+
+// Real-time Chat Flow (unchanged — uses Ably, not DB polling)
+User types message → Server Action → Prisma → DB + Ably broadcast
     │
     ▼
-Update React State (new message appears instantly)
+Ably subscription ← real-time delivery to all clients
 ```
 
 ### 4.3 Caching Strategy (Next.js 16 `use cache`)
@@ -422,32 +450,97 @@ export function handleApiError(error: unknown) {
 
 ---
 
-## 9. Deployment Architecture
+## 9. Deployment Architecture (Multi-Instance + Embedded Replicas)
 
 ```
-          ┌──────────────────┐
-          │   Vercel / VPS   │
-          │  (Next.js 16)    │
-          │                  │
-          │  ┌────────────┐  │
-          │  │ Turbopack   │  │
-          │  │ Build       │  │
-          │  └──────┬─────┘  │
-          │         │        │
-          │  ┌──────▼─────┐  │
-          │  │ Node.js    │  │
-          │  │ Runtime    │  │
-          │  └──────┬─────┘  │
-          └─────────┼────────┘
-                    │
-          ┌─────────▼────────┐
-          │   PostgreSQL     │
-          │  (Neon/Supabase) │
-          └──────────────────┘
+                    ┌──────────────────────────────────┐
+                    │      Cloudflare Tunnel (HTTPS)   │
+                    └──────────┬───────────────────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              ▼                                 ▼
+┌──────────────────────┐          ┌──────────────────────┐
+│  Instance 1 (VPS)    │          │  Instance 2 (VPS)    │
+│  Next.js 16 :3000    │          │  Next.js 16 :3001    │
+│                      │          │                      │
+│  ┌────────────────┐  │          │  ┌────────────────┐  │
+│  │ Node.js 22     │  │          │  │ Node.js 22     │  │
+│  │ Runtime        │  │          │  │ Runtime        │  │
+│  └───────┬────────┘  │          │  └───────┬────────┘  │
+│          │           │          │          │           │
+│  ┌───────▼────────┐  │          │  ┌───────▼────────┐  │
+│  │ libSQL Client  │  │          │  │ libSQL Client  │  │
+│  │ (Emb. Replica) │  │          │  │ (Emb. Replica) │  │
+│  └───┬───────┬────┘  │          │  └───┬───────┬────┘  │
+│      │       │       │          │      │       │       │
+│  ┌───▼──┐ ┌──▼────┐  │          │  ┌───▼──┐ ┌──▼────┐  │
+│  │ READ │ │ WRITE │  │          │  │ READ │ │ WRITE │  │
+│  │local │ │→cloud │  │          │  │local │ │→cloud │  │
+│  └──────┘ └───┬───┘  │          │  └──────┘ └───┬───┘  │
+│       ▲       │      │          │       ▲       │      │
+│  local.db     │      │          │  local.db     │      │
+│  (volume)     │      │          │  (volume)     │      │
+└───────────────┼──────┘          └───────────────┼──────┘
+                │                                 │
+                │     writes forwarded            │
+                ▼                                 ▼
+          ┌───────────────────────────────────────────┐
+          │          Turso Cloud Primary               │
+          │      (AWS ap-northeast-1 — remote)         │
+          │                                            │
+          │  ← auto-sync changes to all replicas →     │
+          │          (every 60s, configurable)          │
+          └────────────────────────────────────────────┘
 ```
 
-| Env | Host | DB | URL |
-|-----|------|-----|-----|
-| Dev | localhost:3000 | SQLite | file:./dev.db |
-| Staging | Vercel Preview | Neon PostgreSQL | branch DB |
-| Production | Vercel / VPS | PostgreSQL | production DB |
+| Env | Host | DB | Read Source | Write Target |
+|-----|------|----|-------------|------|
+| Dev | localhost:3000 | SQLite (direct) | file:./dev.db | file:./dev.db |
+| Production (Instance 1) | Docker :3000 | Turso Embedded Replica | local-replica.db | Turso Cloud |
+| Production (Instance 2) | Docker :3001 | Turso Embedded Replica | local-replica.db | Turso Cloud |
+
+---
+
+## 10. Embedded Replica Subsystem
+
+### 10.1 Connection Configuration
+
+```typescript
+// src/lib/prisma.ts — Dual-mode support
+import { createClient, type Client } from "@libsql/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaClient } from "@prisma/client";
+
+export let libsqlClient: Client;
+
+function createLibSqlClient() {
+  const useEmbeddedReplica = process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN;
+  
+  if (useEmbeddedReplica) {
+    // Production: Embedded Replica
+    return createClient({
+      url: process.env.LOCAL_REPLICA_PATH || "file:./data/local-replica.db",
+      syncUrl: process.env.TURSO_DATABASE_URL!,
+      authToken: process.env.TURSO_AUTH_TOKEN!,
+      syncPeriod: Number(process.env.TURSO_SYNC_PERIOD) || 60,
+    });
+  }
+  
+  // Development: Direct connection
+  return createClient({ url: process.env.DATABASE_URL! });
+}
+```
+
+### 10.2 Sync Strategy
+
+| Trigger | Method | When |
+|---------|--------|----- |
+| Automatic | `syncPeriod: 60` | Every 60 seconds (configurable) |
+| Manual | `libsqlClient.sync()` | After every write operation |
+| Startup | `scripts/init-replica.ts` | Container first boot |
+
+### 10.3 Bandwidth Budget
+
+| Monthly Limit (Free Tier) | Estimated Usage | Utilization |
+|--------------------------|-----------------|-------------|
+| 3GB (3,072 MB) | ~2 MB (2 instances) | 0.07% |

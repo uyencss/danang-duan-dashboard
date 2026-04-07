@@ -6,6 +6,7 @@ import { z } from "zod";
 import { UserRole } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { syncReplica } from "@/lib/utils/sync";
 
 const UserSchema = z.object({
   name: z.string().min(2, "Họ tên tối thiểu 2 ký tự"),
@@ -67,6 +68,7 @@ export async function createUser(data: any) {
     });
 
     revalidatePath("/admin/users");
+    await syncReplica();
     return { success: true };
   } catch (error) {
     if (error instanceof z.ZodError) return { error: error.errors[0].message };
@@ -89,6 +91,7 @@ export async function updateUser(id: string, data: any) {
     });
 
     revalidatePath("/admin/users");
+    await syncReplica();
     return { success: true };
   } catch (error) {
     if (error instanceof z.ZodError) return { error: error.errors[0].message };
@@ -109,6 +112,7 @@ export async function toggleUserStatus(id: string, currentActive: boolean) {
     });
     
     revalidatePath("/admin/users");
+    await syncReplica();
     return { success: true };
   } catch (error) {
     console.error("Toggle error:", error);
@@ -128,6 +132,7 @@ export async function deleteUser(id: string) {
         });
 
         revalidatePath("/admin/users");
+        await syncReplica();
         return { success: true };
     } catch (error: any) {
         console.error("Delete error:", error);

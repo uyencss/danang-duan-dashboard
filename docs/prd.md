@@ -4,8 +4,8 @@
 
 ---
 
-**Version:** 1.2.0  
-**Date:** 2026-04-04  
+**Version:** 1.3.0  
+**Date:** 2026-04-07  
 **Product Manager:** Trung tâm Kinh doanh Giải pháp số - MobiFone Đà Nẵng  
 **Status:** Draft
 
@@ -277,8 +277,10 @@ User click "Cập nhật" trên Project List
 | NFR-02 | Responsiveness | Desktop/Laptop (primary), Tablet portrait (secondary) |
 | NFR-03 | Data Integrity | Ràng buộc FK nghiêm ngặt, không cho phép nhân đôi doanh tự |
 | NFR-04 | Security | Role-based access control, mật khẩu mã hóa, Cloudflare Tunnels (Zero Trust) |
-| NFR-05 | Scalability | SQLite cục bộ (Dev) → Turso DB/PostgreSQL (Production) bằng Docker container |
+| NFR-05 | Scalability | SQLite cục bộ (Dev) → Turso Embedded Replicas (Production) bằng Docker container, hỗ trợ multi-instance |
 | NFR-06 | Availability | Có sẵn hệ thống backup DB, quản lý cấu hình safe db-reset qua script quản trị |
+| NFR-07 | Embedded Replicas | Sử dụng Turso Embedded Replicas cho zero-latency reads — file SQLite cục bộ tự đồng bộ từ remote Turso primary. Reads miễn phí, không giới hạn. Writes forward lên cloud. Bandwidth sync < 3GB/tháng (free tier) |
+| NFR-08 | Multi-Instance | Hỗ trợ 2 instances chạy đồng thời với eventually-consistent data (sync period ≤ 60s). Mỗi instance có replica riêng, Docker volume persist qua restarts |
 
 ---
 
@@ -293,6 +295,7 @@ User click "Cập nhật" trên Project List
 | **Phase 3** | Project Master & Task Logs | Form tạo dự án (Search & Select), Project List, 1-Click Update modal, Detail page (Timeline + Comments), 15-day Smart Alert | ⏳ Todo |
 | **Phase 4** | Analytics & Dashboards | 5 Dashboard views với Recharts: Tổng quan, CRM, Nhân sự, KPI, Địa bàn | ⏳ Todo |
 | **Phase 5** | Real-time & Chat | Thông báo thời gian thực (SSE/Pusher), Chat channel per project với typing indicator & online presence | ⏳ Todo |
+| **Phase 6** | Embedded Replicas & Multi-Instance | Turso Embedded Replicas cho zero-latency reads. 2 Docker instances với local SQLite sync. Sync utilities, health checks | ⏳ Todo |
 
 ---
 
@@ -320,6 +323,16 @@ User click "Cập nhật" trên Project List
 - [ ] Không có dữ liệu dự án/doanh thu bị nhân đôi
 - [ ] Ràng buộc FK hoạt động đúng (xóa KH → không được xóa nếu còn dự án liên quan)
 - [ ] Auto-extract Tuần/Tháng/Quý/Năm chính xác từ ngày bắt đầu
+
+### Infrastructure — Embedded Replicas
+
+- [ ] Reads được phục vụ từ local SQLite replica (latency < 1ms)
+- [ ] Writes được forward lên Turso cloud và sync ngược về local
+- [ ] 2 instances chạy đồng thời, dữ liệu nhất quán sau sync period (≤ 60s)
+- [ ] Docker volumes persist local replica file qua container restarts
+- [ ] Prisma CLI migrations vẫn chạy đúng với remote Turso
+- [ ] Sync bandwidth < 3GB/tháng (free tier limit)
+- [ ] Health check script báo cáo trạng thái sync chính xác
 
 ---
 
