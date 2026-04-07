@@ -59,6 +59,15 @@ npm run dev
   - `npm run seed`: Safe seeding (skips existing data).
   - `npm run seed:reset`: Destructive reset and re-seed (with mandatory backups).
 
+## Multi-Server Deployment (Tailscale & GitHub Actions)
+
+This project has a fully automated multi-instance CI/CD pipeline set up via GitHub Actions.
+
+- **Auto-Deployment**: Pushes to `master` trigger an SSH deployment utilizing the GitHub Actions runner securely connected to your Tailscale network.
+- **Auto-Provisioning**: The GitHub Action dynamically recreates the `.env` file on destination servers using variables stored in GitHub Secrets. If a target machine is completely new, it automatically clones the repository and bootstraps the environment.
+- **Port Conflict & Security**: Host port bindings (`3000:3000`) have been removed from `docker-compose.yml`. The UI container connects exclusively to the Cloudflare Tunnel via internal Docker networking.
+- **Load Balancing (Deterministic Build IDs)**: Next.js generates static asset paths identical to the `BUILD_ID`. To prevent 404s when Cloudflare load-balances user requests across multiple containers, the GitHub Action overrides the Build ID to be the active Git commit SHA. This ensures CSS and chunk hashes are perfectly identical across all independent servers.
+
 ## Learn More
 
 - [Next.js Documentation](https://nextjs.org/docs)
