@@ -12,44 +12,59 @@ import {
   Building2,
   Package,
   UserCog,
-  Shield,
   ChevronLeft,
   Menu,
   PlusCircle,
   UserCheck,
   GraduationCap,
   Target,
-  Globe,
   Trash2,
 } from "lucide-react";
+
+import type { AppRole } from "@/lib/auth-utils";
 
 interface SidebarItem {
   label: string;
   href: string;
   icon: React.ElementType;
-  role?: "ADMIN" | "USER" | "ALL";
+  /** Roles that can see this item. If undefined or empty, all roles can see it. */
+  allowedRoles?: AppRole[];
 }
 
+// Main nav items — role-based visibility
 const mainNavItems: SidebarItem[] = [
-  { label: "Dashboard Tổng quan", href: "/", icon: LayoutDashboard, role: "ADMIN" },
-  { label: "CRM & DS Dự án", href: "/du-an", icon: FolderKanban, role: "ALL" },
-  { label: "Khách hàng", href: "/admin/khach-hang", icon: Building2, role: "ALL" },
-  { label: "Tổng hợp Nhân sự", href: "/nhan-su", icon: Users, role: "ADMIN" },
-  { label: "Phân tích & KPI", href: "/kpi", icon: TrendingUp, role: "ADMIN" },
-  { label: "Top Địa bàn", href: "/dia-ban", icon: MapPin, role: "ADMIN" },
-  { label: "Quản lý AM", href: "/quan-ly-am", icon: UserCheck, role: "ADMIN" },
-  { label: "Quản lý Chuyên viên", href: "/quan-ly-cv", icon: GraduationCap, role: "ADMIN" },
+  // ADMIN + USER can see Dashboard Tổng quan
+  { label: "Dashboard Tổng quan", href: "/", icon: LayoutDashboard, allowedRoles: ["ADMIN", "USER"] },
+  // Everyone can see CRM & DS Dự án
+  { label: "CRM & DS Dự án", href: "/du-an", icon: FolderKanban },
+  // Everyone can see Khách hàng
+  { label: "Khách hàng", href: "/admin/khach-hang", icon: Building2 },
+  // ADMIN + USER can see Tổng hợp Nhân sự
+  { label: "Tổng hợp Nhân sự", href: "/nhan-su", icon: Users, allowedRoles: ["ADMIN", "USER"] },
+  // ADMIN + USER can see Phân tích & KPI
+  { label: "Phân tích & KPI", href: "/kpi", icon: TrendingUp, allowedRoles: ["ADMIN", "USER"] },
+  // ADMIN + USER can see Top Địa bàn
+  { label: "Top Địa bàn", href: "/dia-ban", icon: MapPin, allowedRoles: ["ADMIN", "USER"] },
+  // ADMIN only — Quản lý AM
+  { label: "Quản lý AM", href: "/quan-ly-am", icon: UserCheck, allowedRoles: ["ADMIN"] },
+  // ADMIN only — Quản lý Chuyên viên
+  { label: "Quản lý Chuyên viên", href: "/quan-ly-cv", icon: GraduationCap, allowedRoles: ["ADMIN"] },
 ];
 
+// Admin section nav items
 const adminNavItems: SidebarItem[] = [
-  { label: "Sản phẩm", href: "/admin/san-pham", icon: Package, role: "ADMIN" },
-  { label: "Quản lý User", href: "/admin/users", icon: UserCog, role: "ADMIN" },
-  { label: "Giao KPI", href: "/admin/kpi", icon: Target, role: "ADMIN" },
-  { label: "Dự án đã xoá", href: "/admin/du-an-da-xoa", icon: Trash2, role: "ADMIN" },
+  // ADMIN + USER can see Sản phẩm
+  { label: "Sản phẩm", href: "/admin/san-pham", icon: Package, allowedRoles: ["ADMIN", "USER"] },
+  // ADMIN only — Quản lý User
+  { label: "Quản lý User", href: "/admin/users", icon: UserCog, allowedRoles: ["ADMIN"] },
+  // ADMIN + USER can see Giao KPI
+  { label: "Giao KPI", href: "/admin/kpi", icon: Target, allowedRoles: ["ADMIN", "USER"] },
+  // ADMIN + USER can see Dự án đã xoá
+  { label: "Dự án đã xoá", href: "/admin/du-an-da-xoa", icon: Trash2, allowedRoles: ["ADMIN", "USER"] },
 ];
 
 interface SidebarProps {
-  userRole: "ADMIN" | "USER";
+  userRole: AppRole;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
 }
@@ -62,9 +77,15 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
     return pathname.startsWith(href);
   };
 
+  const isItemVisible = (item: SidebarItem) => {
+    // No restriction = visible to everyone
+    if (!item.allowedRoles || item.allowedRoles.length === 0) return true;
+    return item.allowedRoles.includes(userRole);
+  };
+
   const renderNavItems = (items: SidebarItem[]) => {
     return items
-      .filter((item) => item.role === "ALL" || item.role === userRole)
+      .filter(isItemVisible)
       .map((item) => {
         const active = isActive(item.href);
         return (
@@ -99,6 +120,10 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
         );
       });
   };
+
+  // Check if the user can see any admin section items
+  const visibleAdminItems = adminNavItems.filter(isItemVisible);
+  const showAdminSection = visibleAdminItems.length > 0;
 
   return (
     <aside
@@ -135,11 +160,11 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
         {renderNavItems(mainNavItems)}
 
-        {userRole === "ADMIN" && (
+        {showAdminSection && (
           <div className="mt-4 space-y-1">
             {!isCollapsed && (
               <p className="px-4 text-[10px] uppercase font-black text-slate-500 tracking-widest mb-1.5">
-                Admin
+                Quản trị
               </p>
             )}
             <div className="border-t border-white/5 pt-2">
@@ -149,7 +174,7 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
         )}
       </nav>
 
-      {/* CTA Button */}
+      {/* CTA Button — always visible to ALL roles */}
       <div className={cn("p-3 border-t border-white/5", isCollapsed ? "flex justify-center" : "px-4")}>
         {!isCollapsed ? (
           <Link

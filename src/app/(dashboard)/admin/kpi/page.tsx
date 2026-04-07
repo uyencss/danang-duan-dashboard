@@ -2,8 +2,10 @@ import { getKpiTargets } from "./kpi-actions";
 import { KpiDashboardClient } from "./kpi-client";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { AlertCircle } from "lucide-react";
+import { requireRole } from "@/lib/auth-utils";
 
 export default async function KpiAdminPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
+    await requireRole("ADMIN", "USER");
     const params = await searchParams;
     const year = params.year ? parseInt(params.year) : 2026;
 

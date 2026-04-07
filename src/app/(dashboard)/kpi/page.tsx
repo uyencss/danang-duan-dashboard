@@ -2,8 +2,10 @@ import { KPIDashboardClient } from "./kpi-client";
 import { getKPITimeSeries } from "../dashboard-actions";
 import { AlertCircle } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { requireRole } from "@/lib/auth-utils";
 
 export default async function KPIPage({ searchParams }: { searchParams: Promise<{ granularity?: string }> }) {
+    await requireRole("ADMIN", "USER");
     const params = await searchParams;
     const granularity = (params.granularity === 'thang' || params.granularity === 'quy' || params.granularity === 'nam') 
         ? params.granularity 

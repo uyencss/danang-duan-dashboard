@@ -19,7 +19,10 @@ export async function getCVManagementData(filters?: { year?: number, quarter?: n
 
     // 1. Get all CV users
     const cvs = await prisma.user.findMany({
-      where: { role: UserRole.CV },
+      where: { 
+        role: { in: [UserRole.CV, UserRole.USER] },
+        NOT: { diaBan: "Lãnh đạo" }
+      },
       select: { id: true, name: true, diaBan: true }
     });
 
@@ -39,7 +42,8 @@ export async function getCVManagementData(filters?: { year?: number, quarter?: n
       conversionRate: 0,
       rankMonth: 0,
       rankQuarter: 0,
-      rankYear: 0
+      rankYear: 0,
+      expectedRev: 0
     }));
 
     // 3. Get all projects for the context year
@@ -65,14 +69,6 @@ export async function getCVManagementData(filters?: { year?: number, quarter?: n
     projects.forEach(p => {
         const involvedCVIds = [(p as any).chuyenVienId, (p as any).cvHoTro1Id, (p as any).cvHoTro2Id].filter((id): id is string => !!id);
         const isSigned = p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG;
-
-        // Even projects not yet signed contribute to 'totalOutreach' (Số lượng dự án có chứa tên chuyên viên đó)
-        involvedCVIds.forEach(cvId => {
-            const cvStat = cvStats.find(s => s.id === cvId);
-            if (cvStat) cvStat.totalOutreach += 1;
-        });
-
-        if (!isSigned) return;
 
         const hasTotal = p.tongDoanhThuDuKien && p.tongDoanhThuDuKien > 0;
         const hasMonthly = (p as any).doanhThuTheoThang && (p as any).doanhThuTheoThang > 0;
@@ -125,6 +121,19 @@ export async function getCVManagementData(filters?: { year?: number, quarter?: n
             const cvStat = cvStats.find(s => s.id === cvId);
             if (!cvStat) return;
 
+            // Outreach: Total projects handled in this/past months
+            if (p.thang <= contextMonth && (p as any).quy <= contextQuarter) {
+                cvStat.monthlyOutreach += 1;
+            }
+
+            // Cumulative outreach (Yearly context)
+            cvStat.totalOutreach += 1;
+            
+            // Expected Revenue (Total projected revenue of all projects they are in)
+            cvStat.expectedRev += p.tongDoanhThuDuKien || 0;
+
+            if (!isSigned) return;
+
             // Yearly: All signed projects in context year contribute
             cvStat.yearlyRev += projYearly;
             cvStat.yearlyContracts += 1;
@@ -134,9 +143,6 @@ export async function getCVManagementData(filters?: { year?: number, quarter?: n
                 // Monthly Rev: Sum of active monthly rates
                 cvStat.monthlyRev += projMonthly;
                 
-                // Outreach: Total projects handled up to now
-                cvStat.monthlyOutreach += 1;
-
                 // Quarterly Rev: Cumulative contribution
                 cvStat.quarterlyRev += projQuarterly;
                 cvStat.quarterlyContracts += 1;

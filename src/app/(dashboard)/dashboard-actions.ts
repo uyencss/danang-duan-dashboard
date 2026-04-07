@@ -10,12 +10,7 @@ import { unstable_cache } from "next/cache";
 async function _getDashboardOverview(userId: string, userRole: string) {
     try {
         const whereClause: any = {};
-        if (userRole !== "ADMIN") {
-            whereClause.OR = [
-                { amId: userId },
-                { chuyenVienId: userId }
-            ];
-        }
+        // All authenticated users see all project data (no role-based filtering)
 
         const totalProjects = await prisma.duAn.count({ where: whereClause });
         
@@ -135,7 +130,8 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
         // Fetch users who are personnel (AM, CV, USER)
         const personals = await prisma.user.findMany({
             where: {
-                role: { in: ['AM', 'CV', 'USER'] as any }
+                role: { in: ['AM', 'CV', 'USER'] as any },
+                NOT: { diaBan: "Lãnh đạo" }
             },
             select: { id: true, name: true, diaBan: true, role: true }
         });
@@ -336,12 +332,7 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
 async function _getKPITimeSeries(userId: string, userRole: string, granularity: 'thang' | 'quy' | 'nam' = 'thang') {
     try {
         let whereClause: any = {};
-        if (userRole !== "ADMIN") {
-            whereClause.OR = [
-                { amId: userId },
-                { chuyenVienId: userId }
-            ];
-        }
+        // All authenticated users see all KPI data (no role-based filtering)
 
         let byFields: ('nam' | 'quy' | 'thang')[] = ['nam'];
         if (granularity === 'quy') byFields.push('quy');
@@ -436,7 +427,8 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
     try {
         const personals = await prisma.user.findMany({
             where: {
-                role: { in: ['AM', 'CV', 'USER'] as any }
+                role: { in: ['AM', 'CV', 'USER'] as any },
+                NOT: { diaBan: "Lãnh đạo" }
             },
             select: { id: true, name: true, diaBan: true }
         });

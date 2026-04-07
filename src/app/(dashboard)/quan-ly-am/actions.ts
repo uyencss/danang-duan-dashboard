@@ -19,7 +19,10 @@ export async function getAMManagementData(filters?: { year?: number, quarter?: n
 
     // 1. Get all AM users
     const ams = await prisma.user.findMany({
-      where: { role: UserRole.AM },
+      where: { 
+        role: UserRole.AM,
+        NOT: { diaBan: "Lãnh đạo" }
+      },
       select: { id: true, name: true, diaBan: true }
     });
 
@@ -39,7 +42,8 @@ export async function getAMManagementData(filters?: { year?: number, quarter?: n
       conversionRate: 0,
       rankMonth: 0,
       rankQuarter: 0,
-      rankYear: 0
+      rankYear: 0,
+      expectedRev: 0
     }));
 
     // 3. Get all projects for the context year
@@ -64,14 +68,6 @@ export async function getAMManagementData(filters?: { year?: number, quarter?: n
     projects.forEach(p => {
         const involvedAMIds = [(p as any).amId, (p as any).amHoTroId].filter((id): id is string => !!id);
         const isSigned = p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG;
-
-        // Cumulative outreach counting (Số lượng dự án có chứa tên AM đó)
-        involvedAMIds.forEach(amId => {
-            const amStat = amStats.find(s => s.id === amId);
-            if (amStat) amStat.totalOutreach += 1;
-        });
-
-        if (!isSigned) return;
 
         const hasTotal = p.tongDoanhThuDuKien && p.tongDoanhThuDuKien > 0;
         const hasMonthly = (p as any).doanhThuTheoThang && (p as any).doanhThuTheoThang > 0;
@@ -124,6 +120,19 @@ export async function getAMManagementData(filters?: { year?: number, quarter?: n
             const amStat = amStats.find(s => s.id === amId);
             if (!amStat) return;
 
+            // Outreach: Total projects handled in this/past months
+            if (p.thang <= contextMonth && (p as any).quy <= contextQuarter) {
+                amStat.monthlyOutreach += 1;
+            }
+
+            // Cumulative outreach (Yearly context)
+            amStat.totalOutreach += 1;
+            
+            // Expected Revenue (Total projected revenue of all projects they are in)
+            amStat.expectedRev += p.tongDoanhThuDuKien || 0;
+
+            if (!isSigned) return;
+
             // Yearly: All signed projects in context year contribute
             amStat.yearlyRev += projYearly;
             amStat.yearlyContracts += 1;
@@ -133,9 +142,6 @@ export async function getAMManagementData(filters?: { year?: number, quarter?: n
                 // Monthly Rev: Sum of active monthly rates
                 amStat.monthlyRev += projMonthly;
                 
-                // Outreach: Total projects handled up to now
-                amStat.monthlyOutreach += 1;
-
                 // Quarterly Rev: Cumulative contribution
                 amStat.quarterlyRev += projQuarterly;
                 amStat.quarterlyContracts += 1;

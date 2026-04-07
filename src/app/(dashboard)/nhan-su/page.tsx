@@ -2,8 +2,10 @@ import { NhanSuDashboardClient } from "./nhan-su-client";
 import { getAMPerformance } from "../dashboard-actions";
 import { AlertCircle } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { requireRole } from "@/lib/auth-utils";
 
 export default async function NhanSuPage({ searchParams }: { searchParams: Promise<{ type?: string, year?: string, value?: string }> }) {
+    await requireRole("ADMIN", "USER");
     const params = await searchParams;
     let filterArgs: any = { type: 'all' };
 

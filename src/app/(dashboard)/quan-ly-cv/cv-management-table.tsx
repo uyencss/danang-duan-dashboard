@@ -1,10 +1,11 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Target, Download } from "lucide-react";
+import { MapPin, Target, Download, ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
 import { exportToExcel } from "@/lib/export-excel";
 
 interface CVStat {
@@ -12,6 +13,7 @@ interface CVStat {
     name: string;
     team: string;
     monthlyRev: number;
+    expectedRev: number;
     monthlyContracts: number;
     quarterlyRev: number;
     quarterlyContracts: number;
@@ -25,7 +27,14 @@ interface CVStat {
     rankYear: number;
 }
 
+type SortConfig = {
+    key: keyof CVStat | null;
+    direction: 'asc' | 'desc';
+};
+
 export function CVManagementTable({ data }: { data: CVStat[] }) {
+    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'monthlyRev', direction: 'desc' });
+
     const formatCurrency = (val: number) => {
         return val.toLocaleString('vi-VN') + " Tr.đ";
     };
@@ -37,12 +46,42 @@ export function CVManagementTable({ data }: { data: CVStat[] }) {
         return "bg-slate-50 text-slate-400 border-slate-100";
     };
 
+    const handleSort = (key: keyof CVStat) => {
+        let direction: 'asc' | 'desc' = 'desc';
+        if (sortConfig.key === key && sortConfig.direction === 'desc') {
+            direction = 'asc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedData = useMemo(() => {
+        const sortableItems = [...data];
+        if (sortConfig.key !== null) {
+            sortableItems.sort((a, b) => {
+                const aValue = a[sortConfig.key!];
+                const bValue = b[sortConfig.key!];
+
+                if (typeof aValue === 'number' && typeof bValue === 'number') {
+                    return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+                }
+                
+                const aStr = String(aValue).toLowerCase();
+                const bStr = String(bValue).toLowerCase();
+                if (aStr < bStr) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (aStr > bStr) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [data, sortConfig]);
+
     const handleExport = () => {
-        const exportData = data.map(cv => ({
+        const exportData = sortedData.map(cv => ({
             "Tên Chuyên Viên": cv.name,
             "Đội/Tổ": cv.team,
             "Tỷ lệ Chuyển đổi (%)": parseFloat(cv.conversionRate.toFixed(1)),
             "Doanh Thu Tháng (VNĐ)": cv.monthlyRev,
+            "DT Dự kiến (VNĐ)": cv.expectedRev,
             "Hợp Đồng Tháng": cv.monthlyContracts,
             "Tiếp Cận Tháng": cv.monthlyOutreach,
             "Hạng Tháng": cv.rankMonth,
@@ -57,42 +96,88 @@ export function CVManagementTable({ data }: { data: CVStat[] }) {
         exportToExcel(exportData, "BaoCao_QuanLy_CV");
     };
 
+    const SortIcon = ({ columnKey }: { columnKey: keyof CVStat }) => {
+        if (sortConfig.key !== columnKey) return <ArrowUpDown className="ml-1 size-3 opacity-50 group-hover:opacity-100 transition-opacity" />;
+        return sortConfig.direction === 'asc' ? <ChevronUp className="ml-1 size-3 text-cyan-300" /> : <ChevronDown className="ml-1 size-3 text-cyan-300" />;
+    };
+
     return (
         <Card className="border-none shadow-2xl shadow-blue-900/5 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl ring-1 ring-blue-100/50">
             <div className="p-4 border-b border-blue-50 flex justify-between items-center bg-gradient-to-r from-blue-50/50 to-transparent">
                 <span className="text-sm font-bold text-blue-900/60">Hiển thị {data.length} nhân sự (Chuyên viên)</span>
-                <Button onClick={handleExport} variant="outline" size="sm" className="h-8 gap-2 font-bold text-purple-600 border-purple-200 hover:bg-purple-50 bg-white">
+                <Button onClick={handleExport} variant="outline" size="sm" className="h-8 gap-2 font-bold text-purple-600 border-purple-200 hover:bg-purple-50 bg-white shadow-sm hover:shadow transition-all">
                     <Download className="size-3" /> Xuất Excel
                 </Button>
             </div>
             <div className="overflow-x-auto">
-                <Table className="min-w-[1700px]">
+                <Table className="min-w-[1900px]">
                     <TableHeader className="bg-gradient-to-r from-[#0058bc]/95 via-blue-600/95 to-cyan-500/95 backdrop-blur-sm">
                         <TableRow className="border-b border-white/10 hover:bg-transparent">
                              <TableHead className="w-16 text-center font-black text-white/70 uppercase tracking-widest text-[10px]">#</TableHead>
-                             <TableHead className="font-black text-white uppercase tracking-widest text-[10px]">Chuyên viên</TableHead>
+                             <TableHead 
+                                className="font-black text-white uppercase tracking-widest text-[10px] cursor-pointer group"
+                                onClick={() => handleSort('name')}
+                             >
+                                <div className="flex items-center">Chuyên viên <SortIcon columnKey="name" /></div>
+                             </TableHead>
                              <TableHead className="font-black text-white uppercase tracking-widest text-[10px]">Tổ / Địa bàn</TableHead>
-                             <TableHead className="font-black text-cyan-200 uppercase tracking-widest text-[10px] text-center">Tỷ lệ Chuyển đổi</TableHead>
+                             <TableHead 
+                                className="font-black text-cyan-200 uppercase tracking-widest text-[10px] text-center cursor-pointer group"
+                                onClick={() => handleSort('conversionRate')}
+                             >
+                                <div className="flex items-center justify-center">Tỷ lệ Chuyển đổi <SortIcon columnKey="conversionRate" /></div>
+                             </TableHead>
                              
                              {/* Monthly Header Group */}
-                             <TableHead className="bg-white/10 font-black text-white uppercase tracking-widest text-[10px] border-l border-white/10">Doanh thu Tháng</TableHead>
-                             <TableHead className="bg-white/10 text-center font-black text-white uppercase tracking-widest text-[10px]">HĐ Tháng</TableHead>
-                             <TableHead className="bg-white/10 text-center font-black text-white uppercase tracking-widest text-[10px]">Tiếp cận (M)</TableHead>
+                             <TableHead 
+                                className="bg-white/10 font-black text-white uppercase tracking-widest text-[10px] border-l border-white/10 cursor-pointer group"
+                                onClick={() => handleSort('monthlyRev')}
+                             >
+                                <div className="flex items-center">Doanh thu Tháng <SortIcon columnKey="monthlyRev" /></div>
+                             </TableHead>
+                             <TableHead 
+                                className="bg-white/10 font-black text-yellow-200 uppercase tracking-widest text-[10px] cursor-pointer group"
+                                onClick={() => handleSort('expectedRev')}
+                             >
+                                <div className="flex items-center">DT dự kiến <SortIcon columnKey="expectedRev" /></div>
+                             </TableHead>
+                             <TableHead 
+                                className="bg-white/10 text-center font-black text-white uppercase tracking-widest text-[10px] cursor-pointer group"
+                                onClick={() => handleSort('monthlyContracts')}
+                             >
+                                <div className="flex items-center justify-center">HĐ Tháng <SortIcon columnKey="monthlyContracts" /></div>
+                             </TableHead>
+                             <TableHead 
+                                className="bg-white/10 text-center font-black text-white uppercase tracking-widest text-[10px] cursor-pointer group"
+                                onClick={() => handleSort('monthlyOutreach')}
+                             >
+                                <div className="flex items-center justify-center">Tiếp cận (M) <SortIcon columnKey="monthlyOutreach" /></div>
+                             </TableHead>
                              <TableHead className="bg-white/10 text-center font-black text-white uppercase tracking-widest text-[10px] border-r border-white/10">Hạng Tháng</TableHead>
 
                              {/* Quarterly Header Group */}
-                             <TableHead className="bg-white/5 font-black text-white uppercase tracking-widest text-[10px]">Doanh thu Quý</TableHead>
+                             <TableHead 
+                                className="bg-white/5 font-black text-white uppercase tracking-widest text-[10px] cursor-pointer group"
+                                onClick={() => handleSort('quarterlyRev')}
+                             >
+                                <div className="flex items-center">Doanh thu Quý <SortIcon columnKey="quarterlyRev" /></div>
+                             </TableHead>
                              <TableHead className="bg-white/5 text-center font-black text-white uppercase tracking-widest text-[10px]">HĐ Quý</TableHead>
                              <TableHead className="bg-white/5 text-center font-black text-white uppercase tracking-widest text-[10px] border-r border-white/10">Hạng Quý</TableHead>
 
                              {/* Yearly Header Group */}
-                             <TableHead className="bg-white/10 font-black text-white uppercase tracking-widest text-[10px]">Doanh thu Năm</TableHead>
+                             <TableHead 
+                                className="bg-white/10 font-black text-white uppercase tracking-widest text-[10px] cursor-pointer group"
+                                onClick={() => handleSort('yearlyRev')}
+                             >
+                                <div className="flex items-center">Doanh thu Năm <SortIcon columnKey="yearlyRev" /></div>
+                             </TableHead>
                              <TableHead className="bg-white/10 text-center font-black text-white uppercase tracking-widest text-[10px]">HĐ Năm</TableHead>
                              <TableHead className="bg-white/10 text-center font-black text-white uppercase tracking-widest text-[10px]">Hạng Năm</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {data.map((cv, idx) => (
+                        {sortedData.map((cv, idx) => (
                             <TableRow key={cv.id} className="group hover:bg-blue-50/60 transition-all duration-300 border-b border-slate-50 relative">
                                 <TableCell className="text-center font-bold text-slate-300 group-hover:text-slate-500 transition-colors">
                                     {idx + 1}
@@ -130,6 +215,11 @@ export function CVManagementTable({ data }: { data: CVStat[] }) {
                                 <TableCell className="bg-blue-50/10 border-l border-blue-100/20">
                                     <span className="font-black text-blue-600">
                                         {formatCurrency(cv.monthlyRev)}
+                                    </span>
+                                </TableCell>
+                                <TableCell className="bg-yellow-50/30">
+                                    <span className="font-black text-amber-700">
+                                        {formatCurrency(cv.expectedRev)}
                                     </span>
                                 </TableCell>
                                 <TableCell className="bg-blue-50/10 text-center font-bold text-slate-600">

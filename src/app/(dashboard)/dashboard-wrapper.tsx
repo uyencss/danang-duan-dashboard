@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import type { AppRole } from "@/lib/auth-utils";
 
 interface DashboardWrapperProps {
   children: React.ReactNode;
@@ -23,7 +24,7 @@ export function DashboardWrapper({ children, user }: DashboardWrapperProps) {
     <div className="flex h-screen overflow-hidden bg-transparent">
       {/* Sidebar */}
       <Sidebar
-        userRole={user.role as "ADMIN" | "USER"}
+        userRole={user.role as AppRole}
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
       />

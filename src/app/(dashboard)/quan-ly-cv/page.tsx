@@ -3,12 +3,14 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { CVManagementTable } from "./cv-management-table";
 import { TimeFilters } from "@/components/dashboard/time-filters";
 import { AlertCircle } from "lucide-react";
+import { requireRole } from "@/lib/auth-utils";
 
 export default async function CVManagementPage({
     searchParams,
 }: {
     searchParams: Promise<{ y?: string; q?: string; m?: string }>;
 }) {
+    await requireRole("ADMIN");
     const params = await searchParams;
     const year = params.y ? parseInt(params.y) : 2026;
     const quarter = params.q && params.q !== "all" ? parseInt(params.q) : undefined;

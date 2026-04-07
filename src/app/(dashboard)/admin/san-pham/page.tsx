@@ -1,11 +1,11 @@
-import { requireAdmin } from "@/lib/auth-utils";
+import { requireRole } from "@/lib/auth-utils";
 import { getSanPhamList } from "./actions";
 import { ProductsTable } from "./products-table";
 import { Package } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 
 export default async function SanPhamPage() {
-  await requireAdmin();
+  await requireRole("ADMIN", "USER");
   const { data = [], error } = await getSanPhamList();
 
   return (

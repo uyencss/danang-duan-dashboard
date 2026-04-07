@@ -193,7 +193,6 @@ export function DiaBanDashboardClient({ diaBanData, topStaffData, kpiTotal }: { 
                                         "Tổ 1",
                                         "Tổ 2",
                                         "Tổ 3",
-                                        "Lãnh đạo",
                                         "Chưa phân công"
                                     ].map(name => (
                                         <SelectItem key={name} value={name} className="font-bold">📍 {name}</SelectItem>

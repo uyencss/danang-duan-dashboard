@@ -26,7 +26,7 @@ type SortDir = "asc" | "desc";
 const ROLE_LABELS: Record<string, string> = {
     AM: "AM",
     CV: "Chuyên viên",
-    USER: "Nhân viên",
+    USER: "Chuyên viên",
 };
 
 export function NhanSuDashboardClient({ 
@@ -100,7 +100,9 @@ export function NhanSuDashboardClient({
 
         // Role filter
         let filtered = withConv;
-        if (roleFilter !== "all") {
+        if (roleFilter === "CHUYEN_VIEN_ALL") {
+            filtered = filtered.filter(item => item.role === "CV" || item.role === "USER");
+        } else if (roleFilter !== "all") {
             filtered = filtered.filter(item => item.role === roleFilter);
         }
 
@@ -140,7 +142,7 @@ export function NhanSuDashboardClient({
     // Summary KPIs
     const totalUsers = initialData.length;
     const totalAMs = initialData.filter(d => d.role === "AM").length;
-    const totalCVs = initialData.filter(d => d.role === "CV").length;
+    const totalCVs = initialData.filter(d => d.role === "CV" || d.role === "USER").length;
     
     const { totalSignedRevenue, totalOtherRevenue, totalContracts, totalProjects } = summary;
 
@@ -277,7 +279,7 @@ export function NhanSuDashboardClient({
                             ) : processedData.map((staff, index) => {
                                 const roleColor = staff.role === "AM"
                                     ? "text-[#0058bc] bg-blue-50 border-blue-100"
-                                    : staff.role === "CV"
+                                    : staff.role === "CV" || staff.role === "USER"
                                         ? "text-purple-600 bg-purple-50 border-purple-100"
                                         : "text-slate-500 bg-slate-50 border-slate-200";
                                 return (
@@ -400,8 +402,7 @@ function RoleFilterDropdown({ value, onChange }: { value: string; onChange: (v: 
     const options = [
         { value: "all", label: "Tất cả" },
         { value: "AM", label: "AM" },
-        { value: "CV", label: "Chuyên viên" },
-        { value: "USER", label: "Nhân viên" },
+        { value: "CHUYEN_VIEN_ALL", label: "Chuyên viên" },
     ];
     const selected = options.find(o => o.value === value);
 

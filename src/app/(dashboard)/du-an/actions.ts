@@ -192,6 +192,11 @@ export async function createDuAn(data: any) {
     });
 
     revalidatePath("/du-an");
+    revalidatePath("/nhan-su");
+    revalidatePath("/quan-ly-am");
+    revalidatePath("/quan-ly-cv");
+    revalidatePath("/kpi");
+    revalidatePath("/dia-ban");
     revalidatePath("/admin/khach-hang");
     revalidatePath("/admin/san-pham");
     await syncReplica();
@@ -232,6 +237,11 @@ export async function updateDuAn(id: number, data: any) {
         });
 
         revalidatePath("/du-an");
+        revalidatePath("/nhan-su");
+        revalidatePath("/quan-ly-am");
+        revalidatePath("/quan-ly-cv");
+        revalidatePath("/kpi");
+        revalidatePath("/dia-ban");
         revalidatePath(`/du-an/${id}`);
         await syncReplica();
         return { success: true };
@@ -297,13 +307,7 @@ export async function getDuAnList(params?: {
       isPendingDelete: params?.isDeleted === true ? true : false
     };
     
-    // Permission Logic: User only sees own projects
-    if (user.role !== "ADMIN") {
-        whereClause.OR = [
-            { amId: user.id },
-            { chuyenVienId: user.id }
-        ];
-    }
+    // All accounts can see all projects (no role-based filtering)
 
     // Search
     if (params?.search) {
@@ -395,10 +399,7 @@ export async function getDuAnDetail(id: number) {
 
     if (!project) return { error: "Không tìm thấy dự án" };
 
-    // Permission Logic
-    if (user.role !== "ADMIN" && project.amId !== user.id && project.chuyenVienId !== user.id) {
-        return { error: "Bạn không có quyền truy cập dự án này" };
-    }
+    // All accounts can view any project detail (no role-based restriction)
 
     return { data: project };
   } catch (error: any) {
@@ -445,6 +446,11 @@ export async function createTaskLog(data: {
     });
 
     revalidatePath("/du-an");
+    revalidatePath("/nhan-su");
+    revalidatePath("/quan-ly-am");
+    revalidatePath("/quan-ly-cv");
+    revalidatePath("/kpi");
+    revalidatePath("/dia-ban");
     revalidatePath(`/du-an/${data.projectId}`);
     await syncReplica();
     return { success: true, data: result };
@@ -507,6 +513,11 @@ export async function requestDeleteDuAn(id: number) {
       data: { isPendingDelete: true, deleteRequestedAt: new Date() }
     });
     revalidatePath("/du-an");
+    revalidatePath("/nhan-su");
+    revalidatePath("/quan-ly-am");
+    revalidatePath("/quan-ly-cv");
+    revalidatePath("/kpi");
+    revalidatePath("/dia-ban");
     await syncReplica();
     return { success: true };
   } catch (error) {
@@ -525,6 +536,11 @@ export async function approveDeleteDuAn(id: number) {
     await prisma.duAn.delete({ where: { id }});
     revalidatePath("/admin/du-an-da-xoa");
     revalidatePath("/du-an");
+    revalidatePath("/nhan-su");
+    revalidatePath("/quan-ly-am");
+    revalidatePath("/quan-ly-cv");
+    revalidatePath("/kpi");
+    revalidatePath("/dia-ban");
     await syncReplica();
     return { success: true };
   } catch (error) {
@@ -546,6 +562,11 @@ export async function restoreDuAn(id: number) {
     });
     revalidatePath("/admin/du-an-da-xoa");
     revalidatePath("/du-an");
+    revalidatePath("/nhan-su");
+    revalidatePath("/quan-ly-am");
+    revalidatePath("/quan-ly-cv");
+    revalidatePath("/kpi");
+    revalidatePath("/dia-ban");
     await syncReplica();
     return { success: true };
   } catch (error) {

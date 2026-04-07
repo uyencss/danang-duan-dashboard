@@ -18,8 +18,8 @@ export default async function DeletedProjectsPage({
     headers: await headers()
   });
   const user = sessionRes?.user;
-  if (!user || user.role !== "ADMIN") {
-    redirect("/");
+  if (!user || (user.role !== "ADMIN" && user.role !== "USER")) {
+    redirect("/du-an");
   }
 
   const result = await getDuAnList({ isDeleted: true });

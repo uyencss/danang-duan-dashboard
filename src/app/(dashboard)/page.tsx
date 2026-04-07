@@ -34,7 +34,7 @@ export default async function DashboardPage() {
     headers: await headers(),
   });
   
-  if (session?.user?.role !== "ADMIN") {
+  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "USER") {
     redirect("/du-an");
   }
 

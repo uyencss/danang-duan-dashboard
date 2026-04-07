@@ -115,12 +115,12 @@ export function UsersTable({ data }: { data: any[] }) {
           >
             {role === "ADMIN" ? (
                 <><ShieldCheck className="size-3 mr-1" /> Quản trị</>
-            ) : role === "USER" ? (
-                <><ShieldCheck className="size-3 mr-1" /> Quản trị (CV)</>
+            ) : role === "USER" || role === "CV" ? (
+                <><ShieldCheck className="size-3 mr-1" /> Chuyên viên</>
             ) : role === "AM" ? (
                 <><ShieldAlert className="size-3 mr-1" /> AM</>
             ) : (
-                <><ShieldAlert className="size-3 mr-1" /> Chuyên viên</>
+                <div className="flex items-center"><ShieldAlert className="size-3 mr-1" /> {role}</div>
             )}
           </Badge>
         );
