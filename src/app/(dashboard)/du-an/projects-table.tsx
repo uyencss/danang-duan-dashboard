@@ -72,9 +72,11 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
 
 export function ProjectsTable({ 
   data, 
+  totalCount,
   initialSearch = "" 
 }: { 
   data: any[]; 
+  totalCount?: number;
   initialSearch?: string 
 }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -312,7 +314,7 @@ export function ProjectsTable({
         </div>
         <div className="flex items-center gap-4 px-2">
           <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
-            {data.length} dự án
+            {totalCount && totalCount > data.length ? `${data.length} / ${totalCount}` : data.length} dự án
           </span>
           <Button onClick={handleExport} variant="outline" size="sm" className="h-9 gap-2 font-bold text-[#0058bc] border-[#0058bc]/20 bg-white shadow-sm hover:bg-[#0058bc]/5">
             <Download className="size-4" /> Xuất Excel
@@ -442,7 +444,7 @@ export function ProjectsTable({
         {/* Pagination */}
         <div className="p-6 bg-slate-50/50 flex justify-between items-center border-t border-slate-100/50">
           <p className="text-xs text-[#44474d] font-medium">
-            Hiển thị {table.getRowModel().rows.length} trên tổng số {data.length} dự án
+            Hiển thị {table.getRowModel().rows.length} trên tổng số {totalCount ?? data.length} dự án
           </p>
           <div className="flex gap-1">
             <button

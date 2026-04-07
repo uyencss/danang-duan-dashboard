@@ -24,9 +24,13 @@ export default async function DuAnPage({
     trangThai: typeof params.trangThai === "string" ? params.trangThai : undefined,
     linhVuc: typeof params.linhVuc === "string" ? params.linhVuc : undefined,
     amId: typeof params.amId === "string" ? params.amId : undefined,
+    pageSize: 200,
   };
 
-  const { data = [], error } = await getDuAnList(filters);
+  const result = await getDuAnList(filters);
+  const data = result?.data ?? [];
+  const total = (result as any)?.total ?? data.length;
+  const error = result?.error;
 
   // Auto Sort logic
   const sortedData = [...data].sort((a: any, b: any) => {
@@ -89,7 +93,7 @@ export default async function DuAnPage({
           <p className="text-sm font-medium opacity-80 mt-2">{error}</p>
         </div>
       ) : (
-        <ProjectsTable data={sortedData} initialSearch={filters.search} />
+        <ProjectsTable data={sortedData} totalCount={total} initialSearch={filters.search} />
       )}
     </div>
   );

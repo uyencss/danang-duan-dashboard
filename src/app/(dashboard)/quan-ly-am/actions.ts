@@ -46,6 +46,17 @@ export async function getAMManagementData(filters?: { year?: number, quarter?: n
     const projects = await prisma.duAn.findMany({
       where: {
         nam: contextYear
+      },
+      select: {
+        amId: true,
+        amHoTroId: true,
+        tongDoanhThuDuKien: true,
+        doanhThuTheoThang: true,
+        thang: true,
+        quy: true,
+        nam: true,
+        trangThaiHienTai: true,
+        ngayKetThuc: true
       }
     });
 

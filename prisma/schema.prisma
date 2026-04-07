@@ -14,31 +14,31 @@ datasource db {
 // ============================================
 
 enum UserRole {
-  ADMIN        // Quản trị viên
-  AM           // Account Manager
-  CV           // Chuyên viên
-  USER         // Nhân viên (Legacy)
+  ADMIN // Quản trị viên
+  AM // Account Manager
+  CV // Chuyên viên
+  USER // Nhân viên (Legacy)
 }
 
 enum PhanLoaiKH {
-  CHINH_PHU    // Sở, Ban, Ngành
+  CHINH_PHU // Sở, Ban, Ngành
   DOANH_NGHIEP // Doanh nghiệp tư nhân
-  CONG_AN      // Công an (B2A)
+  CONG_AN // Công an (B2A)
 }
 
 enum TrangThaiDuAn {
-  MOI              // Mới
-  DANG_LAM_VIEC    // Đang làm việc
-  DA_DEMO          // Đã demo
-  DA_GUI_BAO_GIA   // Đã gửi báo giá
-  DA_KY_HOP_DONG   // Đã ký hợp đồng
-  THAT_BAI         // Thất bại
+  MOI // Mới
+  DANG_LAM_VIEC // Đang làm việc
+  DA_DEMO // Đã demo
+  DA_GUI_BAO_GIA // Đã gửi báo giá
+  DA_KY_HOP_DONG // Đã ký hợp đồng
+  THAT_BAI // Thất bại
 }
 
 enum LinhVuc {
-  CHINH_PHU      // Chính phủ/ Sở ban ngành
-  DOANH_NGHIEP   // Doanh nghiệp
-  CONG_AN        // Công an
+  CHINH_PHU // Chính phủ/ Sở ban ngành
+  DOANH_NGHIEP // Doanh nghiệp
+  CONG_AN // Công an
 }
 
 enum LoaiTinNhan {
@@ -66,20 +66,21 @@ model User {
   updatedAt      DateTime  @updatedAt
 
   // Relations
-  duAnAM         DuAn[]           @relation("AMRelation")
-  duAnAMHoTro    DuAn[]           @relation("AMHoTroRelation")
-  duAnCV         DuAn[]           @relation("CVRelation")
-  duAnCVHoTro1   DuAn[]           @relation("CVHoTro1Relation")
-  duAnCVHoTro2   DuAn[]           @relation("CVHoTro2Relation")
-  nhatKy         NhatKyCongViec[]
-  binhLuan       BinhLuan[]
-  tinNhan        TinNhan[]
-  sessions       Session[]
-  accounts       Account[]
+  duAnAM       DuAn[]           @relation("AMRelation")
+  duAnAMHoTro  DuAn[]           @relation("AMHoTroRelation")
+  duAnCV       DuAn[]           @relation("CVRelation")
+  duAnCVHoTro1 DuAn[]           @relation("CVHoTro1Relation")
+  duAnCVHoTro2 DuAn[]           @relation("CVHoTro2Relation")
+  nhatKy       NhatKyCongViec[]
+  binhLuan     BinhLuan[]
+  tinNhan      TinNhan[]
+  sessions     Session[]
+  accounts     Account[]
 
   @@index([email])
   @@index([role])
   @@index([diaBan])
+  @@index([updatedAt])
 }
 
 model Session {
@@ -132,28 +133,29 @@ model KhachHang {
   diaChi      String?
   soDienThoai String?
   email       String?
-  
-  // Thông tin liên hệ & Đầu mối
-  dauMoiTiepCan      String?   // Đầu mối tiếp cận
-  soDienThoaiDauMoi  String?   // Số điện thoại đầu mối
-  ngaySinhDauMoi     DateTime? // Ngày sinh nhật đầu mối
-  lanhDaoDonVi       String?   // Lãnh đạo đơn vị
-  soDienThoaiLanhDao String?   // Số điện thoại Lãnh đạo
-  ngaySinhLanhDao    DateTime? // Ngày sinh nhật Lãnh đạo
-  
-  // Ngày kỷ niệm
-  ngayThanhLap       DateTime? // Ngày thành lập
-  ngayKyNiem         DateTime? // Ngày kỷ niệm
-  ghiChu             String?   // Ghi chú thêm
 
-  isActive    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  // Thông tin liên hệ & Đầu mối
+  dauMoiTiepCan      String? // Đầu mối tiếp cận
+  soDienThoaiDauMoi  String? // Số điện thoại đầu mối
+  ngaySinhDauMoi     DateTime? // Ngày sinh nhật đầu mối
+  lanhDaoDonVi       String? // Lãnh đạo đơn vị
+  soDienThoaiLanhDao String? // Số điện thoại Lãnh đạo
+  ngaySinhLanhDao    DateTime? // Ngày sinh nhật Lãnh đạo
+
+  // Ngày kỷ niệm
+  ngayThanhLap DateTime? // Ngày thành lập
+  ngayKyNiem   DateTime? // Ngày kỷ niệm
+  ghiChu       String? // Ghi chú thêm
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   duAns DuAn[]
 
   @@index([phanLoai])
   @@index([ten])
+  @@index([updatedAt])
 }
 
 model SanPham {
@@ -168,35 +170,36 @@ model SanPham {
   duAns DuAn[]
 
   @@index([nhom])
+  @@index([nhom, tenChiTiet])
 }
 
 model DuAn {
-  id                    Int           @id @default(autoincrement())
-  customerId            Int
-  productId             Int
-  amId                  String?
-  amHoTroId             String?
-  chuyenVienId          String?
-  cvHoTro1Id            String?
-  cvHoTro2Id            String?
-  tenDuAn               String
-  linhVuc               LinhVuc       @default(CHINH_PHU)
-  tongDoanhThuDuKien    Float         @default(0)
-  doanhThuTheoThang     Float?        @default(0)
-  maHopDong             String?
-  ngayBatDau            DateTime
-  ngayKetThuc           DateTime?
-  isTrongDiem           Boolean       @default(false)
-  isPendingDelete       Boolean       @default(false)
-  deleteRequestedAt     DateTime?
-  tuan                  Int
-  thang                 Int
-  quy                   Int
-  nam                   Int
-  ngayChamsocCuoiCung   DateTime?
-  trangThaiHienTai      TrangThaiDuAn @default(MOI)
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  id                  Int           @id @default(autoincrement())
+  customerId          Int
+  productId           Int
+  amId                String?
+  amHoTroId           String?
+  chuyenVienId        String?
+  cvHoTro1Id          String?
+  cvHoTro2Id          String?
+  tenDuAn             String
+  linhVuc             LinhVuc       @default(CHINH_PHU)
+  tongDoanhThuDuKien  Float         @default(0)
+  doanhThuTheoThang   Float?        @default(0)
+  maHopDong           String?
+  ngayBatDau          DateTime
+  ngayKetThuc         DateTime?
+  isTrongDiem         Boolean       @default(false)
+  isPendingDelete     Boolean       @default(false)
+  deleteRequestedAt   DateTime?
+  tuan                Int
+  thang               Int
+  quy                 Int
+  nam                 Int
+  ngayChamsocCuoiCung DateTime?
+  trangThaiHienTai    TrangThaiDuAn @default(MOI)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   // Relations
   khachHang  KhachHang @relation(fields: [customerId], references: [id])
@@ -219,6 +222,9 @@ model DuAn {
   @@index([linhVuc])
   @@index([nam, quy, thang])
   @@index([ngayChamsocCuoiCung])
+  @@index([updatedAt])
+  @@index([tenDuAn])
+  @@index([isPendingDelete])
 }
 
 model NhatKyCongViec {
@@ -235,6 +241,7 @@ model NhatKyCongViec {
 
   @@index([projectId])
   @@index([userId])
+  @@index([projectId, ngayGio]) // Tối ưu cho nhatKy: { orderBy: { ngayGio: 'desc' } }
 }
 
 model BinhLuan {
@@ -246,29 +253,30 @@ model BinhLuan {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  duAn   DuAn      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent BinhLuan? @relation("CommentThread", fields: [parentId], references: [id])
+  duAn    DuAn       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  BinhLuan?  @relation("CommentThread", fields: [parentId], references: [id])
   replies BinhLuan[] @relation("CommentThread")
 
   @@index([projectId])
   @@index([userId])
   @@index([parentId])
+  @@index([projectId, createdAt]) // Tối ưu cho binhLuan: { orderBy: { createdAt: 'desc' } }
 }
 
 model TinNhan {
-  id        Int      @id @default(autoincrement())
+  id        Int         @id @default(autoincrement())
   projectId Int
   userId    String
   content   String
   type      LoaiTinNhan @default(TEXT)
-  isEdited  Boolean  @default(false)
-  isDeleted Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isEdited  Boolean     @default(false)
+  isDeleted Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
-  duAn   DuAn @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  duAn DuAn @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([projectId, createdAt])
   @@index([userId])

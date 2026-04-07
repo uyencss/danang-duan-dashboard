@@ -22,7 +22,9 @@ export default async function DeletedProjectsPage({
     redirect("/");
   }
 
-  const { data = [], error } = await getDuAnList({ isDeleted: true });
+  const result = await getDuAnList({ isDeleted: true });
+  const data = result?.data ?? [];
+  const error = result?.error;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">

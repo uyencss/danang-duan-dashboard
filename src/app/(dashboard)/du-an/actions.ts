@@ -277,7 +277,9 @@ export async function getDuAnList(params?: {
   trangThai?: string,
   linhVuc?: string,
   amId?: string,
-  isDeleted?: boolean
+  isDeleted?: boolean,
+  page?: number,
+  pageSize?: number
 }) {
   try {
     const sessionRes = await (auth.api as any).getSession({
@@ -320,28 +322,37 @@ export async function getDuAnList(params?: {
       whereClause.amId = params.amId;
     }
 
-    const data = await prisma.duAn.findMany({
-      where: whereClause,
-      include: {
-        khachHang: true,
-        sanPham: true,
-        am: true,
-        amHoTro: true,
-        chuyenVien: true,
-        cvHoTro1: true,
-        cvHoTro2: true,
-        nhatKy: {
-          orderBy: { ngayGio: 'desc' },
-          select: { ngayGio: true, noiDungChiTiet: true, trangThaiMoi: true }
-        },
-        _count: {
-          select: { nhatKy: true, binhLuan: true }
-        }
-      } as any,
-      orderBy: { updatedAt: 'desc' }
-    });
+    const pageSize = params?.pageSize || 30;
+    const page = params?.page || 1;
+
+    const [data, total] = await Promise.all([
+      prisma.duAn.findMany({
+        where: whereClause,
+        include: {
+          khachHang: true,
+          sanPham: true,
+          am: true,
+          amHoTro: true,
+          chuyenVien: true,
+          cvHoTro1: true,
+          cvHoTro2: true,
+          nhatKy: {
+            orderBy: { ngayGio: 'desc' },
+            take: 1,
+            select: { ngayGio: true, noiDungChiTiet: true, trangThaiMoi: true }
+          },
+          _count: {
+            select: { nhatKy: true, binhLuan: true }
+          }
+        } as any,
+        orderBy: { updatedAt: 'desc' },
+        take: pageSize,
+        skip: (page - 1) * pageSize,
+      }),
+      prisma.duAn.count({ where: whereClause })
+    ]);
     
-    return { data };
+    return { data, total, page, pageSize };
   } catch (error: any) {
     console.error("Fetch Projects Error:", error);
     return { error: `DEV: ${error?.message || "Unknown error"}` };

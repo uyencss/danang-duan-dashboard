@@ -46,6 +46,18 @@ export async function getCVManagementData(filters?: { year?: number, quarter?: n
     const projects = await prisma.duAn.findMany({
       where: {
         nam: contextYear
+      },
+      select: {
+        chuyenVienId: true,
+        cvHoTro1Id: true,
+        cvHoTro2Id: true,
+        tongDoanhThuDuKien: true,
+        doanhThuTheoThang: true,
+        thang: true,
+        quy: true,
+        nam: true,
+        trangThaiHienTai: true,
+        ngayKetThuc: true
       }
     });
 

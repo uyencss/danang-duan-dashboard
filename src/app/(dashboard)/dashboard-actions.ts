@@ -4,54 +4,68 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { TrangThaiDuAn, UserRole } from "@prisma/client";
+import { unstable_cache } from "next/cache";
 
-export async function getDashboardOverview() {
+// Cache TTL: 5 minutes. Keyed by user id+role so ADMIN and non-ADMIN get separate caches.
+async function _getDashboardOverview(userId: string, userRole: string) {
     try {
-        const sessionRes = await (auth.api as any).getSession({
-            headers: await headers()
-        });
-        const user = sessionRes?.user;
-        if (!user) return { error: "Yêu cầu đăng nhập" };
-
         const whereClause: any = {};
-        if (user.role !== "ADMIN") {
+        if (userRole !== "ADMIN") {
             whereClause.OR = [
-                { amId: user.id },
-                { chuyenVienId: user.id }
+                { amId: userId },
+                { chuyenVienId: userId }
             ];
         }
 
-        const projects = await prisma.duAn.findMany({
+        const totalProjects = await prisma.duAn.count({ where: whereClause });
+        
+        const revAgg = await prisma.duAn.aggregate({
             where: whereClause,
-            include: { khachHang: true, am: true }
+            _sum: { tongDoanhThuDuKien: true }
+        });
+        const totalRevenue = revAgg._sum.tongDoanhThuDuKien || 0;
+        
+        const signedProjects = await prisma.duAn.count({
+            where: {
+                AND: [whereClause, { trangThaiHienTai: TrangThaiDuAn.DA_KY_HOP_DONG }]
+            }
         });
 
-        const totalProjects = projects.length;
-        const totalRevenue = projects.reduce((acc, p) => acc + p.tongDoanhThuDuKien, 0);
-        const signedProjects = projects.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG).length;
+        // Urgent care: null or > 15 days ago
+        const fifteenDaysAgo = new Date();
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+        const urgentWhere = {
+            AND: [
+                whereClause,
+                {
+                    OR: [
+                        { ngayChamsocCuoiCung: null },
+                        { ngayChamsocCuoiCung: { lt: fifteenDaysAgo } }
+                    ]
+                }
+            ]
+        };
+        const urgentCare = await prisma.duAn.count({ where: urgentWhere });
 
-        // Urgent care: nul or > 15 days
-        const urgentCare = projects.filter(p => {
-            if (!p.ngayChamsocCuoiCung) return true;
-            const diff = (new Date().getTime() - new Date(p.ngayChamsocCuoiCung).getTime()) / (1000 * 60 * 60 * 24);
-            return diff > 15;
-        }).length;
-
-        // Status breakdown for Funnel
+        // Status breakdown using GroupBy
+        const statusGroups = await prisma.duAn.groupBy({
+            by: ['trangThaiHienTai'],
+            where: whereClause,
+            _count: { id: true }
+        });
         const statusCounts = Object.values(TrangThaiDuAn).reduce((acc: any, status) => {
-            acc[status] = projects.filter(p => p.trangThaiHienTai === status).length;
+            const group = statusGroups.find(g => g.trangThaiHienTai === status);
+            acc[status] = group ? group._count.id : 0;
             return acc;
         }, {});
 
         // Top 5 urgent
-        const topUrgent = projects
-            .filter(p => !p.ngayChamsocCuoiCung || (new Date().getTime() - new Date(p.ngayChamsocCuoiCung).getTime()) / (1000 * 60 * 60 * 24) > 15)
-            .sort((a, b) => {
-                const dateA = a.ngayChamsocCuoiCung ? new Date(a.ngayChamsocCuoiCung).getTime() : 0;
-                const dateB = b.ngayChamsocCuoiCung ? new Date(b.ngayChamsocCuoiCung).getTime() : 0;
-                return dateA - dateB;
-            })
-            .slice(0, 5);
+        const topUrgent = await prisma.duAn.findMany({
+            where: urgentWhere,
+            orderBy: { ngayChamsocCuoiCung: 'asc' }, // Returns nulls first in SQLite
+            take: 5,
+            include: { khachHang: true, am: true }
+        });
 
         const totalCustomers = await prisma.khachHang.count();
 
@@ -68,8 +82,24 @@ export async function getDashboardOverview() {
         };
     } catch (error: any) {
         console.error("Dashboard Stats Error:", error);
-        return { error: `DEV: ${error?.message || "Unknown error"}` };
+        return { error: `DEV: ${error?.message || "Unknown error"}` } as any;
     }
+}
+
+// Module-level cached version — Next.js requires unstable_cache at module scope.
+// userId/userRole args are automatically incorporated into the cache key.
+const _cachedDashboardOverview = unstable_cache(
+    _getDashboardOverview,
+    ['dashboard-overview'],
+    { revalidate: 300 }
+);
+
+// Public export: resolves session outside cache, then calls module-level cached fn
+export async function getDashboardOverview() {
+    const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
+    const user = sessionRes?.user;
+    if (!user) return { error: "Yêu cầu đăng nhập" };
+    return _cachedDashboardOverview(user.id, user.role);
 }
 
 export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 'thang', year?: number, quarter?: number, month?: number }) {
@@ -123,7 +153,21 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
         }));
 
         const projects = await prisma.duAn.findMany({
-            where: projectFilter
+            where: projectFilter,
+            select: {
+                amId: true,
+                amHoTroId: true,
+                chuyenVienId: true,
+                cvHoTro1Id: true,
+                cvHoTro2Id: true,
+                tongDoanhThuDuKien: true,
+                doanhThuTheoThang: true,
+                thang: true,
+                quy: true,
+                nam: true,
+                trangThaiHienTai: true,
+                ngayKetThuc: true
+            }
         });
 
         let uniqueSignedRevenue = 0;
@@ -289,65 +333,66 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
     }
 }
 
-export async function getKPITimeSeries(granularity: 'thang' | 'quy' | 'nam' = 'thang') {
+async function _getKPITimeSeries(userId: string, userRole: string, granularity: 'thang' | 'quy' | 'nam' = 'thang') {
     try {
-        const sessionRes = await (auth.api as any).getSession({
-            headers: await headers()
-        });
-        const currentUser = sessionRes?.user;
-        if (!currentUser) return { error: "Yêu cầu đăng nhập" };
-
         let whereClause: any = {};
-        if (currentUser.role !== "ADMIN") {
+        if (userRole !== "ADMIN") {
             whereClause.OR = [
-                { amId: currentUser.id },
-                { chuyenVienId: currentUser.id }
+                { amId: userId },
+                { chuyenVienId: userId }
             ];
         }
 
-        const projects = await prisma.duAn.findMany({
+        let byFields: ('nam' | 'quy' | 'thang')[] = ['nam'];
+        if (granularity === 'quy') byFields.push('quy');
+        if (granularity === 'thang') byFields.push('thang');
+
+        // Use array of groups instead of fetching all projects
+        const groups = await prisma.duAn.groupBy({
+            by: byFields,
             where: whereClause,
-            select: {
-                id: true,
-                tongDoanhThuDuKien: true,
-                trangThaiHienTai: true,
-                createdAt: true,
-                thang: true,
-                quy: true,
-                nam: true
-            }
+            _count: { id: true },
+            _sum: { tongDoanhThuDuKien: true }
+        });
+
+        // Group by for signed contracts separately
+        const signedGroups = await prisma.duAn.groupBy({
+            by: byFields,
+            where: {
+                AND: [whereClause, { trangThaiHienTai: TrangThaiDuAn.DA_KY_HOP_DONG }]
+            },
+            _count: { id: true }
         });
 
         const timeSeriesMap = new Map();
 
-        projects.forEach(p => {
+        groups.forEach(g => {
             let timeKey = "";
-            let originalDate = p.createdAt;
-
+            let sortKey = g.nam * 1000;
             if (granularity === 'nam') {
-                timeKey = `${p.nam}`;
+                timeKey = `${g.nam}`;
             } else if (granularity === 'quy') {
-                timeKey = `Q${p.quy}/${p.nam}`;
+                timeKey = `Q${g.quy}/${g.nam}`;
+                sortKey += g.quy! * 10;
             } else {
-                timeKey = `T${p.thang}/${p.nam}`;
+                timeKey = `T${g.thang}/${g.nam}`;
+                sortKey += g.thang!;
             }
 
-            if (!timeSeriesMap.has(timeKey)) {
-                timeSeriesMap.set(timeKey, {
-                    timeLabel: timeKey,
-                    revenue: 0,
-                    newProjects: 0,
-                    signedContracts: 0,
-                    sortKey: p.nam * 1000 + (granularity === 'thang' ? p.thang : granularity === 'quy' ? p.quy * 10 : 0)
-                });
-            }
+            // Find matching signed group
+            const sg = signedGroups.find(sg => 
+                sg.nam === g.nam && 
+                (granularity !== 'quy' || sg.quy === g.quy) &&
+                (granularity !== 'thang' || sg.thang === g.thang)
+            );
 
-            const current = timeSeriesMap.get(timeKey);
-            current.newProjects += 1;
-            current.revenue += p.tongDoanhThuDuKien;
-            if (p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG) {
-                current.signedContracts += 1;
-            }
+            timeSeriesMap.set(timeKey, {
+                timeLabel: timeKey,
+                revenue: g._sum.tongDoanhThuDuKien || 0,
+                newProjects: g._count.id || 0,
+                signedContracts: sg ? (sg._count.id || 0) : 0,
+                sortKey
+            });
         });
 
         const sortedData = Array.from(timeSeriesMap.values()).sort((a, b) => a.sortKey - b.sortKey);
@@ -370,18 +415,25 @@ export async function getKPITimeSeries(granularity: 'thang' | 'quy' | 'nam' = 't
 
     } catch (error: any) {
         console.error("getKPITimeSeries Error:", error);
-        return { error: `Lỗi tải dữ liệu KPI: ${error?.message || "Unknown error"}` };
+        return { error: `Lỗi tải dữ liệu KPI: ${error?.message || "Unknown error"}` } as any;
     }
 }
 
-export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' | 'thang', year?: number, quarter?: number, month?: number }) {
-    try {
-        const sessionRes = await (auth.api as any).getSession({
-            headers: await headers()
-        });
-        const currentUser = sessionRes?.user;
-        if (!currentUser) return { error: "Yêu cầu đăng nhập" };
+const _cachedKPITimeSeries = unstable_cache(
+    _getKPITimeSeries,
+    ['kpi-timeseries'],
+    { revalidate: 300 }
+);
 
+export async function getKPITimeSeries(granularity: 'thang' | 'quy' | 'nam' = 'thang') {
+    const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
+    const user = sessionRes?.user;
+    if (!user) return { error: "Yêu cầu đăng nhập" };
+    return _cachedKPITimeSeries(user.id, user.role, granularity);
+}
+
+async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { type: 'all' | 'nam' | 'quy' | 'thang', year?: number, quarter?: number, month?: number }) {
+    try {
         const personals = await prisma.user.findMany({
             where: {
                 role: { in: ['AM', 'CV', 'USER'] as any }
@@ -568,8 +620,21 @@ export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' 
         };
     } catch (error: any) {
         console.error("getDiaBanAnalytics Error:", error);
-        return { error: `Lỗi phân tích địa bàn: ${error?.message}` };
+        return { error: `Lỗi phân tích địa bàn: ${error?.message}` } as any;
     }
+}
+
+const _cachedDiaBanAnalytics = unstable_cache(
+    _getDiaBanAnalytics,
+    ['diaban-analytics'],
+    { revalidate: 300 }
+);
+
+export async function getDiaBanAnalytics(filter?: { type: 'all' | 'nam' | 'quy' | 'thang', year?: number, quarter?: number, month?: number }) {
+    const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
+    const user = sessionRes?.user;
+    if (!user) return { error: "Yêu cầu đăng nhập" };
+    return _cachedDiaBanAnalytics(user.id, user.role, filter);
 }
 
 export async function getHoanThanhKeHoachData() {

@@ -45,13 +45,17 @@ export async function createComment(data: { projectId: number, content: string, 
 
              const globalChannel = ablyServerClient.channels.get(`notifications`);
              
-             // Extract mentions: @Name
-             const allUsers = await prisma.user.findMany({ select: { id: true, name: true }});
-             const mentions: string[] = [];
-             for (const u of allUsers) {
-                 if (data.content.includes(`@${u.name}`)) {
-                     mentions.push(u.id);
-                 }
+             // Extract @mentions from content using regex — only look up matched names
+             const mentionMatches = data.content.match(/@([\w\sÀ-ỹ]+?)(?=\s|$|[,.!?])/g) || [];
+             const mentionedNames = mentionMatches.map((m: string) => m.slice(1).trim()).filter(Boolean);
+
+             let mentions: string[] = [];
+             if (mentionedNames.length > 0) {
+                 const mentionedUsers = await prisma.user.findMany({
+                     where: { name: { in: mentionedNames } },
+                     select: { id: true, name: true }
+                 });
+                 mentions = mentionedUsers.map((u: any) => u.id);
              }
 
              // Phát mention

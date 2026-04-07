@@ -7,6 +7,8 @@ import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
+import logoPng from "../../../../public/logo.png";
 import {
   Card,
   CardContent,
@@ -69,7 +71,7 @@ export default function LoginPage() {
       <CardHeader className="space-y-1">
         <div className="flex justify-center mb-4">
           <div className="h-16 w-16 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-md ring-1 ring-primary/20">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+            <Image src={logoPng} alt="Logo" className="w-full h-full object-contain" priority />
           </div>
         </div>
         <CardTitle className="text-2xl text-center text-primary font-bold">
