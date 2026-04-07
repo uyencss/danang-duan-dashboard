@@ -7,6 +7,7 @@ RUN apk add --no-cache libc6-compat tzdata
 ENV TZ=Asia/Ho_Chi_Minh
 
 WORKDIR /app
+RUN mkdir -p data && chown -R 1001:1001 /app/data
 
 # Install dependencies
 COPY package.json package-lock.json* ./
@@ -48,6 +49,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder /app/next.config.ts ./next.config.ts
+COPY --from=builder /app/scripts ./scripts
 
 USER nextjs
 

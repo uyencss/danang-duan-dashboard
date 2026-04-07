@@ -11,7 +11,7 @@ services:
       - TURSO_DATABASE_URL=${TURSO_DATABASE_URL}
       - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN}
       - TURSO_SYNC_PERIOD=${TURSO_SYNC_PERIOD:-60}
-      - LOCAL_REPLICA_PATH=/app/data/local-replica.db
+      - LOCAL_REPLICA_PATH=file:/app/data/local-replica.db
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
       - BETTER_AUTH_URL=${BETTER_AUTH_URL}
@@ -20,7 +20,15 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - replica-data-1:/app/data
+      - ./data/web-1:/app/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   web-2:
     build:
@@ -34,7 +42,7 @@ services:
       - TURSO_DATABASE_URL=${TURSO_DATABASE_URL}
       - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN}
       - TURSO_SYNC_PERIOD=${TURSO_SYNC_PERIOD:-60}
-      - LOCAL_REPLICA_PATH=/app/data/local-replica.db
+      - LOCAL_REPLICA_PATH=file:/app/data/local-replica.db
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
       - BETTER_AUTH_URL=${BETTER_AUTH_URL}
@@ -43,7 +51,15 @@ services:
     ports:
       - "3001:3000"
     volumes:
-      - replica-data-2:/app/data
+      - ./data/web-2:/app/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -54,10 +70,14 @@ services:
     command: >
       tunnel --no-autoupdate run
       --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
     depends_on:
       - web-1
       - web-2
-
-volumes:
-  replica-data-1:
-  replica-data-2:
