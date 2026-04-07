@@ -28,13 +28,21 @@ jobs:
           NEXT_PUBLIC_ABLY_KEY: ${{ secrets.NEXT_PUBLIC_ABLY_KEY }}
           CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
         with:
-          host: ${{ secrets.SSH_HOST }}
+          host: 100.68.79.40,100.73.101.28
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: DATABASE_URL,TURSO_DATABASE_URL,TURSO_AUTH_TOKEN,TURSO_SYNC_PERIOD,LOCAL_REPLICA_PATH,NEXT_PUBLIC_APP_URL,BETTER_AUTH_SECRET,BETTER_AUTH_URL,ABLY_API_KEY,NEXT_PUBLIC_ABLY_KEY,CLOUDFLARE_TUNNEL_TOKEN
           script: |
-            cd /home/hieunq/Desktop/code-deployments/danang-duan-dashboard
-            git pull origin master
+            mkdir -p /home/hieunq/Desktop/code-deployments
+            cd /home/hieunq/Desktop/code-deployments
+            
+            if [ -d "danang-duan-dashboard" ]; then
+              cd danang-duan-dashboard
+              git pull origin master
+            else
+              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/uyencss/danang-duan-dashboard.git
+              cd danang-duan-dashboard
+            fi
             
             # Recreate the .env file from GitHub Actions Secrets
             cat <<EOF > .env
