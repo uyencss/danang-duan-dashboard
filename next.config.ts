@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  generateBuildId: async () => {
+    return process.env.BUILD_ID || "development";
+  },
 };
 
 export default nextConfig;

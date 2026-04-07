@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        BUILD_ID: ${BUILD_ID:-default_build_id}
     container_name: danang-dashboard-web
     restart: always
     environment:
