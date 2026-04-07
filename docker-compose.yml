@@ -1,0 +1,31 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: danang-dashboard-web
+    restart: always
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      # Make sure your container reads the required environment variables.
+      # You can supply them natively in the shell or via .env file to docker-compose.
+      - DATABASE_URL=${DATABASE_URL}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL}
+      - ABLY_API_KEY=${ABLY_API_KEY}
+      - NEXT_PUBLIC_ABLY_KEY=${NEXT_PUBLIC_ABLY_KEY}
+    ports:
+      - "3000:3000"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: danang-dashboard-tunnel
+    restart: always
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    command: >
+      tunnel --no-autoupdate run
+      --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - web

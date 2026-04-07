@@ -463,7 +463,15 @@ export function ProjectComments({
 
     return () => {
       channel.unsubscribe();
-      client.close();
+      try {
+        // Ignore unhandled rejection errors on unmount when connection is still connecting
+        const closeResult = client.close() as any;
+        if (closeResult && typeof closeResult.catch === 'function') {
+          closeResult.catch(() => {});
+        }
+      } catch (e) {
+        console.error("Lỗi khi đóng kết nối Ably:", e);
+      }
     };
   }, [projectId, router, currentUser]);
 
