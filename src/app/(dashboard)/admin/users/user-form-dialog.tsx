@@ -230,7 +230,7 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
 
                   <AlertDialog>
                     <AlertDialogTrigger
-                      nativeButton={true}
+                      nativeButton={false}
                       render={
                         <Button type="button" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-100 rounded-xl font-bold h-9 px-4 flex items-center gap-2 border border-red-200" />
                       }
