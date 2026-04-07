@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { UserRole } from "@prisma/client";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 import { createUser, updateUser, deleteUser } from "./actions";
 import {
   AlertDialog,
@@ -46,15 +47,12 @@ import { Trash2, AlertTriangle } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Họ tên tối thiểu 2 ký tự"),
-  email: z.string().min(1, "Tên đăng nhập là bắt buộc"), // Can be name/phone/email
+  email: z.string().min(1, "Tên đăng nhập là bắt buộc"),
   password: z.string().optional().or(z.literal("")),
   role: z.nativeEnum(UserRole),
   diaBan: z.string().optional().or(z.literal("")),
-}).refine((data) => {
-    return true; 
-}, {
-    message: "Mật khẩu là bắt buộc khi tạo mới",
-    path: ["password"],
+  banned: z.boolean(),
+  banReason: z.string().optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -71,6 +69,8 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
       password: data ? "" : "123456",
       role: data?.role || UserRole.USER,
       diaBan: data?.diaBan || "",
+      banned: data?.banned || false,
+      banReason: data?.banReason || "",
     },
   });
 
@@ -83,6 +83,8 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
         password: data ? "" : "123456",
         role: data?.role || UserRole.USER,
         diaBan: data?.diaBan || "",
+        banned: data?.banned || false,
+        banReason: data?.banReason || "",
       });
     }
   }, [open, data, form]);
@@ -215,6 +217,50 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
                 )}
                 />
             </div>
+
+            {isEdit && (
+                <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 space-y-4">
+                    <FormField
+                    control={form.control}
+                    name="banned"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-white">
+                            <div className="space-y-0.5">
+                                <FormLabel className="font-bold text-red-700">Khóa tài khoản (Ban)</FormLabel>
+                                <p className="text-[10px] text-gray-500">Người dùng sẽ không thể đăng nhập</p>
+                            </div>
+                            <FormControl>
+                                <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    className="data-[state=checked]:bg-red-600"
+                                />
+                            </FormControl>
+                        </FormItem>
+                    )}
+                    />
+
+                    {form.watch("banned") && (
+                        <FormField
+                        control={form.control}
+                        name="banReason"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="text-xs font-bold">Lý do khóa</FormLabel>
+                            <FormControl>
+                                <Input 
+                                    placeholder="Vi phạm quy định / Nghỉ việc / ..." 
+                                    className="bg-white"
+                                    {...field} 
+                                />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    )}
+                </div>
+            )}
 
             {isEdit && (
               <div className="mt-8 pt-6 border-t border-red-100 bg-red-50/30 -mx-6 px-6 rounded-b-lg">

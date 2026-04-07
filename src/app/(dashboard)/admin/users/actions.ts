@@ -14,6 +14,9 @@ const UserSchema = z.object({
   password: z.string().min(3, "Mật khẩu tối thiểu 3 ký tự").optional().or(z.literal("")),
   role: z.any(),
   diaBan: z.string().optional().or(z.literal("")),
+  banned: z.boolean().optional().default(false),
+  banReason: z.string().optional().or(z.literal("")),
+  banExpires: z.date().optional().nullable(),
 });
 
 export async function getUserList(params?: { search?: string, role?: string }) {
@@ -109,6 +112,9 @@ export async function updateUser(id: string, data: any) {
         email: validated.email,
         role: validated.role,
         diaBan: validated.diaBan || null,
+        banned: validated.banned,
+        banReason: validated.banReason || null,
+        banExpires: validated.banExpires || null,
       },
     });
 

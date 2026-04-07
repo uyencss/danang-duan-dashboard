@@ -137,20 +137,28 @@ export function UsersTable({ data }: { data: any[] }) {
     },
     {
       accessorKey: "isActive",
-      header: "Trạng thái",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-            <Switch 
-                checked={row.getValue("isActive")} 
-                onCheckedChange={() => handleToggle(row.original.id, row.original.isActive)} 
-            />
-            {row.getValue("isActive") ? (
-                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none text-[10px] uppercase font-black">Active</Badge>
-            ) : (
-                <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-none text-[10px] uppercase font-black">Locked</Badge>
-            )}
-        </div>
-      ),
+      header: "Status",
+      cell: ({ row }) => {
+          const user = row.original;
+          return (
+            <div className="flex flex-col gap-1.5 min-w-[100px]">
+                <div className="flex items-center gap-2">
+                    <Switch 
+                        checked={user.isActive} 
+                        onCheckedChange={() => handleToggle(user.id, user.isActive)} 
+                    />
+                    {user.isActive ? (
+                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none text-[9px] px-1.5 h-4 uppercase font-black">Active</Badge>
+                    ) : (
+                        <Badge className="bg-gray-100 text-gray-500 hover:bg-gray-100 border-none text-[9px] px-1.5 h-4 uppercase font-black">Hold</Badge>
+                    )}
+                </div>
+                {user.banned && (
+                    <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-none text-[9px] px-1.5 h-4 uppercase font-black w-fit">Banned</Badge>
+                )}
+            </div>
+          );
+      }
     },
     {
         accessorKey: "lastLoginAt",
