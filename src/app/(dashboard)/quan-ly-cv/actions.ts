@@ -27,7 +27,7 @@ export async function getCVManagementData(filters?: { year?: number, quarter?: n
     });
 
     // 2. Initial stats structure
-    const cvStats = cvs.map(cv => ({
+    const cvStats = cvs.map((cv: any) => ({
       id: cv.id,
       name: cv.name,
       team: cv.diaBan || "Chưa phân công",
@@ -66,7 +66,7 @@ export async function getCVManagementData(filters?: { year?: number, quarter?: n
     });
 
     // 4. Process each project and credit ALL involved CVs using the SPECIFIC requested formulas
-    projects.forEach(p => {
+    projects.forEach((p: any) => {
         const involvedCVIds = [(p as any).chuyenVienId, (p as any).cvHoTro1Id, (p as any).cvHoTro2Id].filter((id): id is string => !!id);
         const isSigned = p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG;
 
@@ -118,7 +118,7 @@ export async function getCVManagementData(filters?: { year?: number, quarter?: n
         }
 
         involvedCVIds.forEach(cvId => {
-            const cvStat = cvStats.find(s => s.id === cvId);
+            const cvStat = cvStats.find((s: any) => s.id === cvId);
             if (!cvStat) return;
 
             // Outreach: Total projects handled in this/past months
@@ -156,14 +156,14 @@ export async function getCVManagementData(filters?: { year?: number, quarter?: n
     });
 
     // 5. Calculate Conversion Rate based on formula: Signed / Total Involved
-    cvStats.forEach(stat => {
+    cvStats.forEach((stat: any) => {
         stat.conversionRate = stat.totalOutreach > 0 ? (stat.yearlyContracts / stat.totalOutreach) * 100 : 0;
     });
 
     const calculateRanks = (list: typeof cvStats, key: 'monthlyRev' | 'quarterlyRev' | 'yearlyRev', rankKey: 'rankMonth' | 'rankQuarter' | 'rankYear') => {
         const sorted = [...list].sort((a, b) => b[key] - a[key]);
-        list.forEach(item => {
-            item[rankKey] = sorted.findIndex(s => s.id === item.id) + 1;
+        list.forEach((item: any) => {
+            item[rankKey] = sorted.findIndex((s: any) => s.id === item.id) + 1;
         });
     };
 

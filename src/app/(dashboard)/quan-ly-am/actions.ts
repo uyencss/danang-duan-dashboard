@@ -27,7 +27,7 @@ export async function getAMManagementData(filters?: { year?: number, quarter?: n
     });
 
     // 2. Initial stats structure
-    const amStats = ams.map(am => ({
+    const amStats = ams.map((am: any) => ({
       id: am.id,
       name: am.name,
       team: am.diaBan || "Chưa phân công",
@@ -65,7 +65,7 @@ export async function getAMManagementData(filters?: { year?: number, quarter?: n
     });
 
     // 4. Process each project and credit ALL involved AMs using the SPECIFIC requested formulas
-    projects.forEach(p => {
+    projects.forEach((p: any) => {
         const involvedAMIds = [(p as any).amId, (p as any).amHoTroId].filter((id): id is string => !!id);
         const isSigned = p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG;
 
@@ -117,7 +117,7 @@ export async function getAMManagementData(filters?: { year?: number, quarter?: n
         }
 
         involvedAMIds.forEach(amId => {
-            const amStat = amStats.find(s => s.id === amId);
+            const amStat = amStats.find((s: any) => s.id === amId);
             if (!amStat) return;
 
             // Outreach: Total projects handled in this/past months
@@ -155,15 +155,15 @@ export async function getAMManagementData(filters?: { year?: number, quarter?: n
     });
 
     // 5. Calculate Conversion Rate based on formula: Signed / Total Involved
-    amStats.forEach(stat => {
+    amStats.forEach((stat: any) => {
         stat.conversionRate = stat.totalOutreach > 0 ? (stat.yearlyContracts / stat.totalOutreach) * 100 : 0;
     });
 
     // 5. Calculate Rankings based on revenue
     const calculateRanks = (list: typeof amStats, key: 'monthlyRev' | 'quarterlyRev' | 'yearlyRev', rankKey: 'rankMonth' | 'rankQuarter' | 'rankYear') => {
         const sorted = [...list].sort((a, b) => b[key] - a[key]);
-        list.forEach(item => {
-            item[rankKey] = sorted.findIndex(s => s.id === item.id) + 1;
+        list.forEach((item: any) => {
+            item[rankKey] = sorted.findIndex((s: any) => s.id === item.id) + 1;
         });
     };
 

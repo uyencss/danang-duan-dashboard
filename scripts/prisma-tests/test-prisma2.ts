@@ -11,7 +11,7 @@ async function main() {
     })
     console.log("Success")
   } catch (e) {
-    console.error("PRISMA_ERROR_CAUGHT:", e.message)
+    console.error("PRISMA_ERROR_CAUGHT:", (e as Error).message)
   }
   await prisma.$disconnect()
 }

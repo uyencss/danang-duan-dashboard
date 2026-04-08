@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { copyFile } from "node:fs/promises";
-import { loadScriptEnv, runMandatoryDbBackup } from "../prisma/db-safety";
+import { loadScriptEnv, runMandatoryDbBackup } from "../../prisma/db-safety";
 
 loadScriptEnv();
 

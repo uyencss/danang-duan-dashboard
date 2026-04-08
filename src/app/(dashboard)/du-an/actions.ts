@@ -421,7 +421,7 @@ export async function createTaskLog(data: {
     const user = sessionRes?.user;
     if (!user) return { error: "Yêu cầu đăng nhập" };
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
         // 1. Tạo nhật ký
         const log = await tx.nhatKyCongViec.create({
             data: {
@@ -485,7 +485,7 @@ export async function getSanPhamGroups() {
   const groups = await prisma.sanPham.groupBy({
     by: ['nhom'],
   });
-  return { data: groups.map(g => g.nhom) };
+  return { data: groups.map((g: any) => g.nhom) };
 }
 
 export async function getUserOptions() {

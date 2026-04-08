@@ -49,7 +49,7 @@ async function _getDashboardOverview(userId: string, userRole: string) {
             _count: { id: true }
         });
         const statusCounts = Object.values(TrangThaiDuAn).reduce((acc: any, status) => {
-            const group = statusGroups.find(g => g.trangThaiHienTai === status);
+            const group = statusGroups.find((g: any) => g.trangThaiHienTai === status);
             acc[status] = group ? group._count.id : 0;
             return acc;
         }, {});
@@ -136,7 +136,7 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
             select: { id: true, name: true, diaBan: true, role: true }
         });
 
-        const analytics = personals.map(p => ({
+        const analytics = personals.map((p: any) => ({
             id: p.id,
             name: p.name,
             role: p.role,
@@ -171,7 +171,7 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
         let uniqueContracts = 0;
         let uniqueProjects = 0;
 
-        projects.forEach(proj => {
+        projects.forEach((proj: any) => {
             const involvedIds = [
                 (proj as any).amId,
                 (proj as any).amHoTroId,
@@ -244,7 +244,7 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
             }
 
             involvedIds.forEach(id => {
-                const stat = analytics.find(a => a.id === id);
+                const stat = analytics.find((a: any) => a.id === id);
                 if (!stat) return;
 
                 stat.projects += 1;
@@ -260,34 +260,34 @@ export async function getAMPerformance(filter?: { type: 'all' | 'nam' | 'quy' | 
         });
 
         // Map for compatibility with older dashboard views
-        const finalAnalytics = analytics.map(a => ({
+        const finalAnalytics = analytics.map((a: any) => ({
             ...a,
             revenue: a.totalRevenue,
             count: a.projects,
             signed: a.contracts
         }));
 
-        const analyticsSorted = finalAnalytics.sort((a, b) => b.totalRevenue - a.totalRevenue);
+        const analyticsSorted = finalAnalytics.sort((a: any, b: any) => b.totalRevenue - a.totalRevenue);
 
         // Filter and sort for AMs
-        const amAnalytics = finalAnalytics.filter(a => (a.role as string) === 'AM');
+        const amAnalytics = finalAnalytics.filter((a: any) => (a.role as string) === 'AM');
         const topAMSigned = [...amAnalytics]
-            .filter(a => a.signedRevenue > 0)
+            .filter((a: any) => a.signedRevenue > 0)
             .sort((a, b) => b.signedRevenue - a.signedRevenue)
             .slice(0, 5);
         const topAMOthers = [...amAnalytics]
-            .filter(a => a.otherRevenue > 0)
+            .filter((a: any) => a.otherRevenue > 0)
             .sort((a, b) => b.otherRevenue - a.otherRevenue)
             .slice(0, 5);
 
         // Filter and sort for CVs
-        const cvAnalytics = finalAnalytics.filter(a => (a.role as string) === 'CV');
+        const cvAnalytics = finalAnalytics.filter((a: any) => (a.role as string) === 'CV');
         const topCVSigned = [...cvAnalytics]
-            .filter(a => a.signedRevenue > 0)
+            .filter((a: any) => a.signedRevenue > 0)
             .sort((a, b) => b.signedRevenue - a.signedRevenue)
             .slice(0, 5);
         const topCVOthers = [...cvAnalytics]
-            .filter(a => a.otherRevenue > 0)
+            .filter((a: any) => a.otherRevenue > 0)
             .sort((a, b) => b.otherRevenue - a.otherRevenue)
             .slice(0, 5);
 
@@ -357,7 +357,7 @@ async function _getKPITimeSeries(userId: string, userRole: string, granularity: 
 
         const timeSeriesMap = new Map();
 
-        groups.forEach(g => {
+        groups.forEach((g: any) => {
             let timeKey = "";
             let sortKey = g.nam * 1000;
             if (granularity === 'nam') {
@@ -371,7 +371,7 @@ async function _getKPITimeSeries(userId: string, userRole: string, granularity: 
             }
 
             // Find matching signed group
-            const sg = signedGroups.find(sg => 
+            const sg = signedGroups.find((sg: any) => 
                 sg.nam === g.nam && 
                 (granularity !== 'quy' || sg.quy === g.quy) &&
                 (granularity !== 'thang' || sg.thang === g.thang)
@@ -529,7 +529,7 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
 
             // Credit EACH staff member fully in staffMap
             involvedIds.forEach(id => {
-                const staff = personals.find(u => u.id === id);
+                const staff = personals.find((u: any) => u.id === id);
                 if (staff) {
                     const diaBan = staff.diaBan || "Chưa phân công";
                     if (!staffMap.has(staff.id)) {
@@ -549,7 +549,7 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
 
             // Credit Dia Ban ONLY ONCE per project (usually using the main AM's location)
             const primaryAMId = project.amId || project.amHoTroId || project.chuyenVienId;
-            const primaryStaff = primaryAMId ? personals.find(u => u.id === primaryAMId) : null;
+            const primaryStaff = primaryAMId ? personals.find((u: any) => u.id === primaryAMId) : null;
             const diaBan = primaryStaff?.diaBan || "Chưa phân công";
 
             if (!diaBanMap.has(diaBan)) {
@@ -567,7 +567,7 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
 
             // Record all distinct staff seen in this Dia Ban
             involvedIds.forEach(id => {
-                const staff = personals.find(u => u.id === id);
+                const staff = personals.find((u: any) => u.id === id);
                 if (staff && (staff.diaBan || "Chưa phân công") === diaBan) {
                     dbRef.staffCount.add(staff.id);
                 }

@@ -8,7 +8,7 @@ async function main() {
     const localRes = await localClient.execute("SELECT count(*) as count FROM DuAn");
     console.log(`✅ Local 'DuAn' count: ${localRes.rows[0].count}`);
   } catch (err) {
-    console.error("❌ Error checking local:", err.message);
+    console.error("❌ Error checking local:", (err as Error).message);
   }
 
   console.log("\nVerifying REMOTE Turso Database...");
@@ -17,7 +17,7 @@ async function main() {
     const remoteRes = await remoteClient.execute("SELECT count(*) as count FROM DuAn");
     console.log(`✅ Remote 'DuAn' count: ${remoteRes.rows[0].count}`);
   } catch (err) {
-    console.error("❌ Error checking remote:", err.message);
+    console.error("❌ Error checking remote:", (err as Error).message);
   }
 }
 

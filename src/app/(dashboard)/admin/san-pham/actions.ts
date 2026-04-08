@@ -44,7 +44,7 @@ export async function getSanPhamGroups() {
         const groups = await prisma.sanPham.groupBy({
             by: ['nhom'],
         });
-        return { data: groups.map(g => g.nhom) };
+        return { data: groups.map((g: any) => g.nhom) };
     } catch (error) {
         return { error: "Lỗi khi lấy nhóm sản phẩm" };
     }

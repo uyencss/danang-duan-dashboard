@@ -32,7 +32,7 @@ export default async function NhanSuPage({ searchParams }: { searchParams: Promi
     return (
         <div className="space-y-6">
             <Breadcrumb items={[{ label: "Thống kê" }, { label: "Nhân sự" }]} />
-            <NhanSuDashboardClient initialData={res.data} summary={res.summary} />
+            <NhanSuDashboardClient initialData={res.data} summary={res.summary as any} />
         </div>
     );
 }

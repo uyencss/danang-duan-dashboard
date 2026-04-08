@@ -3,7 +3,12 @@ import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { createClient, type Config, type Client } from "@libsql/client";
 
 function getLibSqlConfig(): Config {
-  const useEmbeddedReplica = process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN;
+  // Use embedded replica only in standard production runtime.
+  // Next.js dev server (HMR) and Next.js build workers will lock the DB if they start sync threads.
+  const isProd = process.env.NODE_ENV === "production";
+  const isBuild = process.env.npm_lifecycle_event === "build" || process.argv.join(' ').includes('/next build');
+  
+  const useEmbeddedReplica = isProd && !isBuild && process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN;
   
   if (useEmbeddedReplica) {
     return {
