@@ -19,6 +19,7 @@ import {
   GraduationCap,
   Target,
   Trash2,
+  Mail,
 } from "lucide-react";
 
 import type { AppRole } from "@/lib/auth-utils";
@@ -61,6 +62,8 @@ const adminNavItems: SidebarItem[] = [
   { label: "Giao KPI", href: "/admin/kpi", icon: Target, allowedRoles: ["ADMIN", "USER"] },
   // ADMIN + USER can see Dự án đã xoá
   { label: "Dự án đã xoá", href: "/admin/du-an-da-xoa", icon: Trash2, allowedRoles: ["ADMIN", "USER"] },
+  // ADMIN only — Gửi Email Server
+  { label: "Email Service", href: "/email-service", icon: Mail, allowedRoles: ["ADMIN"] },
 ];
 
 interface SidebarProps {
