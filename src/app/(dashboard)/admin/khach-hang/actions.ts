@@ -38,6 +38,15 @@ export async function getKhachHangList(params?: { search?: string, phanLoai?: st
     const data = await prisma.khachHang.findMany({
       where: whereClause,
       include: {
+        duAns: {
+          select: {
+            id: true,
+            tenDuAn: true,
+            doanhThuTheoThang: true,
+            trangThaiHienTai: true,
+            hienTaiBuoc: true,
+          }
+        },
         _count: {
           select: { duAns: true }
         }

@@ -71,6 +71,16 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   THAT_BAI: { label: "Thất bại", className: "bg-red-100 text-red-700" },
 };
 
+const STEPS = [
+  "Bước 1: Tiếp cận tìm hiểu nhu cầu",
+  "Bước 2: Đề xuất GP",
+  "Bước 3: Xây dựng đề án",
+  "Bước 4: Tham gia thầu",
+  "Bước 5: Ký hợp đồng",
+  "Bước 6: Triển khai",
+  "Bước 7: Hỗ trợ sau bán"
+];
+
 export function ProjectsTable({ 
   data, 
   totalCount,
@@ -201,16 +211,22 @@ export function ProjectsTable({
       ),
     },
     {
-      accessorKey: "ngayChamsocCuoiCung",
-      header: "CSKH",
+      accessorKey: "hienTaiBuoc",
+      header: "Tiến độ",
       cell: ({ row }) => {
-        const lastDate = row.getValue("ngayChamsocCuoiCung") as Date;
-        if (!lastDate) return <span className="text-red-500 font-bold text-[10px] animate-pulse">CHƯA CSKH</span>;
+        const stepValue = row.getValue("hienTaiBuoc") as string;
+        if (!stepValue) return <span className="text-slate-300">—</span>;
+        const shortStep = stepValue.split(":")[0].trim();
         return (
-          <span className="text-sm text-slate-500">
-            {new Date(lastDate).toLocaleDateString("vi-VN")}
+          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold border border-slate-200">
+            {shortStep}
           </span>
         );
+      },
+      filterFn: (row, id, value) => {
+        const rowValue = row.getValue(id) as string;
+        if (!rowValue) return false;
+        return value.includes(rowValue);
       },
     },
     {
@@ -268,6 +284,7 @@ export function ProjectsTable({
         project.sanPham?.tenChiTiet?.toLowerCase()?.includes(value) ||
         project.am?.name?.toLowerCase()?.includes(value) ||
         LINH_VUC_LABELS[project.linhVuc]?.toLowerCase()?.includes(value) ||
+        project.hienTaiBuoc?.toLowerCase()?.includes(value) ||
         false
       );
     },
@@ -292,12 +309,18 @@ export function ProjectsTable({
         "Lĩnh Vực": LINH_VUC_LABELS[p.linhVuc] || p.linhVuc,
         "Sản Phẩm": p.sanPham?.tenChiTiet || "",
         "AM": p.am?.name || "",
+        "AM hỗ trợ": p.amHoTro?.name || "",
         "Chuyên Viên": p.chuyenVien?.name || "",
+        "CV hỗ trợ 1": p.cvHoTro1?.name || "",
+        "CV hỗ trợ 2": p.cvHoTro2?.name || "",
         "Trạng Thái": STATUS_STYLES[p.trangThaiHienTai]?.label || p.trangThaiHienTai,
+        "Tiến độ": p.hienTaiBuoc || "Chưa bắt đầu",
+        "Ngày bắt đầu": p.ngayBatDau ? new Date(p.ngayBatDau).toLocaleDateString("vi-VN") : "",
+        "Ngày kết thúc": p.ngayKetThuc ? new Date(p.ngayKetThuc).toLocaleDateString("vi-VN") : "",
+        "Mã hợp đồng": p.maHopDong || "",
         "Tổng DT Dự Kiến": p.tongDoanhThuDuKien,
         "Doanh Thu Theo Tháng": p.doanhThuTheoThang,
         "Nhật ký công việc": logs,
-        "Ngày CSKH Cuối": p.ngayChamsocCuoiCung ? new Date(p.ngayChamsocCuoiCung).toLocaleDateString("vi-VN") : "Chưa CSKH"
       };
     });
     exportToExcel(exportData, "DanhSachDuAn_CRM");
@@ -335,7 +358,7 @@ export function ProjectsTable({
               {table.getHeaderGroups().map((hg) =>
                 hg.headers.map((header) => {
                   const filterValue = header.column.getFilterValue();
-                  const isSelectFilter = ["linhVuc", "trangThaiHienTai", "warning"].includes(header.id);
+                  const isSelectFilter = ["linhVuc", "trangThaiHienTai", "warning", "hienTaiBuoc"].includes(header.id);
 
                   return (
                     <th
@@ -380,6 +403,12 @@ export function ProjectsTable({
                                         const current = (filterValue as string[]) || [];
                                         header.column.setFilterValue(current.includes(k) ? current.filter(x => x !== k) : [...current, k]);
                                       }} className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", ((filterValue as string[]) || []).includes(k) ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{v.label}</button>
+                                    ))}
+                                    {header.id === "hienTaiBuoc" && STEPS.map((step) => (
+                                      <button key={step} onClick={() => {
+                                        const current = (filterValue as string[]) || [];
+                                        header.column.setFilterValue(current.includes(step) ? current.filter(x => x !== step) : [...current, step]);
+                                      }} className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", ((filterValue as string[]) || []).includes(step) ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{step.split(":")[0]}</button>
                                     ))}
                                     {header.id === "warning" && [
                                       { k: "urgent", v: "Cần CS gấp" },

@@ -23,9 +23,16 @@ import {
   CheckCircle2,
   XCircle,
   Download,
+  Flame,
+  CalendarDays,
+  Filter,
 } from "lucide-react";
 import * as React from "react";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { exportToExcel } from "@/lib/export-excel";
+import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -60,6 +67,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { FolderKanban, TrendingUp, Clock } from "lucide-react";
+import { TrangThaiDuAn as StatusPrisma } from "@prisma/client";
 
 export function CustomersTable({ data }: { data: any[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -68,6 +84,7 @@ export function CustomersTable({ data }: { data: any[] }) {
   const [selectedKH, setSelectedKH] = React.useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [khToBeDeleted, setKhToBeDeleted] = React.useState<any>(null);
+  const [viewProjectsKH, setViewProjectsKH] = React.useState<any>(null);
 
   const handleDelete = async (id: number) => {
     const result = await deleteKhachHang(id);
@@ -119,24 +136,92 @@ export function CustomersTable({ data }: { data: any[] }) {
       },
     },
     {
-      accessorKey: "diaChi",
-      header: "Địa chỉ",
-      cell: ({ row }) => <div className="text-gray-500 text-xs truncate max-w-[150px]">{row.getValue("diaChi") || "---"}</div>,
+      accessorKey: "ngaySinhDauMoi",
+      header: "Sinh nhật Đầu mối",
+      cell: ({ row }) => {
+        const date = row.original.ngaySinhDauMoi;
+        if (!date) return <span className="text-slate-300">—</span>;
+        const d = new Date(date);
+        const now = new Date();
+        const m = d.getMonth();
+        const currM = now.getMonth();
+        const isHighlight = m === currM || m === (currM + 1) % 12;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-700">{format(d, "dd/MM")}</span>
+            {isHighlight && <Flame className="size-4 text-orange-500 fill-orange-500 animate-pulse" />}
+          </div>
+        );
+      },
+      filterFn: (row, id, value) => {
+        const date = row.getValue(id) as string;
+        if (!date) return false;
+        const m = (new Date(date).getMonth() + 1).toString();
+        return value.includes(m);
+      },
     },
     {
-      accessorKey: "soDienThoai",
-      header: "Liên hệ",
-      cell: ({ row }) => (
-        <div className="flex flex-col text-xs">
-          <span className="font-medium">{row.getValue("soDienThoai") || "---"}</span>
-          <span className="text-gray-400 font-normal">{row.original.email || ""}</span>
-        </div>
-      ),
+      accessorKey: "ngaySinhLanhDao",
+      header: "Sinh nhật Lãnh đạo",
+      cell: ({ row }) => {
+        const date = row.original.ngaySinhLanhDao;
+        if (!date) return <span className="text-slate-300">—</span>;
+        const d = new Date(date);
+        const now = new Date();
+        const m = d.getMonth();
+        const currM = now.getMonth();
+        const isHighlight = m === currM || m === (currM + 1) % 12;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-700">{format(d, "dd/MM")}</span>
+            {isHighlight && <Flame className="size-4 text-orange-500 fill-orange-500 animate-pulse" />}
+          </div>
+        );
+      },
+      filterFn: (row, id, value) => {
+        const date = row.getValue(id) as string;
+        if (!date) return false;
+        const m = (new Date(date).getMonth() + 1).toString();
+        return value.includes(m);
+      },
+    },
+    {
+      accessorKey: "ngayKyNiem",
+      header: "Ngày kỷ niệm",
+      cell: ({ row }) => {
+        const date = row.original.ngayKyNiem;
+        if (!date) return <span className="text-slate-300">—</span>;
+        const d = new Date(date);
+        const now = new Date();
+        const m = d.getMonth();
+        const currM = now.getMonth();
+        const isHighlight = m === currM || m === (currM + 1) % 12;
+        return (
+          <div className="flex items-center gap-2 text-blue-600">
+            <span className="text-xs font-bold">{format(d, "dd/MM")}</span>
+            {isHighlight && <Flame className="size-4 text-orange-500 fill-orange-500 animate-pulse" />}
+          </div>
+        );
+      },
+      filterFn: (row, id, value) => {
+        const date = row.getValue(id) as string;
+        if (!date) return false;
+        const m = (new Date(date).getMonth() + 1).toString();
+        return value.includes(m);
+      },
     },
     {
       accessorKey: "_count.duAns",
       header: "Dự án",
-      cell: ({ row }) => <Badge variant="secondary" className="font-mono">{row.original._count.duAns}</Badge>,
+      cell: ({ row }) => (
+        <Badge 
+          variant="secondary" 
+          className="font-mono cursor-pointer hover:bg-[#0058bc] hover:text-white transition-all hover:scale-110 active:scale-95 px-2.5 py-1"
+          onClick={() => setViewProjectsKH(row.original)}
+        >
+          {row.original._count.duAns}
+        </Badge>
+      ),
     },
     {
       accessorKey: "isActive",
@@ -199,6 +284,28 @@ export function CustomersTable({ data }: { data: any[] }) {
       columnFilters,
     },
   });
+
+  // Apply Priority Sorting based on "Heat" (Warnings)
+  const sortedData = React.useMemo(() => {
+    const checkHeat = (kh: any) => {
+      const dates = [kh.ngaySinhDauMoi, kh.ngaySinhLanhDao, kh.ngayKyNiem];
+      const now = new Date();
+      const currM = now.getMonth();
+      const nextM = (currM + 1) % 12;
+      return dates.some(d => {
+        if (!d) return false;
+        const m = new Date(d).getMonth();
+        return m === currM || m === nextM;
+      });
+    };
+
+    return [...table.getRowModel().rows].sort((a, b) => {
+      const heatA = checkHeat(a.original) ? 1 : 0;
+      const heatB = checkHeat(b.original) ? 1 : 0;
+      if (heatA !== heatB) return heatB - heatA; // Warned first
+      return 0;
+    });
+  }, [table.getRowModel().rows]);
 
   const handleExport = () => {
     const exportData = table.getFilteredRowModel().rows.map(row => {
@@ -263,18 +370,70 @@ export function CustomersTable({ data }: { data: any[] }) {
           <TableHeader className="bg-gray-50/50">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-gray-500 text-xs font-bold uppercase tracking-wider">
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const isDateFilter = ["ngaySinhDauMoi", "ngaySinhLanhDao", "ngayKyNiem"].includes(header.id);
+                  const filterValue = header.column.getFilterValue() as string[] || [];
+
+                  return (
+                    <TableHead key={header.id} className="text-gray-500 text-xs font-bold uppercase tracking-wider relative group">
+                      <div className="flex items-center gap-2">
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                        
+                        {isDateFilter && (
+                          <Popover>
+                            <PopoverTrigger className={cn("p-1 h-fit hover:bg-gray-100 rounded-md transition-colors", filterValue.length > 0 && "text-blue-600 bg-blue-50")}>
+                                <Filter className="size-3" />
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56 p-2" align="start">
+                              <div className="space-y-2">
+                                <p className="text-[10px] font-black uppercase text-gray-400 px-2 pb-1 border-b">Lọc theo tháng</p>
+                                <div className="grid grid-cols-3 gap-1">
+                                  {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map(m => (
+                                    <button
+                                      key={m}
+                                      onClick={() => {
+                                        const next = filterValue.includes(m) ? filterValue.filter(x => x !== m) : [...filterValue, m];
+                                        header.column.setFilterValue(next.length ? next : undefined);
+                                      }}
+                                      className={cn(
+                                        "py-1 rounded text-[10px] font-bold border transition-colors",
+                                        filterValue.includes(m) ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-100 hover:border-blue-200"
+                                      )}
+                                    >
+                                      Tháng {m}
+                                    </button>
+                                  ))}
+                                </div>
+                                {filterValue.length > 0 && (
+                                  <Button variant="ghost" size="sm" className="w-full h-7 text-[10px] font-bold text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => header.column.setFilterValue(undefined)}>
+                                    Xóa tất cả
+                                  </Button>
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </div>
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="hover:bg-gray-50/30 transition-colors border-gray-50">
+            {sortedData.length ? (
+              sortedData.map((row) => (
+                <TableRow key={row.id} className={cn(
+                  "hover:bg-gray-50/30 transition-colors border-gray-50",
+                  // Highlight row background if has heat
+                  // checkHeat is not accessible here easily, let's use a simpler check
+                  [row.original.ngaySinhDauMoi, row.original.ngaySinhLanhDao, row.original.ngayKyNiem].some(d => {
+                      if (!d) return false;
+                      const m = new Date(d).getMonth();
+                      const now = new Date();
+                      return m === now.getMonth() || m === (now.getMonth() + 1) % 12;
+                  }) && "bg-orange-50/30 hover:bg-orange-50/50"
+                )}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-4">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -346,6 +505,81 @@ export function CustomersTable({ data }: { data: any[] }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Projects List Dialog */}
+      <Dialog open={!!viewProjectsKH} onOpenChange={(open) => !open && setViewProjectsKH(null)}>
+        <DialogContent className="sm:max-w-[700px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="p-8 bg-gradient-to-br from-[#0058bc] to-blue-600 text-white">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                 <FolderKanban className="size-6" />
+              </div>
+              <DialogTitle className="text-2xl font-black">Danh sách Dự án</DialogTitle>
+            </div>
+            <DialogDescription className="text-blue-100 font-medium text-base">
+              Khách hàng: <span className="text-white font-bold">{viewProjectsKH?.ten}</span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="p-8">
+            <div className="rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+              <Table>
+                <TableHeader className="bg-gray-50">
+                  <TableRow>
+                    <TableHead className="font-bold text-[#191c1e] text-[10px] uppercase tracking-wider">Tên dự án</TableHead>
+                    <TableHead className="font-bold text-[#191c1e] text-[10px] uppercase tracking-wider text-right">Tổng DT kỳ vọng</TableHead>
+                    <TableHead className="font-bold text-[#191c1e] text-[10px] uppercase tracking-wider text-center">Hiện trạng</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {viewProjectsKH?.duAns?.length > 0 ? (
+                    viewProjectsKH.duAns.map((project: any) => (
+                      <TableRow key={project.id} className="hover:bg-blue-50/30">
+                        <TableCell className="py-4">
+                          <p className="font-bold text-[13px] text-[#191c1e] leading-tight">{project.tenDuAn}</p>
+                          <span className={cn(
+                            "inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase mt-1",
+                            project.trangThaiHienTai === "DA_KY_HOP_DONG" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
+                          )}>
+                            {project.trangThaiHienTai === "DA_KY_HOP_DONG" ? "Đã ký HĐ" : "Đang triển khai"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right py-4 font-mono font-bold text-blue-600">
+                          {project.doanhThuTheoThang?.toLocaleString() || 0}
+                        </TableCell>
+                        <TableCell className="text-center py-4">
+                          <div className="flex flex-col items-center gap-1">
+                            <Clock className="size-3 text-slate-300" />
+                            <span className="text-[10px] font-bold text-slate-500 max-w-[120px] truncate">
+                              {project.hienTaiBuoc?.split(":")[0] || "—"}
+                            </span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={3} className="h-32 text-center text-slate-400 italic">
+                        Hiện khách hàng chưa có dự án nào.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            
+            <div className="mt-6 flex justify-between items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+               <div className="flex items-center gap-2">
+                  <TrendingUp className="size-5 text-emerald-500" />
+                  <span className="text-sm font-bold text-gray-600">Tổng doanh thu (tháng):</span>
+               </div>
+               <span className="text-xl font-black text-[#0058bc]">
+                  {viewProjectsKH?.duAns?.reduce((sum: number, p: any) => sum + (p.doanhThuTheoThang || 0), 0).toLocaleString() || 0}
+               </span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

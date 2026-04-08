@@ -199,7 +199,6 @@ export async function createDuAn(data: any) {
     });
 
     revalidatePath("/du-an");
-    revalidatePath("/nhan-su");
     revalidatePath("/quan-ly-am");
     revalidatePath("/quan-ly-cv");
     revalidatePath("/kpi");
@@ -245,7 +244,6 @@ export async function updateDuAn(id: number, data: any) {
         });
 
         revalidatePath("/du-an");
-        revalidatePath("/nhan-su");
         revalidatePath("/quan-ly-am");
         revalidatePath("/quan-ly-cv");
         revalidatePath("/kpi");
@@ -515,7 +513,6 @@ export async function createTaskLog(data: {
     });
 
     revalidatePath("/du-an");
-    revalidatePath("/nhan-su");
     revalidatePath("/quan-ly-am");
     revalidatePath("/quan-ly-cv");
     revalidatePath("/kpi");
@@ -582,7 +579,6 @@ export async function requestDeleteDuAn(id: number) {
       data: { isPendingDelete: true, deleteRequestedAt: new Date() }
     });
     revalidatePath("/du-an");
-    revalidatePath("/nhan-su");
     revalidatePath("/quan-ly-am");
     revalidatePath("/quan-ly-cv");
     revalidatePath("/kpi");
@@ -605,7 +601,6 @@ export async function approveDeleteDuAn(id: number) {
     await prisma.duAn.delete({ where: { id }});
     revalidatePath("/admin/du-an-da-xoa");
     revalidatePath("/du-an");
-    revalidatePath("/nhan-su");
     revalidatePath("/quan-ly-am");
     revalidatePath("/quan-ly-cv");
     revalidatePath("/kpi");
@@ -631,7 +626,6 @@ export async function restoreDuAn(id: number) {
     });
     revalidatePath("/admin/du-an-da-xoa");
     revalidatePath("/du-an");
-    revalidatePath("/nhan-su");
     revalidatePath("/quan-ly-am");
     revalidatePath("/quan-ly-cv");
     revalidatePath("/kpi");

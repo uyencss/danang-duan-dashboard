@@ -41,8 +41,6 @@ const mainNavItems: SidebarItem[] = [
   { label: "CRM & DS Dự án", href: "/du-an", icon: FolderKanban },
   // Everyone can see Khách hàng
   { label: "Khách hàng", href: "/admin/khach-hang", icon: Building2 },
-  // ADMIN + USER can see Tổng hợp Nhân sự
-  { label: "Tổng hợp Nhân sự", href: "/nhan-su", icon: Users, allowedRoles: ["ADMIN", "USER"] },
   // ADMIN + USER can see Phân tích & KPI
   { label: "Phân tích & KPI", href: "/kpi", icon: TrendingUp, allowedRoles: ["ADMIN", "USER"] },
   // ADMIN + USER can see Top Địa bàn

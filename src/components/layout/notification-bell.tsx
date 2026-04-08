@@ -8,8 +8,7 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "sonner";
-import { getNotifications, markNotificationRead, approveStep, rejectStep } from "@/app/(dashboard)/du-an/actions";
-import { Check, X } from "lucide-react";
+import { getNotifications, markNotificationRead } from "@/app/(dashboard)/du-an/actions";
 import Link from "next/link";
 
 interface Notification {
@@ -126,36 +125,6 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     // In a real app we'd call an API to mark all as read.
   };
 
-  const handleApprove = async (notif: Notification) => {
-    if (!notif.relatedId) return;
-    setLoadingId(notif.id);
-    const res = await approveStep(Number(notif.relatedId));
-    if (res.success) {
-      toast.success("Đã duyệt bước quy trình!");
-      await markNotificationRead(Number(notif.id));
-      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
-    } else {
-      toast.error(res.error);
-    }
-    setLoadingId(null);
-  };
-
-  const handleReject = async (notif: Notification) => {
-    if (!notif.relatedId) return;
-    const reason = prompt("Nhập lý do từ chối:");
-    if (reason === null) return;
-    
-    setLoadingId(notif.id);
-    const res = await rejectStep(Number(notif.relatedId), reason);
-    if (res.success) {
-      toast.info("Đã từ chối bước quy trình.");
-      await markNotificationRead(Number(notif.id));
-      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
-    } else {
-      toast.error(res.error);
-    }
-    setLoadingId(null);
-  };
 
   const handleClick = async (notif: Notification) => {
      if (!notif.read) {
@@ -172,7 +141,6 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         className="text-gray-500 hover:bg-gray-50 relative"
         onClick={() => {
           setIsOpen((prev) => !prev);
-          if (!isOpen) markAllRead();
         }}
       >
         <Bell className="size-5" />
@@ -187,14 +155,6 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl border border-gray-100 shadow-2xl shadow-gray-200/30 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <span className="text-xs font-black text-[#003466] uppercase tracking-widest">Thông báo</span>
-            {notifications.length > 0 && (
-              <button
-                onClick={markAllRead}
-                className="text-[10px] text-primary font-bold hover:underline"
-              >
-                Đánh dấu tất cả đã đọc
-              </button>
-            )}
           </div>
 
           <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
@@ -227,41 +187,11 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                         {notif.message}
                       </p>
                       
-                      {notif.type === "APPROVAL_REQUEST" && !notif.read && (
-                        <div className="mt-2 flex gap-2">
-                           <Button 
-                             size="sm" 
-                             className="h-7 px-3 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold rounded-lg"
-                             onClick={(e) => { e.stopPropagation(); handleApprove(notif); }}
-                             disabled={loadingId === notif.id}
-                           >
-                              <Check className="size-3 mr-1" /> Duyệt
-                           </Button>
-                           <Button 
-                             size="sm" 
-                             variant="outline" 
-                             className="h-7 px-3 text-red-600 border-red-100 hover:bg-red-50 text-[10px] font-bold rounded-lg"
-                             onClick={(e) => { e.stopPropagation(); handleReject(notif); }}
-                             disabled={loadingId === notif.id}
-                           >
-                              <X className="size-3 mr-1" /> Từ chối
-                           </Button>
-                        </div>
-                      )}
 
                       <div className="flex items-center justify-between mt-1">
                         <p className="text-[9px] text-gray-400 font-medium">
                           {formatDistanceToNow(notif.timestamp, { addSuffix: true, locale: vi })}
                         </p>
-                        {notif.projectId && (
-                            <Link 
-                                href={`/du-an/${notif.projectId}`} 
-                                className="text-[9px] text-blue-500 hover:underline font-bold"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                Xem chi tiết →
-                            </Link>
-                        )}
                       </div>
                     </div>
                   </div>
