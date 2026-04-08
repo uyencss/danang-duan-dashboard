@@ -30,7 +30,16 @@ This project uses **Turso (libSQL)** with **Embedded Replicas** for low-latency 
 
 If you are setting up the project for the first time or on a new machine:
 
-### 1. Generate Prisma Client
+### 1. Configure Environment Variables
+
+You must create a `.env` file to store your local credentials. GitHub intentionally safeguards Repository Secrets so that their raw values cannot be downloaded via the GitHub API or the `gh` CLI (which is officially supported on Windows, Mac, and Linux). 
+
+Because of this security restriction, you must automatically create a local template, and then manually insert development values shared securely by your team:
+
+- **Mac/Linux**: `./scripts/setup-env.sh`
+- **Windows**: `.\scripts\setup-env.cmd`
+
+### 2. Generate Prisma Client
 Whenever the schema changes, you must regenerate the client:
 ```bash
 npx prisma generate
