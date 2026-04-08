@@ -20,6 +20,7 @@ import {
   Target,
   Trash2,
   ClipboardList,
+  Mail,
 } from "lucide-react";
 
 import type { AppRole } from "@/lib/auth-utils";
@@ -64,6 +65,8 @@ const adminNavItems: SidebarItem[] = [
   { label: "Theo dõi các bước", href: "/du-an/tracking", icon: ClipboardList, allowedRoles: ["ADMIN", "USER"] },
   // ADMIN + USER can see Dự án đã xoá
   { label: "Dự án đã xoá", href: "/admin/du-an-da-xoa", icon: Trash2, allowedRoles: ["ADMIN", "USER"] },
+  // ADMIN only — Gửi Email Server (Tạm ẩn)
+  // { label: "Email Service", href: "/email-service", icon: Mail, allowedRoles: ["ADMIN"] },
 ];
 
 interface SidebarProps {
