@@ -1,12 +1,14 @@
 /**
- * Creates the admin@mobifone.vn user with password admin123 directly in Turso.
- * Safe to run even if the user was previously deleted.
+ * reset-admin-password.ts
+ * Creates or resets admin@mobifone.vn using Better-Auth's own password hasher,
+ * writing directly to the Turso remote database.
+ *
+ * Usage:
+ *   npx tsx --env-file=.env scripts/reset-admin-password.ts
  */
+import { betterAuth } from "better-auth";
 import { createClient } from "@libsql/client";
-import { scrypt, randomBytes } from "node:crypto";
-import { promisify } from "node:util";
-
-const scryptAsync = promisify(scrypt);
+import { randomBytes } from "node:crypto";
 
 const EMAIL = "admin@mobifone.vn";
 const NAME = "Admin Lãnh đạo";
@@ -18,54 +20,59 @@ function generateId(len = 32) {
     return randomBytes(len).toString("base64url").slice(0, len);
 }
 
-async function hashPassword(password: string): Promise<string> {
-    const salt = randomBytes(16).toString("hex");
-    const dk = (await (scryptAsync as any)(password, salt, 64, { N: 16384, r: 8, p: 1 })) as Buffer;
-    return `${salt}:${dk.toString("hex")}`;
-}
-
 async function main() {
-    const client = createClient({
+    const tursoClient = createClient({
         url: process.env.TURSO_DATABASE_URL!,
         authToken: process.env.TURSO_AUTH_TOKEN!,
     });
 
-    // Check if user already exists
-    const { rows } = await client.execute({ sql: `SELECT id FROM "user" WHERE email = ?`, args: [EMAIL] });
-
-    if (rows.length > 0) {
-        console.log(`User already exists (id: ${rows[0][0]}), updating password instead...`);
-        const userId = rows[0][0] as string;
-        const hash = await hashPassword(PASSWORD);
-        await client.execute({ sql: `UPDATE "account" SET password = ? WHERE userId = ? AND providerId = 'credential'`, args: [hash, userId] });
-        // also ensure role is ADMIN
-        await client.execute({ sql: `UPDATE "user" SET role = ?, diaBan = ?, emailVerified = 1 WHERE id = ?`, args: [ROLE, DIA_BAN, userId] });
-        console.log(`✅ Password updated for ${EMAIL} → "${PASSWORD}"`);
-        client.close();
-        return;
-    }
+    // Use Better-Auth's own hasher to get the exact same format as the app uses
+    const authInstance = betterAuth({
+        baseURL: "http://localhost:3000",
+        database: { type: "sqlite", db: ":memory:" } as any,
+        emailAndPassword: { enabled: true },
+    });
+    const ctx = await authInstance.$context;
+    const hash = await ctx.password.hash(PASSWORD);
+    console.log("Hash (partial):", hash.slice(0, 30) + "...");
 
     const now = new Date().toISOString();
-    const userId = generateId(32);
-    const accountId = generateId(32);
-    const hash = await hashPassword(PASSWORD);
 
-    // Insert user
-    await client.execute({
-        sql: `INSERT INTO "user" (id, name, email, emailVerified, role, diaBan, isActive, createdAt, updatedAt)
-          VALUES (?, ?, ?, 1, ?, ?, 1, ?, ?)`,
-        args: [userId, NAME, EMAIL, ROLE, DIA_BAN, now, now],
+    // Check if user already exists
+    const { rows } = await tursoClient.execute({
+        sql: `SELECT id FROM "user" WHERE email = ?`,
+        args: [EMAIL],
     });
 
-    // Insert credential account
-    await client.execute({
-        sql: `INSERT INTO "account" (id, userId, accountId, providerId, password, createdAt, updatedAt)
-          VALUES (?, ?, ?, 'credential', ?, ?, ?)`,
-        args: [accountId, userId, userId, hash, now, now],
-    });
+    if (rows.length > 0) {
+        const userId = rows[0][0] as string;
+        console.log(`User exists (id: ${userId}), updating password & role...`);
+        await tursoClient.execute({
+            sql: `UPDATE "account" SET password = ? WHERE userId = ? AND providerId = 'credential'`,
+            args: [hash, userId],
+        });
+        await tursoClient.execute({
+            sql: `UPDATE "user" SET role = ?, diaBan = ?, emailVerified = 1 WHERE id = ?`,
+            args: [ROLE, DIA_BAN, userId],
+        });
+    } else {
+        console.log("User not found, creating...");
+        const userId = generateId(32);
+        const accountId = generateId(32);
+        await tursoClient.execute({
+            sql: `INSERT INTO "user" (id, name, email, emailVerified, role, diaBan, isActive, createdAt, updatedAt)
+            VALUES (?, ?, ?, 1, ?, ?, 1, ?, ?)`,
+            args: [userId, NAME, EMAIL, ROLE, DIA_BAN, now, now],
+        });
+        await tursoClient.execute({
+            sql: `INSERT INTO "account" (id, userId, accountId, providerId, password, createdAt, updatedAt)
+            VALUES (?, ?, ?, 'credential', ?, ?, ?)`,
+            args: [accountId, userId, userId, hash, now, now],
+        });
+    }
 
-    console.log(`✅ Created admin user ${EMAIL} with password "${PASSWORD}" (userId: ${userId})`);
-    client.close();
+    console.log(`\n✅ ${EMAIL} is ready. Login with: ${PASSWORD}`);
+    tursoClient.close();
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
