@@ -10,7 +10,7 @@
 import { betterAuth } from "better-auth";
 import { createClient } from "@libsql/client";
 
-const NEW_PASSWORD = "12345";
+const NEW_PASSWORD = "123456";
 
 async function main() {
     if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
@@ -33,7 +33,10 @@ async function main() {
     });
 
     const { rows } = await client.execute(
-        `SELECT id, userId FROM "account" WHERE "providerId" = 'credential'`
+        `SELECT a.id, a.userId FROM "account" a
+         JOIN "user" u ON u.id = a.userId
+         WHERE a."providerId" = 'credential'
+           AND u.email != 'admin@mobifone.vn'`
     );
 
     if (rows.length === 0) {
