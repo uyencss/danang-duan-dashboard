@@ -11,6 +11,7 @@
     "seed:reset": "SEED_RESET=true tsx prisma/seed.ts",
     "db:migrate:reset": "tsx scripts/db-management/migrate-reset-safe.ts",
     "db:migrate:reset:unsafe": "prisma migrate reset --force",
+    "reset-passwords": "tsx --env-file=.env scripts/reset-all-passwords.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {
