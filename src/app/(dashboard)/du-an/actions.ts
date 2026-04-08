@@ -1,5 +1,6 @@
 "use server";
 
+// Reloaded to sync Prisma Client
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -7,6 +8,9 @@ import { LinhVuc, TrangThaiDuAn, PhanLoaiKH } from "@prisma/client";
 import { extractTimeFields } from "@/lib/utils/time-extract";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import fs from "fs/promises";
+import path from "path";
+import { existsSync, mkdirSync } from "fs";
 import { syncReplica } from "@/lib/utils/sync";
 
 // ── Schema for the NEW creation flow ────────────────────────────────
@@ -43,6 +47,7 @@ const CreateDuAnSchema = z.object({
   cvHoTro2Id: z.string().optional().or(z.literal("")),
   trangThaiHienTai: z.nativeEnum(TrangThaiDuAn).optional(),
   isTrongDiem: z.boolean().optional().default(false),
+  isKyVong: z.boolean().optional().default(false),
 }).refine(
   (data) => data.customerId || data.customerName,
   { message: "Vui lòng chọn hoặc nhập tên khách hàng", path: ["customerId"] }
@@ -71,6 +76,7 @@ const DuAnSchema = z.object({
     z.coerce.date().optional().nullable(),
   ),
   isTrongDiem: z.boolean().optional().default(false),
+  isKyVong: z.boolean().optional().default(false),
   trangThaiHienTai: z.nativeEnum(TrangThaiDuAn).optional(),
 });
 
@@ -186,6 +192,7 @@ export async function createDuAn(data: any) {
         cvHoTro1Id: validated.cvHoTro1Id || null,
         cvHoTro2Id: validated.cvHoTro2Id || null,
         isTrongDiem: validated.isTrongDiem,
+        isKyVong: validated.isKyVong,
         trangThaiHienTai: validated.trangThaiHienTai || TrangThaiDuAn.MOI,
         ngayChamsocCuoiCung: new Date(),
       } as any,
@@ -230,6 +237,7 @@ export async function updateDuAn(id: number, data: any) {
                 quy,
                 nam,
                 isTrongDiem: validated.isTrongDiem,
+                isKyVong: validated.isKyVong,
                 trangThaiHienTai: validated.trangThaiHienTai || undefined,
                 ngayBatDau: validated.ngayBatDau,
                 ngayKetThuc: validated.ngayKetThuc || null,
@@ -388,7 +396,10 @@ export async function getDuAnDetail(id: number) {
         cvHoTro2: true,
         nhatKy: {
             orderBy: { ngayGio: 'desc' },
-            include: { user: true }
+            include: { 
+              user: true,
+              files: true 
+            }
         },
         binhLuan: {
             orderBy: { createdAt: 'desc' },
@@ -412,7 +423,9 @@ export async function createTaskLog(data: {
   projectId: number, 
   trangThaiMoi: TrangThaiDuAn, 
   noiDungChiTiet: string,
-  ngayGio: Date
+  ngayGio: Date,
+  buoc?: string,
+  files?: { name: string, type: string, size: number, base64: string }[]
 }) {
   try {
     const sessionRes = await (auth.api as any).getSession({
@@ -422,6 +435,8 @@ export async function createTaskLog(data: {
     if (!user) return { error: "Yêu cầu đăng nhập" };
 
     const result = await prisma.$transaction(async (tx: any) => {
+        const isStepUpdate = !!data.buoc;
+        
         // 1. Tạo nhật ký
         const log = await tx.nhatKyCongViec.create({
             data: {
@@ -430,17 +445,71 @@ export async function createTaskLog(data: {
               trangThaiMoi: data.trangThaiMoi,
               noiDungChiTiet: data.noiDungChiTiet,
               ngayGio: data.ngayGio,
+              buoc: data.buoc || null,
+              status: isStepUpdate ? "PENDING" : "APPROVED",
             }
         });
 
-        // 2. Cập nhật dự án
+        // 1.5. Xử lý file đính kèm
+        if (data.files && data.files.length > 0) {
+            const uploadDir = path.join(process.cwd(), "public", "uploads");
+            if (!existsSync(uploadDir)) {
+                mkdirSync(uploadDir, { recursive: true });
+            }
+
+            for (const fileData of data.files) {
+                const fileName = `${Date.now()}-${fileData.name.replace(/\s+/g, "_")}`;
+                const filePath = path.join(uploadDir, fileName);
+                const buffer = Buffer.from(fileData.base64, "base64");
+                
+                await fs.writeFile(filePath, buffer);
+
+                await tx.fileDinhKem.create({
+                    data: {
+                        logId: log.id,
+                        name: fileData.name,
+                        url: `/uploads/${fileName}`,
+                        type: fileData.type,
+                        size: fileData.size,
+                    }
+                });
+            }
+        }
+
+        // 2. Cập nhật dự án (Chỉ cập nhật trạng thái nếu không phải bước mới cần duyệt, hoặc cứ cập nhật trạng thái còn Bước thì đợi duyệt)
         await tx.duAn.update({
             where: { id: data.projectId },
             data: {
                 trangThaiHienTai: data.trangThaiMoi,
                 ngayChamsocCuoiCung: data.ngayGio,
+                // Chú ý: hienTaiBuoc chỉ được update khi Admin duyệt
             }
         });
+
+        // 3. Nếu là bước mới, gửi thông báo cho Admin & CV (Quản trị viên chuyên viên)
+        if (isStepUpdate) {
+            const admins = await tx.user.findMany({
+                where: {
+                    role: { in: ["ADMIN", "USER"] },
+                    isActive: true
+                }
+            });
+
+            const project = await tx.duAn.findUnique({ where: { id: data.projectId } });
+
+            for (const admin of admins) {
+                await tx.notification.create({
+                    data: {
+                        userId: admin.id,
+                        title: "Yêu cầu duyệt Bước quy trình",
+                        content: `${user.name} đề xuất cập nhật ${data.buoc} cho dự án ${project.tenDuAn}`,
+                        type: "APPROVAL_REQUEST",
+                        relatedId: String(log.id),
+                        projectId: data.projectId,
+                    }
+                });
+            }
+        }
 
         return log;
     });
@@ -572,4 +641,182 @@ export async function restoreDuAn(id: number) {
   } catch (error) {
     return { error: "Khôi phục thất bại" };
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// APPROVAL & NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════
+
+export async function approveStep(logId: number) {
+    try {
+        const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
+        const adminUser = sessionRes?.user;
+        if (!["ADMIN", "USER"].includes(adminUser?.role)) return { error: "Không có quyền duyệt" };
+
+        const log = await prisma.nhatKyCongViec.findUnique({
+            where: { id: logId },
+            include: { duAn: true }
+        });
+
+        if (!log || !log.buoc) return { error: "Dữ liệu không hợp lệ" };
+
+        await prisma.$transaction([
+            prisma.nhatKyCongViec.update({
+                where: { id: logId },
+                data: { status: "APPROVED" }
+            }),
+            prisma.duAn.update({
+                where: { id: log.projectId },
+                data: { hienTaiBuoc: log.buoc }
+            }),
+            prisma.notification.create({
+                data: {
+                    userId: log.userId,
+                    title: "Bước quy trình đã được duyệt",
+                    content: `Đề xuất ${log.buoc} của bạn cho dự án ${log.duAn.tenDuAn} đã được phê duyệt.`,
+                    type: "APPROVAL_RESULT",
+                    projectId: log.projectId,
+                }
+            })
+        ]);
+
+        revalidatePath(`/du-an/${log.projectId}`);
+        await syncReplica();
+        return { success: true };
+    } catch (error) {
+        return { error: "Duyệt thất bại" };
+    }
+}
+
+export async function rejectStep(logId: number, reason: string) {
+    try {
+        const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
+        const adminUser = sessionRes?.user;
+        if (!["ADMIN", "USER"].includes(adminUser?.role)) return { error: "Không có quyền" };
+
+        const log = await prisma.nhatKyCongViec.findUnique({
+            where: { id: logId },
+            include: { duAn: true }
+        });
+
+        if (!log) return { error: "Không tìm thấy nhật ký" };
+
+        await prisma.$transaction([
+            prisma.nhatKyCongViec.update({
+                where: { id: logId },
+                data: { status: "REJECTED" }
+            }),
+            prisma.notification.create({
+                data: {
+                    userId: log.userId,
+                    title: "Bước quy trình bị từ chối",
+                    content: `Đề xuất ${log.buoc} cho dự án ${log.duAn.tenDuAn} đã bị từ chối. Lý do: ${reason}. Vui lòng cập nhật lại.`,
+                    type: "APPROVAL_RESULT",
+                    projectId: log.projectId,
+                }
+            })
+        ]);
+
+        revalidatePath(`/du-an/${log.projectId}`);
+        await syncReplica();
+        return { success: true };
+    } catch (error) {
+        return { error: "Từ chối thất bại" };
+    }
+}
+
+export async function getNotifications() {
+    try {
+        const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
+        if (!sessionRes?.user) return { data: [] };
+
+        const data = await prisma.notification.findMany({
+            where: { userId: sessionRes.user.id },
+            orderBy: { createdAt: "desc" },
+            take: 20
+        });
+        return { data };
+    } catch (error) {
+        return { data: [] };
+    }
+}
+
+export async function markNotificationRead(id: number) {
+    await prisma.notification.update({
+        where: { id },
+        data: { isRead: true }
+    });
+    return { success: true };
+}
+
+export async function getPendingStepLogs() {
+    try {
+        const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
+        const user = sessionRes?.user;
+        if (!["ADMIN", "USER"].includes(user?.role)) return { data: [] };
+
+        const data = await prisma.nhatKyCongViec.findMany({
+            where: { status: "PENDING" },
+            include: {
+                duAn: true,
+                user: true,
+                files: true
+            },
+            orderBy: { createdAt: "desc" }
+        });
+        return { data };
+    } catch (error) {
+        console.error("Fetch Pending Logs Error:", error);
+    }
+}
+
+export async function revokeStepLog(logId: number) {
+    try {
+        const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
+        if (!sessionRes?.user) return { error: "Yêu cầu đăng nhập" };
+
+        const log = await prisma.nhatKyCongViec.findUnique({
+            where: { id: logId },
+        });
+
+        if (!log || !log.buoc) {
+            return { error: "Nhật ký này không chứa bước quy trình hoặc không tồn tại" };
+        }
+
+        const projectId = log.projectId;
+
+        await prisma.$transaction(async (tx) => {
+            // 1. Update this log to REJECTED
+            await tx.nhatKyCongViec.update({
+                where: { id: logId },
+                data: { status: "REJECTED" }
+            });
+
+            // 2. Find the most recent approved step log that ISN'T this one
+            const lastApproved = await tx.nhatKyCongViec.findFirst({
+                where: {
+                    projectId,
+                    status: "APPROVED",
+                    buoc: { not: null },
+                    id: { not: logId }
+                },
+                orderBy: { ngayGio: "desc" }
+            });
+
+            // 3. Update Project's current step
+            await tx.duAn.update({
+                where: { id: projectId },
+                data: { hienTaiBuoc: lastApproved?.buoc || null }
+            });
+        });
+
+        revalidatePath(`/du-an/${projectId}`);
+        revalidatePath("/du-an");
+        await syncReplica();
+
+        return { success: true };
+    } catch (error) {
+        console.error("Revoke Step Error:", error);
+        return { error: "Lỗi hệ thống khi thu hồi bước" };
+    }
 }

@@ -28,10 +28,10 @@ interface HeaderProps {
 }
 
 const roleLabels: Record<string, string> = {
-  ADMIN: "Ban Công Nghệ",
+  ADMIN: "Quản trị viên (Admin)",
   AM: "AM",
-  CV: "Chuyên viên giải pháp",
-  USER: "Nhân viên",
+  CV: "Chuyên viên (CV)",
+  USER: "Quản trị viên (Chuyên viên)",
 };
 
 export function Header({ user }: HeaderProps) {

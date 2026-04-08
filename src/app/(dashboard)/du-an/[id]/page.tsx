@@ -17,6 +17,13 @@ import {
   ChevronRight,
   Pencil,
   Star,
+  Banknote,
+  Users,
+  Building2,
+  UserCheck,
+  Flag,
+  Wrench,
+  UserCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -115,43 +122,80 @@ export default async function ProjectDetailPage({
         </div>
       </div>
 
-      {/* Meta Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white p-6 rounded-xl border border-[#c5c6ce]/10 shadow-sm">
-        <div>
-          <p className="text-[10px] font-black text-[#44474d] uppercase tracking-widest mb-1">Khách hàng</p>
-          <p className="font-bold text-[#191c1e]">{project.khachHang.ten}</p>
-          <span className="text-[10px] text-slate-500">{project.khachHang.phanLoai === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : project.khachHang.phanLoai === "CONG_AN" ? "Công an" : "Doanh nghiệp"}</span>
+      {/* Meta Row - Redesigned Dashboard-style Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-0 bg-white rounded-3xl border border-[#c5c6ce]/20 shadow-xl shadow-slate-200/40 overflow-hidden divide-y md:divide-y-0 md:divide-x divide-slate-100">
+        <div className="p-5 flex items-start gap-3 hover:bg-slate-50 transition-colors">
+          <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+            <Building2 className="size-4" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Khách hàng</p>
+            <p className="font-bold text-[#191c1e] text-sm leading-tight">{project.khachHang.ten}</p>
+            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+              {project.khachHang.phanLoai === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : project.khachHang.phanLoai === "CONG_AN" ? "Công an" : "Doanh nghiệp"}
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-[10px] font-black text-[#44474d] uppercase tracking-widest mb-1">Sản phẩm</p>
-          <p className="font-bold text-[#191c1e]">{project.sanPham.tenChiTiet}</p>
-          <span className="text-[10px] text-slate-500">{project.sanPham.nhom}</span>
+
+        <div className="p-5 flex items-start gap-3 hover:bg-slate-50 transition-colors">
+          <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+            <Package className="size-4" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Sản phẩm</p>
+            <p className="font-bold text-[#191c1e] text-sm leading-tight">{project.sanPham.tenChiTiet}</p>
+            <p className="text-[10px] text-slate-500 font-medium mt-0.5">{project.sanPham.nhom}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-[10px] font-black text-[#44474d] uppercase tracking-widest mb-1">AM Phụ trách</p>
-          {project.am ? (
-            <div className="flex items-center gap-2">
-              <div className="size-6 bg-[#000719]/10 text-[#000719] rounded-full flex items-center justify-center text-[10px] font-black uppercase">
-                {project.am.name?.[0] || "?"}
+
+        <div className="p-5 flex items-start gap-3 hover:bg-slate-50 transition-colors">
+          <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
+            <UserCircle className="size-4" />
+          </div>
+          <div className="flex-1">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">AM Phụ trách</p>
+            {project.am ? (
+              <div className="flex items-center gap-2">
+                <p className="font-bold text-[#191c1e] text-sm">{project.am.name}</p>
               </div>
-              <p className="font-bold text-[#191c1e] text-sm">{project.am.name}</p>
-            </div>
-          ) : (
-            <span className="text-[11px] text-slate-400 italic font-medium">Chưa phân công</span>
-          )}
+            ) : (
+              <span className="text-[11px] text-slate-400 italic font-medium">Chưa phân công</span>
+            )}
+            <p className="text-[10px] text-slate-400 mt-0.5 font-medium">Quản lý trực tiếp</p>
+          </div>
         </div>
-        <div>
-          <p className="text-[10px] font-black text-[#44474d] uppercase tracking-widest mb-1">Chuyên viên hỗ trợ</p>
-          {project.chuyenVien ? (
-            <div className="flex items-center gap-2">
-              <div className="size-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-[10px] font-black uppercase">
-                {project.chuyenVien.name?.[0] || "?"}
+
+        <div className="p-5 flex items-start gap-3 hover:bg-slate-50 transition-colors">
+          <div className="p-2 bg-teal-50 text-teal-600 rounded-xl">
+            <UserCheck className="size-4" />
+          </div>
+          <div className="flex-1">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Chuyên viên hỗ trợ</p>
+            {project.chuyenVien ? (
+              <div className="flex items-center gap-2">
+                <p className="font-bold text-[#191c1e] text-sm">{project.chuyenVien.name}</p>
               </div>
-              <p className="font-bold text-[#191c1e] text-sm">{project.chuyenVien.name}</p>
+            ) : (
+              <span className="text-[11px] text-slate-400 italic font-medium">Chưa phân công</span>
+            )}
+            <p className="text-[10px] text-slate-400 mt-0.5 font-medium">Hỗ trợ kỹ thuật</p>
+          </div>
+        </div>
+
+        <div className="p-5 flex items-center bg-slate-50/30">
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-2">
+                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Tiến độ quy trình</p>
+                 <Flag className="size-3 text-blue-400" />
             </div>
-          ) : (
-            <span className="text-[11px] text-slate-400 italic font-medium">Chưa phân công</span>
-          )}
+            {project.hienTaiBuoc ? (
+              <div className="px-3 py-2 bg-gradient-to-r from-[#0058bc] to-[#0070eb] text-white rounded-2xl shadow-lg shadow-blue-500/20 border border-blue-400/20 flex items-center justify-center">
+                 <span className="text-[11px] font-black uppercase tracking-tight italic">{project.hienTaiBuoc}</span>
+              </div>
+            ) : (
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic bg-white px-3 py-2 rounded-2xl border border-slate-100 flex items-center justify-center">Chưa bắt đầu</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -318,7 +362,7 @@ export default async function ProjectDetailPage({
             </div>
           </div>
 
-          {/* Key Project Status */}
+          {/* Key Project Status - Trong Diem */}
           <div className={cn(
             "p-4 rounded-xl flex items-center justify-center gap-3 border shadow-sm",
             project.isTrongDiem 
@@ -331,6 +375,21 @@ export default async function ProjectDetailPage({
                 Dự án Trọng điểm
               </span>
             )}
+          </div>
+
+          {/* Key Project Status - Ky Vong */}
+          <div className={cn(
+             "p-4 rounded-xl flex items-center justify-center gap-3 border shadow-sm",
+             project.isKyVong 
+               ? "bg-emerald-50 border-emerald-200 text-emerald-600" 
+               : "bg-blue-50/50 border-blue-100/50 text-blue-600/30"
+           )}>
+             <Banknote className={cn("size-6", project.isKyVong ? "fill-emerald-100/50" : "")} />
+             {project.isKyVong && (
+               <span className="font-black uppercase tracking-widest text-sm">
+                 Dự án Kỳ vọng
+               </span>
+             )}
           </div>
 
           {/* Health Card */}

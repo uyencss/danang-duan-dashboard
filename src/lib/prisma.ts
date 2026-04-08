@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { createClient, type Config, type Client } from "@libsql/client";
+// Cache Busted: 2026-04-08 17:00
+
 
 function getLibSqlConfig(): Config {
   // Use embedded replica only in standard production runtime.

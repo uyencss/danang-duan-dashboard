@@ -1,10 +1,14 @@
-import { getDuAnList } from "./actions";
+import { getDuAnList, getPendingStepLogs } from "./actions";
 import { ProjectsTable } from "./projects-table";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, ClipboardList, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { TrangThaiDuAn } from "@prisma/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TrackingTab } from "./tracking-tab";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export const metadata = {
   title: "CRM & Danh sách Dự án",
@@ -27,8 +31,19 @@ export default async function DuAnPage({
     pageSize: 200,
   };
 
-  const result = await getDuAnList(filters);
+  const sessionRes = await (auth.api as any).getSession({
+    headers: await headers()
+  });
+  const user = sessionRes?.user;
+  const isAdminOrCV = ["ADMIN", "CV", "USER"].includes(user?.role);
+
+  const [result, pendingLogsRes] = await Promise.all([
+    getDuAnList(filters),
+    isAdminOrCV ? getPendingStepLogs() : Promise.resolve({ data: [] })
+  ]);
+
   const data = result?.data ?? [];
+  const pendingLogs = pendingLogsRes?.data ?? [];
   const total = (result as any)?.total ?? data.length;
   const error = result?.error;
 
@@ -93,7 +108,9 @@ export default async function DuAnPage({
           <p className="text-sm font-medium opacity-80 mt-2">{error}</p>
         </div>
       ) : (
-        <ProjectsTable data={sortedData} totalCount={total} initialSearch={filters.search} />
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+           <ProjectsTable data={sortedData} totalCount={total} initialSearch={filters.search} />
+        </div>
       )}
     </div>
   );

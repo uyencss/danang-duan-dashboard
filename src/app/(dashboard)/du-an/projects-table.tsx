@@ -25,6 +25,7 @@ import {
   Download,
   Star,
   Trash2,
+  Banknote,
 } from "lucide-react";
 import * as React from "react";
 import Link from "next/link";
@@ -118,6 +119,9 @@ export function ProjectsTable({
           <div className="flex items-center gap-1.5 mt-0.5">
             {(row.original as any).isTrongDiem && (
               <Star className="size-3.5 fill-red-500 text-red-500 shrink-0" />
+            )}
+            {(row.original as any).isKyVong && (
+              <Banknote className="size-3.5 text-emerald-600 shrink-0" />
             )}
             <p className="text-[11px] text-slate-500 line-clamp-2">{(row.original as any).tenDuAn}</p>
           </div>
@@ -282,6 +286,8 @@ export function ProjectsTable({
 
       return {
         "Tên Dự Án": p.tenDuAn,
+        "Trọng Điểm": p.isTrongDiem ? "Có" : "Không",
+        "Kỳ Vọng": p.isKyVong ? "Có" : "Không",
         "Khách Hàng": p.khachHang?.ten || "",
         "Lĩnh Vực": LINH_VUC_LABELS[p.linhVuc] || p.linhVuc,
         "Sản Phẩm": p.sanPham?.tenChiTiet || "",

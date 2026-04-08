@@ -37,6 +37,7 @@ import {
 import { extractTimeFields } from "@/lib/utils/time-extract";
 import {
   FileText,
+  Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -57,7 +58,17 @@ interface FormValues {
   trangThaiHienTai: TrangThaiDuAn;
   ngayKetThuc?: string | null;
   isTrongDiem: boolean;
+  isKyVong: boolean;
 }
+
+const STATUS_LABELS: Record<string, string> = {
+  MOI: "Mới",
+  DANG_LAM_VIEC: "Đang làm việc",
+  DA_DEMO: "Đã demo",
+  DA_GUI_BAO_GIA: "Đã gửi báo giá",
+  DA_KY_HOP_DONG: "Đã ký hợp đồng",
+  THAT_BAI: "Thất bại",
+};
 
 const formSchema = z.object({
   customerId: z.number().min(1, "Vui lòng chọn khách hàng"),
@@ -76,6 +87,7 @@ const formSchema = z.object({
   ngayKetThuc: z.string().optional().nullable().or(z.literal("")),
   trangThaiHienTai: z.nativeEnum(TrangThaiDuAn),
   isTrongDiem: z.boolean(),
+  isKyVong: z.boolean(),
 });
 
 interface ProjectData {
@@ -97,6 +109,7 @@ interface ProjectData {
   khachHang?: { id: number; ten: string };
   ngayKetThuc?: Date | string | null;
   isTrongDiem?: boolean;
+  isKyVong?: boolean;
 }
 
 interface ProjectFormDialogProps {
@@ -130,6 +143,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
       trangThaiHienTai: TrangThaiDuAn.MOI,
       ngayKetThuc: "",
       isTrongDiem: false,
+      isKyVong: false,
     },
   });
 
@@ -166,6 +180,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
         trangThaiHienTai: project.trangThaiHienTai,
         ngayKetThuc: project.ngayKetThuc ? new Date(project.ngayKetThuc).toISOString().split("T")[0] : "",
         isTrongDiem: project.isTrongDiem || false,
+        isKyVong: project.isKyVong || false,
       });
     }
   }, [project, open, form]);
@@ -208,7 +223,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                   control={form.control}
                   name="tenDuAn"
                   render={({ field }) => (
-                    <FormItem className="col-span-1 md:col-span-3">
+                    <FormItem className="col-span-1 md:col-span-2">
                       <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Tên dự án *</FormLabel>
                       <FormControl>
                         <Input className="rounded-xl h-10 border-slate-200" placeholder="Tên dự án..." {...field} />
@@ -233,6 +248,27 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                         <span className={`text-sm font-bold flex items-center gap-1.5 ${field.value ? 'text-red-600' : 'text-slate-500'}`}>
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={field.value ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                           Trọng điểm
+                        </span>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="isKyVong"
+                  render={({ field }) => (
+                    <FormItem className="col-span-1 md:col-span-1 flex flex-col pt-[26px]">
+                      <div className="flex items-center space-x-2 h-10 px-3 bg-emerald-50/50 border border-emerald-100 rounded-xl cursor-pointer" onClick={() => field.onChange(!field.value)}>
+                        <input 
+                          type="checkbox" 
+                          checked={!!field.value} 
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          className="size-4 rounded text-emerald-600 focus:ring-emerald-600 outline-none border-emerald-300 accent-emerald-600 cursor-pointer"
+                        />
+                        <span className={`text-sm font-bold flex items-center gap-1.5 ${field.value ? 'text-emerald-600' : 'text-slate-500'}`}>
+                          <Banknote className="size-4" />
+                          Kỳ vọng
                         </span>
                       </div>
                     </FormItem>
@@ -276,22 +312,14 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                         <FormControl>
                           <SelectTrigger className="rounded-xl h-10 border-slate-200">
                             <SelectValue placeholder="Chọn trạng thái">
-                              {field.value === TrangThaiDuAn.MOI ? "Mới" :
-                               field.value === TrangThaiDuAn.DANG_LAM_VIEC ? "Đang làm việc" :
-                               field.value === TrangThaiDuAn.DA_DEMO ? "Đã Demo" :
-                               field.value === TrangThaiDuAn.DA_GUI_BAO_GIA ? "Đã gửi báo giá" :
-                               field.value === TrangThaiDuAn.DA_KY_HOP_DONG ? "Đã ký hợp đồng" :
-                               field.value === TrangThaiDuAn.THAT_BAI ? "Thất bại" : field.value}
+                              {STATUS_LABELS[field.value] || field.value}
                             </SelectValue>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value={TrangThaiDuAn.MOI}>Mới</SelectItem>
-                          <SelectItem value={TrangThaiDuAn.DANG_LAM_VIEC}>Đang làm việc</SelectItem>
-                          <SelectItem value={TrangThaiDuAn.DA_DEMO}>Đã Demo</SelectItem>
-                          <SelectItem value={TrangThaiDuAn.DA_GUI_BAO_GIA}>Đã gửi báo giá</SelectItem>
-                          <SelectItem value={TrangThaiDuAn.DA_KY_HOP_DONG}>Đã ký hợp đồng</SelectItem>
-                          <SelectItem value={TrangThaiDuAn.THAT_BAI}>Thất bại</SelectItem>
+                          {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>{label}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />

@@ -1,4 +1,4 @@
-// This is your Prisma schema file,
+// This is your Prisma schema file (Updated for approval)
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -18,6 +18,12 @@ enum UserRole {
   AM // Account Manager
   CV // Chuyên viên
   USER // Nhân viên (Legacy)
+}
+
+enum LogStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum PhanLoaiKH {
@@ -69,16 +75,17 @@ model User {
   updatedAt      DateTime  @updatedAt
 
   // Relations
-  duAnAM       DuAn[]           @relation("AMRelation")
-  duAnAMHoTro  DuAn[]           @relation("AMHoTroRelation")
-  duAnCV       DuAn[]           @relation("CVRelation")
-  duAnCVHoTro1 DuAn[]           @relation("CVHoTro1Relation")
-  duAnCVHoTro2 DuAn[]           @relation("CVHoTro2Relation")
-  nhatKy       NhatKyCongViec[]
-  binhLuan     BinhLuan[]
-  tinNhan      TinNhan[]
-  sessions     Session[]
-  accounts     Account[]
+  duAnAM        DuAn[]           @relation("AMRelation")
+  duAnAMHoTro   DuAn[]           @relation("AMHoTroRelation")
+  duAnCV        DuAn[]           @relation("CVRelation")
+  duAnCVHoTro1  DuAn[]           @relation("CVHoTro1Relation")
+  duAnCVHoTro2  DuAn[]           @relation("CVHoTro2Relation")
+  nhatKy        NhatKyCongViec[]
+  binhLuan      BinhLuan[]
+  tinNhan       TinNhan[]
+  sessions      Session[]
+  accounts      Account[]
+  notifications Notification[]
 
   @@index([email])
   @@index([role])
@@ -193,6 +200,8 @@ model DuAn {
   ngayBatDau          DateTime
   ngayKetThuc         DateTime?
   isTrongDiem         Boolean       @default(false)
+  isKyVong            Boolean       @default(false)
+  hienTaiBuoc         String? // Bước hiện tại của dự án
   isPendingDelete     Boolean       @default(false)
   deleteRequestedAt   DateTime?
   tuan                Int
@@ -213,9 +222,10 @@ model DuAn {
   cvHoTro1   User?     @relation("CVHoTro1Relation", fields: [cvHoTro1Id], references: [id], onDelete: SetNull)
   cvHoTro2   User?     @relation("CVHoTro2Relation", fields: [cvHoTro2Id], references: [id], onDelete: SetNull)
 
-  nhatKy   NhatKyCongViec[]
-  binhLuan BinhLuan[]
-  tinNhan  TinNhan[]
+  nhatKy        NhatKyCongViec[]
+  binhLuan      BinhLuan[]
+  tinNhan       TinNhan[]
+  notifications Notification[]
 
   @@index([customerId])
   @@index([productId])
@@ -237,10 +247,13 @@ model NhatKyCongViec {
   ngayGio        DateTime      @default(now())
   trangThaiMoi   TrangThaiDuAn
   noiDungChiTiet String
+  buoc           String? // Bước quy trình (nếu có)
+  status         LogStatus     @default(APPROVED)
   createdAt      DateTime      @default(now())
 
   duAn DuAn @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files FileDinhKem[]
 
   @@index([projectId])
   @@index([userId])
@@ -298,4 +311,35 @@ model ChiTieuKpi {
 
   @@unique([nam, thang])
   @@index([nam])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  title     String
+  content   String
+  isRead    Boolean  @default(false)
+  type      String // "APPROVAL_REQUEST", "APPROVAL_RESULT"
+  relatedId String? // Nhật ký ID (có thể dùng thay/cùng projectId)
+  projectId Int?
+  createdAt DateTime @default(now())
+
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project DuAn? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([projectId])
+}
+model FileDinhKem {
+  id        Int      @id @default(autoincrement())
+  logId     Int
+  name      String
+  url       String
+  type      String
+  size      Int
+  createdAt DateTime @default(now())
+
+  log       NhatKyCongViec @relation(fields: [logId], references: [id], onDelete: Cascade)
+  
+  @@index([logId])
 }

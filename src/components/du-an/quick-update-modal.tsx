@@ -34,7 +34,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createTaskLog } from "@/app/(dashboard)/du-an/actions";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, History } from "lucide-react";
+import { ArrowRight, History, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -42,7 +42,18 @@ const formSchema = z.object({
   trangThaiMoi: z.nativeEnum(TrangThaiDuAn),
   noiDungChiTiet: z.string().min(10, "Vui lòng nhập tối thiểu 10 ký tự nội dung"),
   ngayGio: z.string(),
+  buoc: z.string().optional(),
 });
+
+const STEPS = [
+  "Bước 1: Tiếp cận tìm hiểu nhu cầu",
+  "Bước 2: Đề xuất GP",
+  "Bước 3: Xây dựng đề án",
+  "Bước 4: Tham gia thầu",
+  "Bước 5: Ký hợp đồng",
+  "Bước 6: Triển khai",
+  "Bước 7: Hỗ trợ sau bán"
+];
 
 export function QuickUpdateModal({ 
   open, 
@@ -54,6 +65,8 @@ export function QuickUpdateModal({
   project: any 
 }) {
   const [loading, setLoading] = useState(false);
+  const [selectedStep, setSelectedStep] = useState<string>("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,6 +74,7 @@ export function QuickUpdateModal({
       trangThaiMoi: project?.trangThaiHienTai || TrangThaiDuAn.MOI,
       noiDungChiTiet: "",
       ngayGio: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+      buoc: "",
     },
   });
 
@@ -70,25 +84,59 @@ export function QuickUpdateModal({
         trangThaiMoi: project?.trangThaiHienTai || TrangThaiDuAn.MOI,
         noiDungChiTiet: "",
         ngayGio: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+        buoc: "",
       });
+      setSelectedStep("");
     }
   }, [open, project, form]);
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(",")[1];
+        resolve(base64);
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const onSubmit = async (values: any) => {
     setLoading(true);
-    const result = await createTaskLog({
-        projectId: project.id,
-        trangThaiMoi: values.trangThaiMoi,
-        noiDungChiTiet: values.noiDungChiTiet,
-        ngayGio: new Date(values.ngayGio),
-    });
+    try {
+      const fileData = await Promise.all(
+        selectedFiles.map(async (file) => ({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          base64: await fileToBase64(file),
+        }))
+      );
 
-    if (result.success) {
-      toast.success("Cập nhật tiến độ thành công!");
-      setOpen(false);
-      form.reset();
-    } else {
-      toast.error(result.error);
+      const result = await createTaskLog({
+          projectId: project.id,
+          trangThaiMoi: values.trangThaiMoi,
+          noiDungChiTiet: values.noiDungChiTiet,
+          ngayGio: new Date(values.ngayGio),
+          buoc: selectedStep || undefined,
+          files: fileData.length > 0 ? fileData : undefined,
+      });
+
+      if (result.success) {
+        if (selectedStep) {
+          toast.success("Bước quy trình đã được gửi tới Quản trị viên để duyệt!");
+        } else {
+          toast.success("Cập nhật tiến độ thành công!");
+        }
+        setOpen(false);
+        form.reset();
+        setSelectedFiles([]);
+      } else {
+        toast.error(result.error);
+      }
+    } catch (error) {
+      toast.error("Lỗi khi xử lý tệp tin");
     }
     setLoading(false);
   };
@@ -118,8 +166,8 @@ export function QuickUpdateModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-none shadow-2xl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[800px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-8 pb-4">
           <DialogTitle className="text-2xl font-black text-[#000719] flex items-center gap-2">
             <History className="size-6 text-[#000719]" /> Cập nhật Tiến độ
           </DialogTitle>
@@ -128,21 +176,23 @@ export function QuickUpdateModal({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-2xl border border-gray-100 justify-center">
-            <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] text-gray-400 font-bold uppercase">Hiện tại</span>
-                {getStatusBadge(project?.trangThaiHienTai)}
-            </div>
-            <ArrowRight className="size-4 text-gray-300 mx-2" />
-            <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] text-gray-400 font-bold uppercase">Mới</span>
-                {getStatusBadge(form.watch("trangThaiMoi"))}
-            </div>
+        <div className="px-8 space-y-4">
+          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-2xl border border-gray-100 justify-center">
+              <div className="flex flex-col items-center gap-1">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase">Hiện tại</span>
+                  {getStatusBadge(project?.trangThaiHienTai)}
+              </div>
+              <ArrowRight className="size-4 text-gray-300 mx-2" />
+              <div className="flex flex-col items-center gap-1">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase">Mới</span>
+                  {getStatusBadge(form.watch("trangThaiMoi"))}
+              </div>
+          </div>
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-8 pt-0">
+            <div className="grid grid-cols-2 gap-6">
                 <FormField
                 control={form.control}
                 name="trangThaiMoi"
@@ -191,7 +241,7 @@ export function QuickUpdateModal({
                   <FormControl>
                     <Textarea 
                       placeholder="Mô tả công việc đã thực hiện, kết quả đạt được hoặc khó khăn..." 
-                      className="min-h-[120px] bg-white rounded-xl" 
+                      className="min-h-[140px] bg-white rounded-2xl border-gray-200 focus:ring-blue-500/20" 
                       {...field} 
                     />
                   </FormControl>
@@ -200,7 +250,84 @@ export function QuickUpdateModal({
               )}
             />
 
-            <DialogFooter className="pt-4">
+            <div className="space-y-3">
+              <p className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Tiến độ quy trình</p>
+              <div className="flex flex-wrap gap-2">
+                {STEPS.map((step) => {
+                  const isSelected = selectedStep === step;
+                  return (
+                    <button
+                      key={step}
+                      type="button"
+                      onClick={() => setSelectedStep(isSelected ? "" : step)}
+                      className={cn(
+                        "px-4 py-2 rounded-xl text-xs font-bold transition-all border",
+                        isSelected 
+                          ? "bg-gradient-to-r from-[#0058bc] to-[#0070eb] text-white border-transparent shadow-md transform scale-105" 
+                          : "bg-gray-50 text-gray-400 border-gray-100 hover:border-blue-200 hover:text-blue-500"
+                      )}
+                    >
+                      {step}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <p className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest mb-2">Tệp đính kèm</p>
+              <div className="relative group">
+                <Input 
+                  type="file" 
+                  className="hidden" 
+                  id="file-upload" 
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setSelectedFiles(prev => [...prev, ...files]);
+                  }}
+                />
+                <label 
+                  htmlFor="file-upload" 
+                  className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all group"
+                >
+                  <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-blue-100 text-gray-400 group-hover:text-blue-600 transition-colors">
+                    <History className="size-4 rotate-45" /> 
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-bold text-gray-600 group-hover:text-blue-700">Tải tệp lên hệ thống</p>
+                    <p className="text-[10px] text-gray-400">Excel, Word, PDF, PPT, CSV... tối đa 20MB</p>
+                  </div>
+                </label>
+              </div>
+
+              {selectedFiles.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {selectedFiles.map((file, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 px-4 bg-blue-50/50 rounded-xl border border-blue-100 group animate-in slide-in-from-left-2 duration-300">
+                      <div className="flex items-center gap-3">
+                         <div className="p-2 bg-white rounded-lg shadow-sm">
+                            <History className="size-3.5 text-blue-500" />
+                         </div>
+                         <div className="min-w-0">
+                           <p className="text-xs font-bold text-gray-700 truncate max-w-[200px]">{file.name}</p>
+                           <p className="text-[10px] text-gray-400">{(file.size / 1024).toFixed(1)} KB</p>
+                         </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
+                        className="p-1.5 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="pt-6 mt-4 border-t border-gray-100">
               <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={loading} className="font-bold">
                 Bỏ qua
               </Button>

@@ -71,6 +71,7 @@ const formSchema = z.object({
   cvHoTro2Id: z.string().optional().or(z.literal("")),
   trangThaiHienTai: z.nativeEnum(TrangThaiDuAn).optional(),
   isTrongDiem: z.boolean().optional().default(false),
+  isKyVong: z.boolean().optional().default(false),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -130,6 +131,7 @@ export default function ProjectForm() {
       cvHoTro2Id: "",
       trangThaiHienTai: "MOI" as any,
       isTrongDiem: false,
+      isKyVong: false,
     } as any,
   });
 
@@ -329,7 +331,7 @@ export default function ProjectForm() {
                   control={form.control as any}
                   name="tenDuAn"
                   render={({ field }) => (
-                    <FormItem className="md:col-span-3">
+                    <FormItem className="md:col-span-2">
                       <FieldLabel required>Tên Dự Án</FieldLabel>
                       <FormControl>
                         <input
@@ -359,6 +361,28 @@ export default function ProjectForm() {
                         <span className={`text-base font-[1000] flex items-center gap-2 ${field.value ? 'text-[#e10b17]' : 'text-slate-400'}`}>
                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill={field.value ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                           Trọng điểm
+                        </span>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Kỳ Vọng */}
+                <FormField
+                  control={form.control as any}
+                  name="isKyVong"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-1 pt-[26px]">
+                      <div className="flex items-center justify-center space-x-3 h-[44px] px-5 bg-[#fafffa] border border-emerald-100 hover:border-emerald-200 rounded-2xl cursor-pointer transition-all" onClick={() => field.onChange(!field.value)}>
+                        <input 
+                          type="checkbox" 
+                          checked={!!field.value} 
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          className="size-5 rounded text-emerald-600 focus:ring-emerald-600 outline-none border-emerald-300 accent-emerald-600 cursor-pointer"
+                        />
+                        <span className={`text-base font-[1000] flex items-center gap-2 ${field.value ? 'text-[#059669]' : 'text-slate-400'}`}>
+                          <Banknote className="size-5" />
+                          Kỳ vọng
                         </span>
                       </div>
                     </FormItem>

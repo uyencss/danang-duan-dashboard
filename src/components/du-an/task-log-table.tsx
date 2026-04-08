@@ -16,7 +16,11 @@ import {
   Clock, 
   MessageSquareQuote,
   User as UserIcon,
-  Calendar
+  Calendar,
+  FileText,
+  RotateCcw,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import { 
   Dialog, 
@@ -36,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { updateNhatKy, deleteNhatKy } from "@/app/(dashboard)/du-an/actions";
+import { updateNhatKy, deleteNhatKy, revokeStepLog } from "@/app/(dashboard)/du-an/actions";
 import { cn } from "@/lib/utils";
 import { TrangThaiDuAn } from "@prisma/client";
 
@@ -56,10 +60,10 @@ export function TaskLogTable({ logs }: TaskLogTableProps) {
     new Date(b.ngayGio).getTime() - new Date(a.ngayGio).getTime()
   );
 
-  const STATUS_LABELS: any = {
+  const STATUS_LABELS: Record<string, string> = {
     MOI: "Mới",
     DANG_LAM_VIEC: "Đang làm việc",
-    DA_DEMO: "Đã Demo",
+    DA_DEMO: "Đã demo",
     DA_GUI_BAO_GIA: "Đã gửi báo giá",
     DA_KY_HOP_DONG: "Đã ký hợp đồng",
     THAT_BAI: "Thất bại",
@@ -103,6 +107,21 @@ export function TaskLogTable({ logs }: TaskLogTableProps) {
     setLoading(false);
   };
 
+  const handleRevoke = async () => {
+    if (!editingLog?.id) return;
+    if (!confirm(`Bạn có chắc muốn thu hồi bước "${editingLog.buoc}"? Dự án sẽ quay lại bước trước đó.`)) return;
+    
+    setLoading(true);
+    const result = await revokeStepLog(editingLog.id);
+    if (result.success) {
+      toast.success("Đã thu hồi bước thành công!");
+      setEditingLog(null);
+    } else {
+      toast.error(result.error);
+    }
+    setLoading(false);
+  };
+
   const handleDelete = async (id: number) => {
     if (!confirm("Bạn có chắc chắn muốn xóa nhật ký này?")) return;
     const result = await deleteNhatKy(id);
@@ -136,7 +155,13 @@ export function TaskLogTable({ logs }: TaskLogTableProps) {
           </TableHeader>
           <TableBody>
             {sortedLogs.map((log) => (
-              <TableRow key={log.id} className="hover:bg-slate-50/50 border-b border-[#f2f4f6] group">
+              <TableRow 
+                key={log.id} 
+                className={cn(
+                  "hover:bg-slate-50/50 border-b border-[#f2f4f6] group transition-all",
+                  log.status === "REJECTED" && "bg-slate-100/80 grayscale-[0.3] opacity-80"
+                )}
+              >
                 <TableCell className="pl-6 py-4 align-top">
                   <div className="flex flex-col gap-1 pr-2">
                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#191c1e]">
@@ -153,7 +178,50 @@ export function TaskLogTable({ logs }: TaskLogTableProps) {
                 </TableCell>
                 <TableCell className="py-4 align-top">
                   <div className="whitespace-normal break-words overflow-hidden text-sm font-medium text-slate-700 leading-relaxed pr-8">
+                    {log.buoc && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className={cn(
+                            "text-[10px] uppercase font-black px-2 py-0.5 rounded-lg flex items-center gap-1",
+                            log.status === "REJECTED" 
+                              ? "bg-red-50 text-red-600 border-red-200" 
+                              : "bg-blue-50 text-blue-700 border-blue-200"
+                        )}>
+                          <CheckCircle2 className="size-3" />
+                          {log.buoc}
+                        </Badge>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                          {log.status === "REJECTED" ? "Bước bị từ chối" : "Cập nhật bước mới"}
+                        </span>
+
+                        {log.status === "REJECTED" && (
+                          <div className="flex flex-col items-center gap-0 ml-auto mr-4">
+                            <Badge className="bg-[#ba1a1a] text-white border-none text-[10px] font-black uppercase px-2 py-0.5 rounded-lg flex items-center gap-1 animate-pulse">
+                              <AlertTriangle className="size-3" />
+                              Không duyệt
+                            </Badge>
+                            <span className="text-[9px] text-slate-400 font-bold italic leading-none mt-0.5">Yêu cầu cập nhật lại</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {log.noiDungChiTiet}
+                    {log.files && log.files.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {log.files.map((file: any) => (
+                           <a 
+                             key={file.id} 
+                             href={file.url} 
+                             target="_blank" 
+                             rel="noopener noreferrer"
+                             download={file.name}
+                             className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-[#0058bc] rounded-md text-[10px] font-bold border border-blue-100 hover:bg-blue-100 transition-colors"
+                           >
+                             <FileText className="size-3" />
+                             {file.name}
+                           </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="py-4 align-top text-center">
@@ -206,11 +274,13 @@ export function TaskLogTable({ logs }: TaskLogTableProps) {
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Trạng thái mới</label>
                 <Select onValueChange={(v) => setNewStatus(v as TrangThaiDuAn)} value={newStatus}>
                   <SelectTrigger className="rounded-xl border-slate-200">
-                    <SelectValue placeholder="Chọn trạng thái" />
+                    <SelectValue placeholder="Chọn trạng thái">
+                      {newStatus ? (STATUS_LABELS[newStatus] || newStatus) : "Chọn trạng thái"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>{String(label)}</SelectItem>
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -239,15 +309,30 @@ export function TaskLogTable({ logs }: TaskLogTableProps) {
               />
             </div>
           </div>
-          <DialogFooter className="px-6 py-4 bg-slate-50 border-t border-slate-100">
-            <Button variant="ghost" onClick={() => setEditingLog(null)} className="rounded-xl font-bold">Hủy</Button>
-            <Button 
-              disabled={loading || !newContent.trim()} 
-              onClick={handleUpdate}
-              className="rounded-xl bg-[#0058bc] text-white px-8 font-black shadow-lg shadow-blue-200"
-            >
-              {loading ? "Đang lưu..." : "Lưu thay đổi"}
-            </Button>
+          <DialogFooter className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+            <div className="flex-1">
+              {editingLog?.buoc && editingLog?.status === "APPROVED" && (
+                <Button 
+                  variant="outline" 
+                  onClick={handleRevoke}
+                  disabled={loading}
+                  className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold px-4"
+                >
+                  <RotateCcw className="size-3.5 mr-2" />
+                  Thu hồi bước
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={() => setEditingLog(null)} className="rounded-xl font-bold text-slate-500">Hủy</Button>
+              <Button 
+                disabled={loading || !newContent.trim()} 
+                onClick={handleUpdate}
+                className="rounded-xl bg-[#0058bc] text-white px-8 font-black shadow-lg shadow-blue-200"
+              >
+                {loading ? "Đang lưu..." : "Lưu thay đổi"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -34,8 +34,17 @@ export function useTypingIndicator(projectId: number, currentUserId?: string) {
     });
 
     return () => {
-      channel.unsubscribe();
-      client.close();
+      try {
+        channel.unsubscribe();
+        if (client.connection.state !== "closed") {
+          const result = client.close() as any;
+          if (result && typeof result.catch === 'function') {
+            result.catch(() => {});
+          }
+        }
+      } catch (e) {
+        // Silently fail on unmount
+      }
     };
   }, [projectId, currentUserId]);
 

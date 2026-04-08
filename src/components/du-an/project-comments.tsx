@@ -462,15 +462,16 @@ export function ProjectComments({
     });
 
     return () => {
-      channel.unsubscribe();
       try {
-        // Ignore unhandled rejection errors on unmount when connection is still connecting
-        const closeResult = client.close() as any;
-        if (closeResult && typeof closeResult.catch === 'function') {
-          closeResult.catch(() => {});
+        channel.unsubscribe();
+        if (client.connection.state !== "closed") {
+          const result = client.close() as any;
+          if (result && typeof result.catch === 'function') {
+            result.catch(() => {});
+          }
         }
       } catch (e) {
-        console.error("Lỗi khi đóng kết nối Ably:", e);
+        // Silently fail on unmount
       }
     };
   }, [projectId, router, currentUser]);

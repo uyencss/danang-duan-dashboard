@@ -77,10 +77,16 @@ export function useProjectChat(projectId: number, currentUserId?: string) {
     });
 
     return () => {
-      // safely unsubscribe if created
-      if (client.connection.state !== "closed") {
+      try {
         channel.unsubscribe();
-        client.close();
+        if (client.connection.state !== "closed") {
+          const result = client.close() as any;
+          if (result && typeof result.catch === 'function') {
+            result.catch(() => {});
+          }
+        }
+      } catch (e) {
+        // Silently fail on unmount
       }
     };
   }, [projectId]);

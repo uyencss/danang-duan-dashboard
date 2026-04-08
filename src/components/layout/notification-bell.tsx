@@ -8,12 +8,18 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "sonner";
+import { getNotifications, markNotificationRead, approveStep, rejectStep } from "@/app/(dashboard)/du-an/actions";
+import { Check, X } from "lucide-react";
+import Link from "next/link";
 
 interface Notification {
   id: string;
   message: string;
   timestamp: Date;
   read: boolean;
+  type?: string;
+  relatedId?: string;
+  projectId?: number;
 }
 
 interface NotificationBellProps {
@@ -23,9 +29,36 @@ interface NotificationBellProps {
 export function NotificationBell({ userId }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    const fetchDbNotifications = async () => {
+      const { data } = await getNotifications();
+      if (data) {
+        const mapped: Notification[] = data.map((n: any) => ({
+          id: String(n.id),
+          message: n.content,
+          timestamp: new Date(n.createdAt),
+          read: n.isRead,
+          type: n.type,
+          relatedId: n.relatedId,
+          projectId: n.projectId
+        }));
+        setNotifications((prev) => {
+          // Merge Ably (mention/chat) and DB notifications
+          const combined = [...prev, ...mapped];
+          // Simple unique check by ID (some IDs might be string, some stringified numbers)
+          const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+          return unique.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 30);
+        });
+      }
+    };
+
+    fetchDbNotifications();
+  }, [userId]);
 
   useEffect(() => {
     const key = process.env.NEXT_PUBLIC_ABLY_KEY;
@@ -66,7 +99,14 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
     return () => {
       channel.unsubscribe();
-      client.close();
+      try {
+        const result = client.close() as any;
+        if (result && typeof result.catch === 'function') {
+          result.catch(() => {});
+        }
+      } catch (e) {
+        // Silently fail on unmount
+      }
     };
   }, [userId]);
 
@@ -83,6 +123,45 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
   const markAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    // In a real app we'd call an API to mark all as read.
+  };
+
+  const handleApprove = async (notif: Notification) => {
+    if (!notif.relatedId) return;
+    setLoadingId(notif.id);
+    const res = await approveStep(Number(notif.relatedId));
+    if (res.success) {
+      toast.success("Đã duyệt bước quy trình!");
+      await markNotificationRead(Number(notif.id));
+      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+    } else {
+      toast.error(res.error);
+    }
+    setLoadingId(null);
+  };
+
+  const handleReject = async (notif: Notification) => {
+    if (!notif.relatedId) return;
+    const reason = prompt("Nhập lý do từ chối:");
+    if (reason === null) return;
+    
+    setLoadingId(notif.id);
+    const res = await rejectStep(Number(notif.relatedId), reason);
+    if (res.success) {
+      toast.info("Đã từ chối bước quy trình.");
+      await markNotificationRead(Number(notif.id));
+      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+    } else {
+      toast.error(res.error);
+    }
+    setLoadingId(null);
+  };
+
+  const handleClick = async (notif: Notification) => {
+     if (!notif.read) {
+        await markNotificationRead(Number(notif.id));
+        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+     }
   };
 
   return (
@@ -128,6 +207,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
               notifications.map((notif) => (
                 <div
                   key={notif.id}
+                  onClick={() => handleClick(notif)}
                   className={cn(
                     "px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer",
                     !notif.read && "bg-blue-50/30"
@@ -137,11 +217,52 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                     {!notif.read && (
                       <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-500 flex-shrink-0" />
                     )}
-                    <div className={cn(!notif.read ? "" : "pl-3.5")}>
-                      <p className="text-xs text-gray-700 leading-snug">{notif.message}</p>
-                      <p className="text-[9px] text-gray-400 mt-1 font-medium">
-                        {formatDistanceToNow(notif.timestamp, { addSuffix: true, locale: vi })}
+                    <div className={cn("w-full", !notif.read ? "" : "pl-3.5")}>
+                      <p className="text-xs text-gray-700 leading-snug font-medium">
+                        {notif.type === "APPROVAL_REQUEST" ? (
+                            <span className="text-amber-600 font-bold uppercase text-[9px] block mb-0.5">Yêu cầu duyệt</span>
+                        ) : notif.type === "APPROVAL_RESULT" ? (
+                            <span className="text-blue-600 font-bold uppercase text-[9px] block mb-0.5">Kết quả duyệt</span>
+                        ) : null}
+                        {notif.message}
                       </p>
+                      
+                      {notif.type === "APPROVAL_REQUEST" && !notif.read && (
+                        <div className="mt-2 flex gap-2">
+                           <Button 
+                             size="sm" 
+                             className="h-7 px-3 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold rounded-lg"
+                             onClick={(e) => { e.stopPropagation(); handleApprove(notif); }}
+                             disabled={loadingId === notif.id}
+                           >
+                              <Check className="size-3 mr-1" /> Duyệt
+                           </Button>
+                           <Button 
+                             size="sm" 
+                             variant="outline" 
+                             className="h-7 px-3 text-red-600 border-red-100 hover:bg-red-50 text-[10px] font-bold rounded-lg"
+                             onClick={(e) => { e.stopPropagation(); handleReject(notif); }}
+                             disabled={loadingId === notif.id}
+                           >
+                              <X className="size-3 mr-1" /> Từ chối
+                           </Button>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-[9px] text-gray-400 font-medium">
+                          {formatDistanceToNow(notif.timestamp, { addSuffix: true, locale: vi })}
+                        </p>
+                        {notif.projectId && (
+                            <Link 
+                                href={`/du-an/${notif.projectId}`} 
+                                className="text-[9px] text-blue-500 hover:underline font-bold"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                Xem chi tiết →
+                            </Link>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

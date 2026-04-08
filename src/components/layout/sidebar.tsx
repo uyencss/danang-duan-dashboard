@@ -19,6 +19,7 @@ import {
   GraduationCap,
   Target,
   Trash2,
+  ClipboardList,
 } from "lucide-react";
 
 import type { AppRole } from "@/lib/auth-utils";
@@ -59,6 +60,8 @@ const adminNavItems: SidebarItem[] = [
   { label: "Quản lý User", href: "/admin/users", icon: UserCog, allowedRoles: ["ADMIN"] },
   // ADMIN + USER can see Giao KPI
   { label: "Giao KPI", href: "/admin/kpi", icon: Target, allowedRoles: ["ADMIN", "USER"] },
+  // ADMIN + USER can see Theo dõi các bước
+  { label: "Theo dõi các bước", href: "/du-an/tracking", icon: ClipboardList, allowedRoles: ["ADMIN", "USER"] },
   // ADMIN + USER can see Dự án đã xoá
   { label: "Dự án đã xoá", href: "/admin/du-an-da-xoa", icon: Trash2, allowedRoles: ["ADMIN", "USER"] },
 ];
