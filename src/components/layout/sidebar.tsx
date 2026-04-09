@@ -35,36 +35,34 @@ interface SidebarItem {
 
 // Main nav items — role-based visibility
 const mainNavItems: SidebarItem[] = [
-  // ADMIN + USER can see Dashboard Tổng quan
-  { label: "Dashboard Tổng quan", href: "/", icon: LayoutDashboard, allowedRoles: ["ADMIN", "USER"] },
-  // Everyone can see CRM & DS Dự án
+  // Dashboard Tổng quan — Visible to ALL (ADMIN, USER, CV, AM)
+  { label: "Dashboard Tổng quan", href: "/", icon: LayoutDashboard },
+  // CRM & DS Dự án — Visible to ALL
   { label: "CRM & DS Dự án", href: "/du-an", icon: FolderKanban },
-  // Everyone can see Khách hàng
+  // Khách hàng — Visible to ALL
   { label: "Khách hàng", href: "/admin/khach-hang", icon: Building2 },
-  // ADMIN + USER can see Phân tích & KPI
+  // Phân tích & KPI — Hidden for CV, AM
   { label: "Phân tích & KPI", href: "/kpi", icon: TrendingUp, allowedRoles: ["ADMIN", "USER"] },
-  // ADMIN + USER can see Top Địa bàn
+  // Top Địa bàn — Hidden for CV, AM
   { label: "Top Địa bàn", href: "/dia-ban", icon: MapPin, allowedRoles: ["ADMIN", "USER"] },
-  // ADMIN only — Quản lý AM
-  { label: "Quản lý AM", href: "/quan-ly-am", icon: UserCheck, allowedRoles: ["ADMIN"] },
-  // ADMIN only — Quản lý Chuyên viên
-  { label: "Quản lý Chuyên viên", href: "/quan-ly-cv", icon: GraduationCap, allowedRoles: ["ADMIN"] },
+  // Quản lý AM — Hidden for CV, AM
+  { label: "Quản lý AM", href: "/quan-ly-am", icon: UserCheck, allowedRoles: ["ADMIN", "USER"] },
+  // Quản lý Chuyên viên — Hidden for CV, AM
+  { label: "Quản lý Chuyên viên", href: "/quan-ly-cv", icon: GraduationCap, allowedRoles: ["ADMIN", "USER"] },
 ];
 
 // Admin section nav items
 const adminNavItems: SidebarItem[] = [
-  // ADMIN + USER can see Sản phẩm
+  // Sản phẩm — Hidden for CV, AM
   { label: "Sản phẩm", href: "/admin/san-pham", icon: Package, allowedRoles: ["ADMIN", "USER"] },
-  // ADMIN only — Quản lý User
-  { label: "Quản lý User", href: "/admin/users", icon: UserCog, allowedRoles: ["ADMIN"] },
-  // ADMIN + USER can see Giao KPI
-  { label: "Giao KPI", href: "/admin/kpi", icon: Target, allowedRoles: ["ADMIN", "USER"] },
-  // ADMIN + USER can see Theo dõi các bước
+  // Quản lý User — Hidden for CV, AM
+  { label: "Quản lý User", href: "/admin/users", icon: UserCog, allowedRoles: ["ADMIN", "USER"] },
+  // Giao KPI — Visible to ALL per request
+  { label: "Giao KPI", href: "/admin/kpi", icon: Target },
+  // Theo dõi các bước — Hidden for CV, AM
   { label: "Theo dõi các bước", href: "/du-an/tracking", icon: ClipboardList, allowedRoles: ["ADMIN", "USER"] },
-  // ADMIN + USER can see Dự án đã xoá
+  // Dự án đã xoá — Hidden for CV, AM
   { label: "Dự án đã xoá", href: "/admin/du-an-da-xoa", icon: Trash2, allowedRoles: ["ADMIN", "USER"] },
-  // ADMIN only — Gửi Email Server (Tạm ẩn)
-  // { label: "Email Service", href: "/email-service", icon: Mail, allowedRoles: ["ADMIN"] },
 ];
 
 interface SidebarProps {
@@ -82,7 +80,9 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
   };
 
   const isItemVisible = (item: SidebarItem) => {
-    // No restriction = visible to everyone
+    // ADMIN and USER see everything
+    if (userRole === "ADMIN" || userRole === "USER") return true;
+    // For others (AM, CV), check allowedRoles
     if (!item.allowedRoles || item.allowedRoles.length === 0) return true;
     return item.allowedRoles.includes(userRole);
   };

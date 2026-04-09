@@ -531,12 +531,7 @@ export async function getBoardOverview() {
         const projects = await prisma.duAn.findMany({
             where: excludeFailed,
             include: {
-              am: { select: { diaBan: true } },
-              nhatKy: {
-                where: { status: "APPROVED" },
-                orderBy: { ngayGio: "desc" },
-                take: 1
-              }
+              am: { select: { diaBan: true } }
             }
         });
 
@@ -587,8 +582,7 @@ export async function getBoardOverview() {
         const fifteenDaysAgo = new Date(now.getTime() - (15 * 24 * 60 * 60 * 1000));
         const alertTo: Record<string, number> = { "Tổ 1": 0, "Tổ 2": 0, "Tổ 3": 0, "Tổ dự án": 0 };
         projects.forEach(p => {
-            const latestLog = p.nhatKy[0];
-            const lastUpdate = latestLog ? new Date(latestLog.ngayGio) : new Date(p.createdAt);
+            const lastUpdate = p.ngayChamsocCuoiCung ? new Date(p.ngayChamsocCuoiCung) : new Date(p.createdAt);
             if (lastUpdate < fifteenDaysAgo) {
                 const diaBan = p.am?.diaBan || "";
                 if (alertTo.hasOwnProperty(diaBan)) alertTo[diaBan]++;

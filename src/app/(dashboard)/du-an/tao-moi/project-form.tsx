@@ -189,7 +189,7 @@ export default function ProjectForm() {
     () => [
       { value: "", label: "--- Trống ---" },
       ...userOptions
-        .filter((u) => u.role === "AM" || u.role === "ADMIN")
+        .filter((u) => u.role === "AM")
         .map((u) => ({ value: u.id, label: u.name })),
     ],
     [userOptions]
@@ -694,11 +694,11 @@ export default function ProjectForm() {
                     <FormItem>
                       <FieldLabel>AM Hỗ Trợ 1</FieldLabel>
                       <SearchableSelect
-                        options={allUserWithEmpty}
+                        options={amSearchOptions}
                         value={field.value ? String(field.value) : ""}
                         onValueChange={field.onChange}
                         placeholder="Chọn AM hỗ trợ..."
-                        searchPlaceholder="Tìm nhân viên..."
+                        searchPlaceholder="Tìm AM hỗ trợ..."
                       />
                     </FormItem>
                   )}
@@ -711,11 +711,11 @@ export default function ProjectForm() {
                     <FormItem>
                       <FieldLabel>Chuyên Viên Hỗ Trợ 1</FieldLabel>
                       <SearchableSelect
-                        options={allUserWithEmpty}
+                        options={cvSearchOptions}
                         value={field.value ? String(field.value) : ""}
                         onValueChange={field.onChange}
                         placeholder="Chọn CV hỗ trợ..."
-                        searchPlaceholder="Tìm nhân viên..."
+                        searchPlaceholder="Tìm CV hỗ trợ..."
                       />
                     </FormItem>
                   )}
@@ -728,11 +728,11 @@ export default function ProjectForm() {
                     <FormItem>
                       <FieldLabel>Chuyên Viên Hỗ Trợ 2</FieldLabel>
                       <SearchableSelect
-                        options={allUserWithEmpty}
+                        options={cvSearchOptions}
                         value={field.value ? String(field.value) : ""}
                         onValueChange={field.onChange}
                         placeholder="Chọn CV hỗ trợ..."
-                        searchPlaceholder="Tìm nhân viên..."
+                        searchPlaceholder="Tìm CV hỗ trợ..."
                       />
                     </FormItem>
                   )}

@@ -35,7 +35,7 @@ export default async function DuAnPage({
     headers: await headers()
   });
   const user = sessionRes?.user;
-  const isAdminOrCV = ["ADMIN", "CV", "USER"].includes(user?.role);
+  const isAdminOrCV = ["ADMIN", "CV", "USER", "AM"].includes(user?.role);
 
   const [result, pendingLogsRes] = await Promise.all([
     getDuAnList(filters),

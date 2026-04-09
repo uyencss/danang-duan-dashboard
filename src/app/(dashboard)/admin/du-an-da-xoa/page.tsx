@@ -18,7 +18,8 @@ export default async function DeletedProjectsPage({
     headers: await headers()
   });
   const user = sessionRes?.user;
-  if (!user || (user.role !== "ADMIN" && user.role !== "USER")) {
+
+  if (!user || !["ADMIN", "USER"].includes(user.role)) {
     redirect("/du-an");
   }
 

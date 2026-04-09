@@ -1,12 +1,24 @@
-import { requireAdmin } from "@/lib/auth-utils";
+import { requireRole } from "@/lib/auth-utils";
 import { getUserList } from "./actions";
 import { UsersTable } from "./users-table";
 import { Users2, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
 export default async function NhanVienPage() {
-  await requireAdmin();
+  const sessionRes = await (auth.api as any).getSession({
+    headers: await headers()
+  });
+  const user = sessionRes?.user;
+
+  if (!user || !["ADMIN", "USER"].includes(user.role)) {
+    redirect("/du-an");
+  }
+
   const { data = [], error } = await getUserList();
 
   return (

@@ -4,8 +4,20 @@ import { ProductsTable } from "./products-table";
 import { Package } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
 export default async function SanPhamPage() {
-  await requireRole("ADMIN", "USER");
+  const sessionRes = await (auth.api as any).getSession({
+    headers: await headers()
+  });
+  const user = sessionRes?.user;
+
+  if (!user || !["ADMIN", "USER"].includes(user.role)) {
+    redirect("/du-an");
+  }
+  
   const { data = [], error } = await getSanPhamList();
 
   return (

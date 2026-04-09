@@ -233,8 +233,8 @@ export function ProjectsTable({
       id: "warning",
       header: "Cảnh báo",
       cell: ({ row }) => {
-        const lastDate = (row.original as any).ngayChamsocCuoiCung;
-        if (!lastDate) return <span className="text-slate-300">—</span>;
+        const p = row.original as any;
+        const lastDate = p.ngayChamsocCuoiCung || p.createdAt;
         const diff = Math.floor((new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24));
         if (diff > 15) {
           return (
@@ -246,8 +246,9 @@ export function ProjectsTable({
         return <span className="text-slate-300">—</span>;
       },
       filterFn: (row, id, value) => {
-        const lastDate = (row.original as any).ngayChamsocCuoiCung;
-        const isUrgent = lastDate ? Math.floor((new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24)) > 15 : false;
+        const p = row.original as any;
+        const lastDate = p.ngayChamsocCuoiCung || p.createdAt;
+        const isUrgent = Math.floor((new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24)) > 15;
         return value === "urgent" ? isUrgent : !isUrgent;
       },
     },
@@ -437,13 +438,12 @@ export function ProjectsTable({
           <tbody className="divide-y divide-blue-50/50">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
-                const lastDate = row.original.ngayChamsocCuoiCung;
-                const isUrgent = lastDate
-                  ? Math.floor(
-                    (new Date().getTime() - new Date(lastDate).getTime()) /
-                    (1000 * 60 * 60 * 24)
-                  ) > 15
-                  : false;
+                const p = row.original as any;
+                const lastDate = p.ngayChamsocCuoiCung || p.createdAt;
+                const isUrgent = Math.floor(
+                  (new Date().getTime() - new Date(lastDate).getTime()) /
+                  (1000 * 60 * 60 * 24)
+                ) > 15;
 
                 return (
                   <tr

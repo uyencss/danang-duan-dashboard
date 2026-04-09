@@ -4,8 +4,20 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { AlertCircle } from "lucide-react";
 import { requireRole } from "@/lib/auth-utils";
 
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
 export default async function KpiAdminPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
-    await requireRole("ADMIN", "USER");
+    const sessionRes = await (auth.api as any).getSession({
+        headers: await headers()
+    });
+    const user = sessionRes?.user;
+
+    if (!user || !["ADMIN", "USER", "AM", "CV"].includes(user.role)) {
+        redirect("/du-an");
+    }
+
     const params = await searchParams;
     const year = params.year ? parseInt(params.year) : 2026;
 

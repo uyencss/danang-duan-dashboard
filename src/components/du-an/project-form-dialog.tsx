@@ -1,4 +1,6 @@
 "use client";
+// Updated: 2026-04-09 11:20
+
 
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Dialog,
   DialogContent,
@@ -160,6 +163,27 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
     }
     loadData();
   }, []);
+
+  const amOptions = userOptions
+    .filter((u) => u.role === "AM")
+    .map((u) => ({ value: u.id, label: u.name || "Không rõ" }));
+
+  const cvOptions = userOptions
+    .filter((u) => u.role === "CV" || u.role === "ADMIN")
+    .map((u) => ({ value: u.id, label: u.name || "Không rõ" }));
+
+  const amSearchOptions = [{ value: "", label: "--- Trống ---" }, ...amOptions];
+  const cvSearchOptions = [{ value: "", label: "--- Trống ---" }, ...cvOptions];
+
+  const khSearchOptions = khOptions.map((kh) => ({
+    value: String(kh.id),
+    label: kh.ten,
+  }));
+
+  const spSearchOptions = spOptions.map((sp) => ({
+    value: String(sp.id),
+    label: `[${sp.nhom}] ${sp.tenChiTiet}`,
+  }));
 
   useEffect(() => {
     if (project && open) {
@@ -333,20 +357,13 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Khách hàng *</FormLabel>
-                      <Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value)}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-xl h-10 border-slate-200">
-                            <SelectValue placeholder="Chọn khách hàng">
-                              {khOptions.find(kh => String(kh.id) === String(field.value))?.ten}
-                            </SelectValue>
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {khOptions.map(kh => (
-                            <SelectItem key={kh.id} value={String(kh.id)}>{kh.ten}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        options={khSearchOptions}
+                        value={String(field.value)}
+                        onValueChange={(v) => field.onChange(Number(v))}
+                        placeholder="Chọn khách hàng..."
+                        searchPlaceholder="Tìm khách hàng..."
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -358,22 +375,13 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sản phẩm *</FormLabel>
-                      <Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value)}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-xl h-10 border-slate-200">
-                            <SelectValue placeholder="Chọn sản phẩm">
-                              {spOptions.find(sp => String(sp.id) === String(field.value)) 
-                                ? `[${spOptions.find(sp => String(sp.id) === String(field.value))?.nhom}] ${spOptions.find(sp => String(sp.id) === String(field.value))?.tenChiTiet}` 
-                                : undefined}
-                            </SelectValue>
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {spOptions.map(sp => (
-                            <SelectItem key={sp.id} value={String(sp.id)}>[{sp.nhom}] {sp.tenChiTiet}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        options={spSearchOptions}
+                        value={String(field.value)}
+                        onValueChange={(v) => field.onChange(Number(v))}
+                        placeholder="Chọn sản phẩm..."
+                        searchPlaceholder="Tìm sản phẩm..."
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -384,25 +392,21 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
               <div className="grid grid-cols-1 md:grid-cols-5 gap-6 pt-6 border-t border-slate-100">
                  <h4 className="col-span-1 md:col-span-5 text-[10px] font-black uppercase text-[#0058bc]">Nhân sự phụ trách</h4>
                  
-                 <FormField
+                  <FormField
                   control={form.control}
                   name="amId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">AM phụ trách</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-xl h-10 border-slate-200">
-                        <SelectValue placeholder="Chọn AM">
-                          {userOptions.find(u => u.id === field.value)?.name}
-                        </SelectValue>
-                      </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                           <SelectItem value="">Trống</SelectItem>
-                           {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          options={amSearchOptions}
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                          placeholder="Chọn AM..."
+                          searchPlaceholder="Tìm AM..."
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                  />
@@ -413,19 +417,15 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">AM Hỗ trợ</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-xl h-10 border-slate-200">
-                        <SelectValue placeholder="Chọn AM">
-                          {userOptions.find(u => u.id === field.value)?.name}
-                        </SelectValue>
-                      </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                           <SelectItem value="">Trống</SelectItem>
-                           {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          options={amSearchOptions}
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                          placeholder="Chọn AM..."
+                          searchPlaceholder="Tìm AM..."
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                  />
@@ -436,19 +436,15 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">CV Chủ trì</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-xl h-10 border-slate-200">
-                        <SelectValue placeholder="Chọn CV">
-                          {userOptions.find(u => u.id === field.value)?.name}
-                        </SelectValue>
-                      </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                           <SelectItem value="">Trống</SelectItem>
-                           {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          options={cvSearchOptions}
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                          placeholder="Chọn CV..."
+                          searchPlaceholder="Tìm CV..."
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                  />
@@ -459,19 +455,15 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">CV Hỗ trợ 1</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-xl h-10 border-slate-200">
-                        <SelectValue placeholder="Chọn CV">
-                          {userOptions.find(u => u.id === field.value)?.name}
-                        </SelectValue>
-                      </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                           <SelectItem value="">Trống</SelectItem>
-                           {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          options={cvSearchOptions}
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                          placeholder="Chọn CV..."
+                          searchPlaceholder="Tìm CV..."
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                  />
@@ -482,19 +474,15 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">CV Hỗ trợ 2</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-xl h-10 border-slate-200">
-                        <SelectValue placeholder="Chọn CV">
-                          {userOptions.find(u => u.id === field.value)?.name}
-                        </SelectValue>
-                      </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                           <SelectItem value="">Trống</SelectItem>
-                           {userOptions.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          options={cvSearchOptions}
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                          placeholder="Chọn CV..."
+                          searchPlaceholder="Tìm CV..."
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                  />

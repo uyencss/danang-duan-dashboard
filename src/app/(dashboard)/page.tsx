@@ -31,15 +31,14 @@ export const metadata = {
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { requireRole } from "@/lib/auth-utils";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
   
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "USER") {
-    redirect("/du-an");
-  }
+  await requireRole("ADMIN", "USER", "AM", "CV");
 
   const result = await getDashboardOverview();
   const amPerf = await getAMPerformance();

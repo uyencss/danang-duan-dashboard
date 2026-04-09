@@ -10,7 +10,7 @@ export default async function CVManagementPage({
 }: {
     searchParams: Promise<{ y?: string; q?: string; m?: string }>;
 }) {
-    await requireRole("ADMIN");
+    await requireRole("ADMIN", "USER");
     const params = await searchParams;
     const year = params.y ? parseInt(params.y) : 2026;
     const quarter = params.q && params.q !== "all" ? parseInt(params.q) : undefined;

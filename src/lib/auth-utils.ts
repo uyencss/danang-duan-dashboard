@@ -31,8 +31,12 @@ export async function requireAdmin() {
  * Require one of several roles. Redirects to /du-an if the user's role is not in the allowed list.
  */
 export async function requireRole(...allowedRoles: AppRole[]) {
-  const user = await requireAuth();
-  if (!allowedRoles.includes(user.role as AppRole)) {
+  const sessionRes = await (auth.api as any).getSession({
+    headers: await headers()
+  });
+  const user = sessionRes?.user;
+
+  if (!user || !allowedRoles.includes(user.role as AppRole)) {
     redirect("/du-an");
   }
   return user;
