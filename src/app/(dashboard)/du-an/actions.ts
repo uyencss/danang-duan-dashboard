@@ -334,7 +334,7 @@ export async function deleteNhatKy(id: number) {
             });
 
             // Nếu nhật ký bị xóa đã được duyệt và có chứa bước quy trình, ta cần tính toán lại bước hiện tại của dự án
-            if (log.buoc && log.status === "APPROVED") {
+          if (log && log.buoc && log.status === "APPROVED") {
                 await updateProjectHighestStep(log.projectId, tx);
             }
         });
