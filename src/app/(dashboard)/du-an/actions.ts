@@ -328,13 +328,17 @@ export async function deleteNhatKy(id: number) {
             select: { buoc: true, status: true, projectId: true }
         });
 
+        if (!log) {
+            return { error: "Không tìm thấy nhật ký hoặc đã bị xóa" };
+        }
+
         await prisma.$transaction(async (tx) => {
             await tx.nhatKyCongViec.delete({
                 where: { id }
             });
 
             // Nếu nhật ký bị xóa đã được duyệt và có chứa bước quy trình, ta cần tính toán lại bước hiện tại của dự án
-          if (log && log.buoc && log.status === "APPROVED") {
+            if (log.buoc && log.status === "APPROVED") {
                 await updateProjectHighestStep(log.projectId, tx);
             }
         });
@@ -343,7 +347,7 @@ export async function deleteNhatKy(id: number) {
         await syncReplica();
 
         // Nếu là bước quy trình đang chờ duyệt, thông báo cho admin qua Ably
-        if (log && log.buoc && log.status === "PENDING" && ablyServerClient) {
+        if (log.buoc && log.status === "PENDING" && ablyServerClient) {
             const channel = ablyServerClient.channels.get("tracking");
             channel.publish("step-deleted", { logId: id }).catch((err) => {
                 console.error("Ably publish error (deleteNhatKy):", err);
