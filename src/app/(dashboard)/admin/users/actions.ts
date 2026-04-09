@@ -9,6 +9,7 @@ import { headers } from "next/headers";
 import { syncReplica } from "@/lib/utils/sync";
 import { requireRole } from "@/lib/auth-utils";
 import { logger } from "@/lib/logger";
+import { cacheInvalidate } from "@/lib/cache";
 
 const UserSchema = z.object({
   name: z.string().min(2, "Họ tên tối thiểu 2 ký tự"),
@@ -95,6 +96,7 @@ export async function createUser(data: any) {
         console.warn(`[createUser] Could not set emailVerified for ${email}, but user was created.`);
     }
 
+    await cacheInvalidate("options:users");
     revalidatePath("/admin/users");
     await syncReplica();
     return { success: true };
@@ -148,6 +150,7 @@ export async function updateUser(id: string, data: any) {
       }
     }, `User ${id} updated`);
 
+    await cacheInvalidate("options:users");
     revalidatePath("/admin/users");
     await syncReplica();
     return { success: true };
@@ -169,7 +172,8 @@ export async function toggleUserStatus(id: string, currentActive: boolean) {
       where: { id },
       data: { isActive: !currentActive },
     });
-    
+
+    await cacheInvalidate("options:users");
     revalidatePath("/admin/users");
     await syncReplica();
     return { success: true };
@@ -191,6 +195,7 @@ export async function deleteUser(id: string) {
             where: { id }
         });
 
+        await cacheInvalidate("options:users");
         revalidatePath("/admin/users");
         await syncReplica();
         return { success: true };
@@ -253,6 +258,7 @@ export async function bulkCreateUsers(users: any[]) {
             }
         }
 
+        await cacheInvalidate("options:users");
         revalidatePath("/admin/users");
         await syncReplica();
         return { success: true, results };
@@ -297,6 +303,7 @@ export async function bulkUpdateRole(userIds: string[], newRole: UserRole) {
             changes: roleChanges
         }, "User role bulk updated");
 
+        await cacheInvalidate("options:users");
         revalidatePath("/admin/users");
         await syncReplica();
         return { success: true, count: userIds.length };

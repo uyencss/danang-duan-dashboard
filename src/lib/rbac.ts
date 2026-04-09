@@ -1,3 +1,5 @@
+
+
 export type AppRole = "ADMIN" | "USER" | "AM" | "CV";
 
 export interface RoleMetadata {
@@ -6,6 +8,7 @@ export interface RoleMetadata {
   badgeColor: string;
   textColor: string;
   borderColor: string;
+  color?: string;
 }
 
 export const ROLE_METADATA: Record<AppRole, RoleMetadata> = {
@@ -61,20 +64,13 @@ export interface RoutePermission {
   exact?: boolean;
 }
 
-/**
- * Route-to-role mapping. Order matters: more specific patterns first.
- * Routes not listed here default to ALL authenticated users.
- */
 export const ROUTE_PERMISSIONS: RoutePermission[] = [
-  // --- ALL roles ---
   { pattern: "/", roles: ALL_ROLES, exact: true },
   { pattern: "/du-an/tao-moi", roles: ALL_ROLES },
   { pattern: "/du-an", roles: ALL_ROLES, exact: true },
   { pattern: "/du-an/", roles: ALL_ROLES },
   { pattern: "/admin/khach-hang", roles: ALL_ROLES },
   { pattern: "/admin/kpi", roles: ALL_ROLES },
-
-  // --- ADMIN + USER only ---
   { pattern: "/kpi", roles: MANAGER_ROLES },
   { pattern: "/dia-ban", roles: MANAGER_ROLES },
   { pattern: "/quan-ly-am", roles: MANAGER_ROLES },
@@ -86,12 +82,10 @@ export const ROUTE_PERMISSIONS: RoutePermission[] = [
   { pattern: "/email-service", roles: MANAGER_ROLES },
 ];
 
-/**
- * Match a pathname against the ROUTE_PERMISSIONS config.
- * Returns the allowed roles for the matched route, or ALL_ROLES if no match.
- */
-export function getRequiredRoles(pathname: string): AppRole[] {
-  for (const perm of ROUTE_PERMISSIONS) {
+// Server-side database functions have been moved to rbac-server.ts
+
+export function matchRequiredRoles(pathname: string, permissions: RoutePermission[]): AppRole[] {
+  for (const perm of permissions) {
     if (perm.exact) {
       if (pathname === perm.pattern) return perm.roles;
     } else {
@@ -100,14 +94,19 @@ export function getRequiredRoles(pathname: string): AppRole[] {
       }
     }
   }
-  // Default: all authenticated users can access unlisted routes
   return ALL_ROLES;
 }
 
-/**
- * Check if a role can access a given route.
- */
-export function canRoleAccess(role: AppRole, pathname: string): boolean {
-  const required = getRequiredRoles(pathname);
+export function getRequiredRoles(pathname: string, permissions: RoutePermission[] = ROUTE_PERMISSIONS): AppRole[] {
+  return matchRequiredRoles(pathname, permissions);
+}
+
+export function getRequiredRolesSync(pathname: string, permissions: RoutePermission[] = ROUTE_PERMISSIONS): AppRole[] {
+  return matchRequiredRoles(pathname, permissions);
+}
+
+export function canRoleAccess(role: AppRole, pathname: string, permissions: RoutePermission[] = ROUTE_PERMISSIONS): boolean {
+  const required = getRequiredRolesSync(pathname, permissions);
   return required.includes(role);
 }
+

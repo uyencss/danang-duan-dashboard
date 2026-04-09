@@ -19,9 +19,28 @@ import {
   Target,
   Trash2,
   ClipboardList,
+  Shield,
+  Settings,
 } from "lucide-react";
 
 import type { AppRole } from "@/lib/rbac";
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  LayoutDashboard,
+  FolderKanban,
+  Building2,
+  TrendingUp,
+  MapPin,
+  UserCheck,
+  GraduationCap,
+  Package,
+  UserCog,
+  Target,
+  ClipboardList,
+  Trash2,
+  Shield,
+  Settings,
+};
 
 interface SidebarItem {
   label: string;
@@ -67,10 +86,32 @@ interface SidebarProps {
   userRole: AppRole;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
+  dbMenuItems?: any[];
 }
 
-export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps) {
+export function Sidebar({ userRole, isCollapsed, setIsCollapsed, dbMenuItems = [] }: SidebarProps) {
   const pathname = usePathname();
+
+  let finalMainItems: SidebarItem[] = [];
+  let finalAdminItems: SidebarItem[] = [];
+
+  if (dbMenuItems && dbMenuItems.length > 0) {
+    const mainDb = dbMenuItems.filter(item => item.section === "main");
+    const adminDb = dbMenuItems.filter(item => item.section === "admin");
+    const mapDbItems = (dbItems: any[]): SidebarItem[] => {
+      return dbItems.map(item => ({
+        label: item.label,
+        href: item.href,
+        icon: ICON_MAP[item.icon] || LayoutDashboard,
+        allowedRoles: ["ADMIN", "USER", "AM", "CV"], // Since they are returned, user can see them
+      }));
+    };
+    finalMainItems = mapDbItems(mainDb);
+    finalAdminItems = mapDbItems(adminDb);
+  } else {
+    finalMainItems = mainNavItems;
+    finalAdminItems = adminNavItems;
+  }
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -78,6 +119,8 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
   };
 
   const isItemVisible = (item: SidebarItem) => {
+    if (dbMenuItems && dbMenuItems.length > 0) return true; // already filtered
+
     // ADMIN and USER see everything
     if (userRole === "ADMIN" || userRole === "USER") return true;
     // For others (AM, CV), check allowedRoles
@@ -124,7 +167,7 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
   };
 
   // Check if the user can see any admin section items
-  const visibleAdminItems = adminNavItems.filter(isItemVisible);
+  const visibleAdminItems = finalAdminItems.filter(isItemVisible);
   const showAdminSection = visibleAdminItems.length > 0;
 
   return (
@@ -160,7 +203,7 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
 
       {/* Main Navigation */}
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-        {renderNavItems(mainNavItems)}
+        {renderNavItems(finalMainItems)}
 
         {showAdminSection && (
           <div className="mt-4 space-y-1">
@@ -170,7 +213,7 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
               </p>
             )}
             <div className="border-t border-white/5 pt-2">
-              {renderNavItems(adminNavItems)}
+              {renderNavItems(finalAdminItems)}
             </div>
           </div>
         )}

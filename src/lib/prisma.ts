@@ -23,8 +23,12 @@ function getLibSqlConfig(): Config {
     };
   }
   
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is not defined in your environment variables. Refusing to connect to prevent unwanted local database creation.");
+  }
+
   return {
-    url: process.env.DATABASE_URL!,
+    url: process.env.DATABASE_URL,
   };
 }
 

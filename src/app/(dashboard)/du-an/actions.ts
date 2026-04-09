@@ -14,6 +14,7 @@ import { existsSync, mkdirSync } from "fs";
 import { syncReplica } from "@/lib/utils/sync";
 import { ablyServerClient } from "@/lib/realtime";
 import { getCurrentUser, requireRole } from "@/lib/auth-utils";
+import { withCache, cacheInvalidate } from "@/lib/cache";
 
 // ── Schema for the NEW creation flow ────────────────────────────────
 // Customer can be an existing ID or a new inline entry
@@ -201,6 +202,7 @@ export async function createDuAn(data: any) {
       } as any,
     });
 
+    await cacheInvalidate("dashboard:overview", "options:khachhang", "options:sanpham", "options:sanpham-groups");
     revalidatePath("/du-an");
     revalidatePath("/quan-ly-am");
     revalidatePath("/quan-ly-cv");
@@ -247,6 +249,7 @@ export async function updateDuAn(id: number, data: any) {
             } as any,
         });
 
+        await cacheInvalidate("dashboard:overview");
         revalidatePath("/du-an");
         revalidatePath("/quan-ly-am");
         revalidatePath("/quan-ly-cv");
@@ -550,6 +553,7 @@ export async function createTaskLog(data: {
         return log;
     });
 
+    await cacheInvalidate("dashboard:overview");
     revalidatePath(`/du-an/${data.projectId}`);
     revalidatePath("/du-an");
     await syncReplica();
@@ -561,35 +565,44 @@ export async function createTaskLog(data: {
 }
 
 export async function getKhachHangOptions() {
-  const data = await prisma.khachHang.findMany({ 
-    where: { isActive: true }, 
-    select: { id: true, ten: true, phanLoai: true, diaChi: true },
-    orderBy: { ten: 'asc' },
-  });
+  const data = await withCache("options:khachhang", 300, () =>
+    prisma.khachHang.findMany({
+      where: { isActive: true },
+      select: { id: true, ten: true, phanLoai: true, diaChi: true },
+      orderBy: { ten: 'asc' },
+    })
+  );
   return { data };
 }
 
 export async function getSanPhamOptions() {
-  const data = await prisma.sanPham.findMany({ 
-    where: { isActive: true }, 
-    select: { id: true, nhom: true, tenChiTiet: true, moTa: true },
-    orderBy: [{ nhom: 'asc' }, { tenChiTiet: 'asc' }],
-  });
+  const data = await withCache("options:sanpham", 300, () =>
+    prisma.sanPham.findMany({
+      where: { isActive: true },
+      select: { id: true, nhom: true, tenChiTiet: true, moTa: true },
+      orderBy: [{ nhom: 'asc' }, { tenChiTiet: 'asc' }],
+    })
+  );
   return { data };
 }
 
 export async function getSanPhamGroups() {
-  const groups = await prisma.sanPham.groupBy({
-    by: ['nhom'],
+  const data = await withCache("options:sanpham-groups", 300, async () => {
+    const groups = await prisma.sanPham.groupBy({
+      by: ['nhom'],
+    });
+    return groups.map((g: any) => g.nhom);
   });
-  return { data: groups.map((g: any) => g.nhom) };
+  return { data };
 }
 
 export async function getUserOptions() {
-  const data = await prisma.user.findMany({ 
-    where: { isActive: true }, 
-    select: { id: true, name: true, role: true } 
-  });
+  const data = await withCache("options:users", 300, () =>
+    prisma.user.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, role: true }
+    })
+  );
   return { data };
 }
 
@@ -602,6 +615,7 @@ export async function requestDeleteDuAn(id: number) {
       where: { id },
       data: { isPendingDelete: true, deleteRequestedAt: new Date() }
     });
+    await cacheInvalidate("dashboard:overview");
     revalidatePath("/du-an");
     await syncReplica();
     return { success: true };
@@ -616,6 +630,7 @@ export async function approveDeleteDuAn(id: number) {
     if (user.role !== "ADMIN") return { error: "Chỉ Admin mới có quyền duyệt xoá" };
 
     await prisma.duAn.delete({ where: { id }});
+    await cacheInvalidate("dashboard:overview");
     revalidatePath("/admin/du-an-da-xoa");
     revalidatePath("/du-an");
     await syncReplica();
@@ -634,6 +649,7 @@ export async function restoreDuAn(id: number) {
       where: { id },
       data: { isPendingDelete: false, deleteRequestedAt: null }
     });
+    await cacheInvalidate("dashboard:overview");
     revalidatePath("/admin/du-an-da-xoa");
     revalidatePath("/du-an");
     await syncReplica();
@@ -686,6 +702,7 @@ export async function approveStep(logId: number) {
             });
         });
 
+        await cacheInvalidate("dashboard:overview");
         revalidatePath(`/du-an/${log.projectId}`);
         await syncReplica();
 

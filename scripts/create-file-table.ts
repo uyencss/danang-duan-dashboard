@@ -7,7 +7,6 @@ const urls = [
   process.env.TURSO_DATABASE_URL,
   process.env.DATABASE_URL,
   process.env.LOCAL_REPLICA_PATH,
-  "file:./dev.db"
 ].filter(Boolean) as string[];
 
 async function main() {

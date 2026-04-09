@@ -12,7 +12,7 @@ export async function saveFile(
   const monthStr = (date.getMonth() + 1).toString().padStart(2, '0');
 
   // Create absolute dir if it doesn't exist /uploads/YYYY/MM
-  const absoluteUploadDir = path.resolve(process.cwd(), UPLOAD_CONFIG.BASE_DIR, yearStr, monthStr);
+  const absoluteUploadDir = path.resolve(/*turbopackIgnore: true*/ process.cwd(), UPLOAD_CONFIG.BASE_DIR, yearStr, monthStr);
   await fs.mkdir(absoluteUploadDir, { recursive: true });
 
   // Create unique filename
@@ -36,7 +36,7 @@ export async function saveFile(
 }
 
 export async function resolveFilePath(relativeFilePath: string): Promise<string | null> {
-    const absolutePath = path.resolve(process.cwd(), UPLOAD_CONFIG.BASE_DIR, relativeFilePath);
+    const absolutePath = path.resolve(/*turbopackIgnore: true*/ process.cwd(), UPLOAD_CONFIG.BASE_DIR, relativeFilePath);
     
     try {
         await fs.access(absolutePath);

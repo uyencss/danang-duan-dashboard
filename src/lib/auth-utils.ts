@@ -2,13 +2,23 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-export type { AppRole } from "@/lib/rbac";
+import type { AppRole } from "@/lib/rbac";
 
-export async function getCurrentUser() {
+type AppUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: AppRole;
+  image?: string | null;
+  diaBan?: string | null;
+  [key: string]: unknown;
+};
+
+export async function getCurrentUser(): Promise<AppUser | undefined> {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  return session?.user;
+  return session?.user as AppUser | undefined;
 }
 
 export async function requireAuth() {
@@ -66,7 +76,7 @@ export async function requireApiRole(...allowedRoles: AppRole[]): Promise<
     };
   }
 
-  if (!allowedRoles.includes(session.user.role as AppRole)) {
+  if (!allowedRoles.includes((session.user as any).role as AppRole)) {
     return {
       error: new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,

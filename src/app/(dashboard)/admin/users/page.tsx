@@ -4,9 +4,7 @@ import { RoleOverviewCards } from "./role-overview-cards";
 import { Users2, ShieldCheck } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { requireRole } from "@/lib/auth-utils";
 
 export default async function NhanVienPage() {
   const user = await requireRole("ADMIN", "USER");

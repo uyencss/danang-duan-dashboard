@@ -10,6 +10,36 @@ services:
       - ./logs:/app/logs
       - ./uploads:/app/uploads
 
+  redis:
+    image: redis:7-alpine
+    container_name: danang-dashboard-redis
+    restart: always
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --loglevel warning
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    volumes:
+      - redis-data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   web:
     build:
       context: .
@@ -30,6 +60,7 @@ services:
       - BETTER_AUTH_URL=${BETTER_AUTH_URL}
       - ABLY_API_KEY=${ABLY_API_KEY}
       - NEXT_PUBLIC_ABLY_KEY=${NEXT_PUBLIC_ABLY_KEY}
+      - REDIS_URL=redis://redis:6379
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
@@ -37,14 +68,16 @@ services:
     depends_on:
       init-perms:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 1G
+          cpus: '4.0'
+          memory: 8G
         reservations:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '2.0'
+          memory: 4G
     networks:
       backend:
         aliases:
@@ -70,6 +103,9 @@ services:
       - web
     networks:
       - backend
+
+volumes:
+  redis-data:
 
 networks:
   backend:
