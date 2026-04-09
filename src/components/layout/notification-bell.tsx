@@ -96,6 +96,15 @@ export function NotificationBell({ userId }: NotificationBellProps) {
       setNotifications((prev) => [notif, ...prev].slice(0, 20));
     });
 
+    channel.subscribe("mark-read-related", (msg) => {
+      const { relatedId } = msg.data;
+      if (!relatedId) return;
+      
+      setNotifications(prev => prev.map(n => 
+        n.relatedId === String(relatedId) ? { ...n, read: true } : n
+      ));
+    });
+
     return () => {
       channel.unsubscribe();
       try {

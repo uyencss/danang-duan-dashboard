@@ -127,7 +127,7 @@ export function QuickUpdateModal({
            name: f.fileName,
            type: f.type,
            size: f.size,
-           filePath: f.filePath,
+           url: f.filePath,
         }));
       }
 

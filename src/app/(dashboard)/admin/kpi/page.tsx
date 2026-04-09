@@ -9,14 +9,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function KpiAdminPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
-    const sessionRes = await (auth.api as any).getSession({
-        headers: await headers()
-    });
-    const user = sessionRes?.user;
+    const user = await requireRole("ADMIN", "USER", "AM", "CV");
 
-    if (!user || !["ADMIN", "USER", "AM", "CV"].includes(user.role)) {
-        redirect("/du-an");
-    }
 
     const params = await searchParams;
     const year = params.year ? parseInt(params.year) : 2026;

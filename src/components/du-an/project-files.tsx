@@ -17,7 +17,7 @@ interface ProjectFilesProps {
         name: string;
         type: string;
         size: number;
-        filePath: string;
+        url: string;
         createdAt: Date | string;
         log?: {
             user?: {
@@ -57,7 +57,7 @@ export function ProjectFiles({ files }: ProjectFilesProps) {
             {files.map((file) => (
                 <a 
                     key={file.id} 
-                    href={`/api/uploads/${file.filePath || (file as any).url?.replace('/uploads/', '')}`}
+                    href={`/api/uploads/${file.url || (file as any).filePath?.replace('/uploads/', '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     download={file.name}

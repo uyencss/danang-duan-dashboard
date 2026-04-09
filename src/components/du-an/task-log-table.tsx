@@ -210,7 +210,7 @@ export function TaskLogTable({ logs }: TaskLogTableProps) {
                         {log.files.map((file: any) => (
                            <a 
                              key={file.id} 
-                             href={`/api/uploads/${(file as any).filePath || (file as any).url?.replace('/uploads/', '')}`} 
+                             href={`/api/uploads/${(file as any).url || (file as any).filePath?.replace('/uploads/', '')}`} 
                              target="_blank" 
                              rel="noopener noreferrer"
                              download={file.name}

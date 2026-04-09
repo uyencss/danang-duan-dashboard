@@ -9,14 +9,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function SanPhamPage() {
-  const sessionRes = await (auth.api as any).getSession({
-    headers: await headers()
-  });
-  const user = sessionRes?.user;
-
-  if (!user || !["ADMIN", "USER"].includes(user.role)) {
-    redirect("/du-an");
-  }
+  const user = await requireRole("ADMIN", "USER");
   
   const { data = [], error } = await getSanPhamList();
 

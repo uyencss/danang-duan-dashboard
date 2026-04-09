@@ -12,6 +12,8 @@ import fs from "fs/promises";
 import path from "path";
 import { existsSync, mkdirSync } from "fs";
 import { syncReplica } from "@/lib/utils/sync";
+import { ablyServerClient } from "@/lib/realtime";
+import { getCurrentUser } from "@/lib/auth-utils";
 
 // ── Schema for the NEW creation flow ────────────────────────────────
 // Customer can be an existing ID or a new inline entry
@@ -303,10 +305,7 @@ export async function getDuAnList(params?: {
   pageSize?: number
 }) {
   try {
-    const sessionRes = await (auth.api as any).getSession({
-      headers: await headers()
-    });
-    const user = sessionRes?.user;
+    const user = await getCurrentUser();
     if (!user) return { error: "Yêu cầu đăng nhập" };
 
     const whereClause: any = {
@@ -376,10 +375,7 @@ export async function getDuAnList(params?: {
 
 export async function getDuAnDetail(id: number) {
   try {
-    const sessionRes = await (auth.api as any).getSession({
-      headers: await headers()
-    });
-    const user = sessionRes?.user;
+    const user = await getCurrentUser();
     if (!user) return { error: "Yêu cầu đăng nhập" };
 
     const project = await prisma.duAn.findUnique({
@@ -423,13 +419,10 @@ export async function createTaskLog(data: {
   noiDungChiTiet: string,
   ngayGio: Date,
   buoc?: string,
-  files?: { name: string, type: string, size: number, filePath: string }[]
+  files?: { name: string, type: string, size: number, url: string }[]
 }) {
   try {
-    const sessionRes = await (auth.api as any).getSession({
-      headers: await headers()
-    });
-    const user = sessionRes?.user;
+    const user = await getCurrentUser();
     if (!user) return { error: "Yêu cầu đăng nhập" };
 
     const result = await prisma.$transaction(async (tx: any) => {
@@ -455,7 +448,7 @@ export async function createTaskLog(data: {
                     data: {
                         logId: log.id,
                         name: fileData.name,
-                        filePath: fileData.filePath,
+                        url: fileData.url,
                         type: fileData.type,
                         size: fileData.size,
                     }
@@ -557,10 +550,7 @@ export async function getUserOptions() {
 
 export async function requestDeleteDuAn(id: number) {
   try {
-    const sessionRes = await (auth.api as any).getSession({
-      headers: await headers()
-    });
-    const user = sessionRes?.user;
+    const user = await getCurrentUser();
     if (!user) return { error: "Yêu cầu đăng nhập" };
 
     await prisma.duAn.update({
@@ -581,10 +571,7 @@ export async function requestDeleteDuAn(id: number) {
 
 export async function approveDeleteDuAn(id: number) {
   try {
-    const sessionRes = await (auth.api as any).getSession({
-      headers: await headers()
-    });
-    const user = sessionRes?.user;
+    const user = await getCurrentUser();
     if (user?.role !== "ADMIN") return { error: "Chỉ Admin mới có quyền duyệt xoá" };
 
     await prisma.duAn.delete({ where: { id }});
@@ -603,10 +590,7 @@ export async function approveDeleteDuAn(id: number) {
 
 export async function restoreDuAn(id: number) {
   try {
-    const sessionRes = await (auth.api as any).getSession({
-      headers: await headers()
-    });
-    const user = sessionRes?.user;
+    const user = await getCurrentUser();
     if (user?.role !== "ADMIN") return { error: "Chỉ Admin mới có quyền khôi phục" };
 
     await prisma.duAn.update({
@@ -632,9 +616,8 @@ export async function restoreDuAn(id: number) {
 
 export async function approveStep(logId: number) {
     try {
-        const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
-        const adminUser = sessionRes?.user;
-        if (!["ADMIN", "USER"].includes(adminUser?.role)) return { error: "Không có quyền duyệt" };
+        const user = await getCurrentUser();
+        if (!["ADMIN", "USER"].includes(user?.role || "")) return { error: "Không có quyền duyệt" };
 
         const log = await prisma.nhatKyCongViec.findUnique({
             where: { id: logId },
@@ -660,11 +643,25 @@ export async function approveStep(logId: number) {
                     type: "APPROVAL_RESULT",
                     projectId: log.projectId,
                 }
+            }),
+            prisma.notification.updateMany({
+                where: {
+                    relatedId: String(logId),
+                    type: "APPROVAL_REQUEST"
+                },
+                data: { isRead: true }
             })
         ]);
 
         revalidatePath(`/du-an/${log.projectId}`);
         await syncReplica();
+
+        // Notify real-time components to mark related notifications as read
+        if (ablyServerClient) {
+            const channel = ablyServerClient.channels.get("notifications");
+            channel.publish("mark-read-related", { relatedId: String(logId) }).catch(() => {});
+        }
+
         return { success: true };
     } catch (error) {
         return { error: "Duyệt thất bại" };
@@ -673,9 +670,8 @@ export async function approveStep(logId: number) {
 
 export async function rejectStep(logId: number, reason: string) {
     try {
-        const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
-        const adminUser = sessionRes?.user;
-        if (!["ADMIN", "USER"].includes(adminUser?.role)) return { error: "Không có quyền" };
+        const user = await getCurrentUser();
+        if (!["ADMIN", "USER"].includes(user?.role || "")) return { error: "Không có quyền" };
 
         const log = await prisma.nhatKyCongViec.findUnique({
             where: { id: logId },
@@ -697,11 +693,25 @@ export async function rejectStep(logId: number, reason: string) {
                     type: "APPROVAL_RESULT",
                     projectId: log.projectId,
                 }
+            }),
+            prisma.notification.updateMany({
+                where: {
+                    relatedId: String(logId),
+                    type: "APPROVAL_REQUEST"
+                },
+                data: { isRead: true }
             })
         ]);
 
         revalidatePath(`/du-an/${log.projectId}`);
         await syncReplica();
+
+        // Notify real-time components to mark related notifications as read
+        if (ablyServerClient) {
+            const channel = ablyServerClient.channels.get("notifications");
+            channel.publish("mark-read-related", { relatedId: String(logId) }).catch(() => {});
+        }
+
         return { success: true };
     } catch (error) {
         return { error: "Từ chối thất bại" };
@@ -710,11 +720,11 @@ export async function rejectStep(logId: number, reason: string) {
 
 export async function getNotifications() {
     try {
-        const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
-        if (!sessionRes?.user) return { data: [] };
+        const user = await getCurrentUser();
+        if (!user) return { data: [] };
 
         const data = await prisma.notification.findMany({
-            where: { userId: sessionRes.user.id },
+            where: { userId: user.id },
             orderBy: { createdAt: "desc" },
             take: 20
         });
@@ -734,9 +744,8 @@ export async function markNotificationRead(id: number) {
 
 export async function getPendingStepLogs() {
     try {
-        const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
-        const user = sessionRes?.user;
-        if (!["ADMIN", "USER"].includes(user?.role)) return { data: [] };
+        const user = await getCurrentUser();
+        if (!["ADMIN", "USER"].includes(user?.role || "")) return { data: [] };
 
         const data = await prisma.nhatKyCongViec.findMany({
             where: { status: "PENDING" },
@@ -755,8 +764,8 @@ export async function getPendingStepLogs() {
 
 export async function revokeStepLog(logId: number) {
     try {
-        const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
-        if (!sessionRes?.user) return { error: "Yêu cầu đăng nhập" };
+        const user = await getCurrentUser();
+        if (!user) return { error: "Yêu cầu đăng nhập" };
 
         const log = await prisma.nhatKyCongViec.findUnique({
             where: { id: logId },

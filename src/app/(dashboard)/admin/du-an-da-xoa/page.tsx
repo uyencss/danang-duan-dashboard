@@ -1,9 +1,8 @@
+import { requireRole } from "@/lib/auth-utils";
 import { getDuAnList } from "@/app/(dashboard)/du-an/actions";
 import { DeletedProjectsTable } from "./deleted-projects-table";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Dự án đã xoá",
@@ -14,14 +13,8 @@ export default async function DeletedProjectsPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const sessionRes = await (auth.api as any).getSession({
-    headers: await headers()
-  });
-  const user = sessionRes?.user;
+  const user = await requireRole("ADMIN", "USER");
 
-  if (!user || !["ADMIN", "USER"].includes(user.role)) {
-    redirect("/du-an");
-  }
 
   const result = await getDuAnList({ isDeleted: true });
   const data = result?.data ?? [];
