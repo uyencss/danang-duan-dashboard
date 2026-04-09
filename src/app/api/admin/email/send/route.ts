@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email";
+import { withLogging } from "@/lib/logger/api-logger";
 
 // TODO: Ensure this endpoint is protected so only Admin can call it
 // Import better-auth session logic depending on project setup
 
-export async function POST(request: Request) {
+export const POST = withLogging(async (request: Request) => {
   try {
     const body = await request.json();
     const { to, subject, message } = body;
@@ -34,4 +35,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+});
