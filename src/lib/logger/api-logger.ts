@@ -4,10 +4,10 @@ export const withLogging = (handler: Function) => {
   return async (req: Request, ...args: any[]) => {
     const reqId = req.headers.get('x-request-id') || crypto.randomUUID();
     const childLogger = logger.child({ reqId, module: 'api' });
-    
+
     const startTime = Date.now();
     const url = new URL(req.url);
-    
+
     // Attempt to clone request to read body without consuming it
     let bodyObj = undefined;
     if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
@@ -19,11 +19,15 @@ export const withLogging = (handler: Function) => {
       }
     }
 
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || req.headers.get('x-real-ip') || 'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+    const serverHost = process.env.HOSTNAME || 'unknown';
+
     try {
       const response: Response = await handler(req, ...args);
-      
+
       const responseTime = Date.now() - startTime;
-      
+
       childLogger.info({
         msg: `${req.method} ${url.pathname}`,
         method: req.method,
@@ -31,21 +35,27 @@ export const withLogging = (handler: Function) => {
         statusCode: response.status,
         responseTime,
         body: bodyObj,
+        ip,
+        userAgent,
+        serverHost,
       });
-      
+
       return response;
     } catch (error: any) {
       const responseTime = Date.now() - startTime;
-      
+
       childLogger.error({
         msg: `Unhandled error in ${req.method} ${url.pathname}`,
         method: req.method,
         url: url.pathname,
         responseTime,
         body: bodyObj,
-        err: error?.message || error
+        err: error?.message || error,
+        ip,
+        userAgent,
+        serverHost,
       });
-      
+
       throw error;
     }
   };
