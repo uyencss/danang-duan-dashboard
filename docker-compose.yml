@@ -1,5 +1,6 @@
 services:
   web:
+    image: ghcr.io/uyencss/danang-duan-dashboard:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -42,8 +43,7 @@ services:
     environment:
       - TZ=Asia/Ho_Chi_Minh
     command: >
-      tunnel --no-autoupdate run
-      --token ${CLOUDFLARE_TUNNEL_TOKEN}
+      tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     deploy:
       resources:
         limits:
