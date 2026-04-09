@@ -91,7 +91,7 @@ export function TrackingTab({ initialData }: { initialData: any[] }) {
               {log.files.map((file: any) => (
                 <a 
                   key={file.id}
-                  href={file.url}
+                  href={`/api/uploads/${(file as any).filePath || (file as any).url?.replace('/uploads/', '')}`}
                   download={file.name}
                   target="_blank"
                   rel="noopener noreferrer"

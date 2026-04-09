@@ -18,3 +18,5 @@ scripts/turso-db
 scripts/diagnostics
 scripts/prisma-tests
 scripts/db-management
+/uploads/
+public/uploads/

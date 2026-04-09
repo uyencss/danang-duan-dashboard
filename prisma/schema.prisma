@@ -334,7 +334,7 @@ model FileDinhKem {
   id        Int      @id @default(autoincrement())
   logId     Int
   name      String
-  url       String
+  filePath  String
   type      String
   size      Int
   createdAt DateTime @default(now())

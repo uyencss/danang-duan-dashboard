@@ -105,14 +105,31 @@ export function QuickUpdateModal({
   const onSubmit = async (values: any) => {
     setLoading(true);
     try {
-      const fileData = await Promise.all(
-        selectedFiles.map(async (file) => ({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          base64: await fileToBase64(file),
-        }))
-      );
+      let uploadedFilesInfo = [];
+      if (selectedFiles.length > 0) {
+        const formData = new FormData();
+        selectedFiles.forEach((file) => formData.append("files", file));
+        
+        const uploadRes = await fetch("/api/uploads", {
+          method: "POST",
+          body: formData,
+        });
+        
+        const uploadData = await uploadRes.json();
+        
+        if (!uploadData.success) {
+           toast.error(uploadData.error || "Lỗi upload file");
+           setLoading(false);
+           return;
+        }
+        
+        uploadedFilesInfo = uploadData.files.map((f: any) => ({
+           name: f.fileName,
+           type: f.type,
+           size: f.size,
+           filePath: f.filePath,
+        }));
+      }
 
       const result = await createTaskLog({
           projectId: project.id,
@@ -120,7 +137,7 @@ export function QuickUpdateModal({
           noiDungChiTiet: values.noiDungChiTiet,
           ngayGio: new Date(values.ngayGio),
           buoc: selectedStep || undefined,
-          files: fileData.length > 0 ? fileData : undefined,
+          files: uploadedFilesInfo.length > 0 ? uploadedFilesInfo : undefined,
       });
 
       if (result.success) {

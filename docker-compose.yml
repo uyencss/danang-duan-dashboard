@@ -22,6 +22,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
+      - ./uploads:/app/uploads
     deploy:
       resources:
         limits:

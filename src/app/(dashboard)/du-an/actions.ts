@@ -423,7 +423,7 @@ export async function createTaskLog(data: {
   noiDungChiTiet: string,
   ngayGio: Date,
   buoc?: string,
-  files?: { name: string, type: string, size: number, base64: string }[]
+  files?: { name: string, type: string, size: number, filePath: string }[]
 }) {
   try {
     const sessionRes = await (auth.api as any).getSession({
@@ -450,23 +450,12 @@ export async function createTaskLog(data: {
 
         // 1.5. Xử lý file đính kèm
         if (data.files && data.files.length > 0) {
-            const uploadDir = path.join(process.cwd(), "public", "uploads");
-            if (!existsSync(uploadDir)) {
-                mkdirSync(uploadDir, { recursive: true });
-            }
-
             for (const fileData of data.files) {
-                const fileName = `${Date.now()}-${fileData.name.replace(/\s+/g, "_")}`;
-                const filePath = path.join(uploadDir, fileName);
-                const buffer = Buffer.from(fileData.base64, "base64");
-                
-                await fs.writeFile(filePath, buffer);
-
                 await tx.fileDinhKem.create({
                     data: {
                         logId: log.id,
                         name: fileData.name,
-                        url: `/uploads/${fileName}`,
+                        filePath: fileData.filePath,
                         type: fileData.type,
                         size: fileData.size,
                     }

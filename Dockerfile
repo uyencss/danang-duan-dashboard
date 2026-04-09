@@ -41,8 +41,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Create data and logs directory for Turso and Pino and set permissions
-RUN mkdir -p /app/data /app/logs && chown -R nextjs:nodejs /app/data /app/logs
+# Create data, logs, and uploads directory for Turso, Pino, and file attachments and set permissions
+RUN mkdir -p /app/data /app/logs /app/uploads && chown -R nextjs:nodejs /app/data /app/logs /app/uploads
 
 # Copy built assets and dependencies from builder stage
 COPY --from=builder /app/package.json ./
