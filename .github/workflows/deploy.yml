@@ -7,47 +7,15 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
           
-      - name: Build and Push Image on Primary Server
+      - name: Deploy to Server
         uses: appleboy/ssh-action@v1.0.3
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          host: 100.68.79.40
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GITHUB_TOKEN
-          script: |
-            mkdir -p /home/hieunq/Desktop/code-deployments
-            cd /home/hieunq/Desktop/code-deployments
-            
-            if [ -d "danang-duan-dashboard" ]; then
-              cd danang-duan-dashboard
-              git pull origin master
-            else
-              git clone https://x-access-token:$GITHUB_TOKEN@github.com/uyencss/danang-duan-dashboard.git
-              cd danang-duan-dashboard
-            fi
-            
-            # Login to GitHub Container Registry using the transient token
-            echo "$GITHUB_TOKEN" | docker login ghcr.io -u uyencss --password-stdin
-            
-            # Build and push 
-            docker build --build-arg BUILD_ID="${{ github.sha }}" -t ghcr.io/uyencss/danang-duan-dashboard:latest .
-            docker push ghcr.io/uyencss/danang-duan-dashboard:latest
-            
-      - name: Deploy to All Servers
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
@@ -65,21 +33,23 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
         with:
-          host: 100.68.79.40,100.73.101.28
+          host: 100.68.79.40
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GITHUB_TOKEN,DATABASE_URL,TURSO_DATABASE_URL,TURSO_AUTH_TOKEN,TURSO_SYNC_PERIOD,LOCAL_REPLICA_PATH,NEXT_PUBLIC_APP_URL,BETTER_AUTH_SECRET,BETTER_AUTH_URL,ABLY_API_KEY,NEXT_PUBLIC_ABLY_KEY,CLOUDFLARE_TUNNEL_TOKEN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASSWORD,SMTP_FROM
+          envs: DATABASE_URL,TURSO_DATABASE_URL,TURSO_AUTH_TOKEN,TURSO_SYNC_PERIOD,LOCAL_REPLICA_PATH,NEXT_PUBLIC_APP_URL,BETTER_AUTH_SECRET,BETTER_AUTH_URL,ABLY_API_KEY,NEXT_PUBLIC_ABLY_KEY,CLOUDFLARE_TUNNEL_TOKEN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASSWORD,SMTP_FROM
           script: |
             mkdir -p /home/hieunq/Desktop/code-deployments
-            cd /home/hieunq/Desktop/code-deployments/danang-duan-dashboard
+            cd /home/hieunq/Desktop/code-deployments
             
-            # Ensure the docker-compose template is updated
-            git pull origin master
+            if [ -d "danang-duan-dashboard" ]; then
+              cd danang-duan-dashboard
+              git pull origin master
+            else
+              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/uyencss/danang-duan-dashboard.git
+              cd danang-duan-dashboard
+            fi
             
-            # Login to GHCR to pull the image
-            echo "$GITHUB_TOKEN" | docker login ghcr.io -u uyencss --password-stdin
-            
-            # Recreate the .env file
+            # Recreate the .env file from GitHub Actions Secrets
             cat <<EOF > .env
             BUILD_ID="${{ github.sha }}"
             DATABASE_URL="$DATABASE_URL"
@@ -100,6 +70,5 @@ jobs:
             SMTP_FROM="$SMTP_FROM"
             EOF
 
-            # Pull the prebuilt identical image and restart
-            docker compose pull web
-            docker compose up -d web
+            # Build and deploy locally on this machine
+            docker compose up -d --build web

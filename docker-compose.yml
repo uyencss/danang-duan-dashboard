@@ -1,6 +1,5 @@
 services:
   web:
-    image: ghcr.io/uyencss/danang-duan-dashboard:latest
     build:
       context: .
       dockerfile: Dockerfile
