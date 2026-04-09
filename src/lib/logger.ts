@@ -18,7 +18,7 @@ if (isDev) {
     streams.push({
       stream: pinoPretty({
         colorize: true,
-        translateTime: 'SYS:standard',
+        translateTime: 'dd/mm/yyyy HH:MM:ss',
         ignore: 'pid,hostname',
       })
     });
@@ -33,6 +33,16 @@ if (isDev) {
 export const logger = pino({
   level: logLevel,
   redact: redactOptions,
+  timestamp: () => {
+    const d = new Date();
+    const date = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const seconds = d.getSeconds().toString().padStart(2, '0');
+    return `,"time":"${date}/${month}/${year} ${hours}:${minutes}:${seconds}"`;
+  },
   base: {
     pid: process.pid,
     hostname: process.env.HOSTNAME || 'danang-dashboard-web',
