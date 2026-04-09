@@ -2,6 +2,7 @@
 
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { PrefetchRoutes } from "@/components/layout/prefetch-routes";
 import { UserProvider } from "@/contexts/user-context";
 import { useState } from "react";
 import type { AppRole } from "@/lib/rbac";
@@ -39,6 +40,7 @@ export function DashboardWrapper({ children, user, menuItems }: DashboardWrapper
               {children}
             </div>
           </main>
+          <PrefetchRoutes />
         </div>
       </div>
     </UserProvider>

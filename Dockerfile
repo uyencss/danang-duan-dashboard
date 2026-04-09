@@ -27,7 +27,7 @@ ENV BUILD_ID=${BUILD_ID}
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# Stage 2: Production image
+# Stage 2: Production image (standalone output)
 FROM base AS runner
 WORKDIR /app
 
@@ -44,13 +44,15 @@ RUN adduser --system --uid 1001 nextjs
 # Create data, logs, and uploads directory for Turso, Pino, and file attachments and set permissions
 RUN mkdir -p /app/data /app/logs /app/uploads && chown -R nextjs:nodejs /app/data /app/logs /app/uploads
 
-# Copy built assets and dependencies from builder stage
-COPY --from=builder /app/package.json ./
-# For a non-standalone Next.js build, we need node_modules
-COPY --from=builder /app/node_modules ./node_modules
+# Copy public assets
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder /app/next.config.ts ./next.config.ts
+
+# Copy standalone server (includes minimal node_modules)
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+# Copy static assets (JS/CSS bundles)
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy scripts for DB management etc.
 COPY --from=builder /app/scripts ./scripts
 
 USER nextjs
@@ -60,4 +62,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["npm", "start"]
+# Standalone uses server.js directly instead of npm start
+CMD ["node", "server.js"]

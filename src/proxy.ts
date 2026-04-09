@@ -34,7 +34,7 @@ export async function proxy(request: NextRequest) {
   try {
     const baseUrl = request.nextUrl.origin;
     const res = await fetch(`${baseUrl}/api/auth/get-session`, {
-      headers: { cookie: request.headers.get("cookie") || "" },
+      headers: request.headers,
     });
     if (res.ok) {
       session = await res.json();
