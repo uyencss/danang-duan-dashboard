@@ -21,7 +21,8 @@ export default async function TrackingPage() {
     redirect("/du-an");
   }
 
-  const { data: pendingLogs } = await getPendingStepLogs();
+  const result = await getPendingStepLogs();
+  const pendingLogs = result?.data || [];
 
   return (
     <div className="space-y-6">
