@@ -13,14 +13,35 @@ export async function proxy(request: NextRequest) {
   };
 
   const path = request.nextUrl.pathname;
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const hasSessionCookie =
+    Boolean(request.cookies.get("__Secure-better-auth.session_token")?.value) ||
+    Boolean(request.cookies.get("better-auth.session_token")?.value);
 
   // Allow static assets and internal Next.js routes through
   if (STATIC_PREFIXES.some((prefix) => path.startsWith(prefix))) {
     return withHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
-  // Allow public routes (auth API, login, register)
-  if (PUBLIC_ROUTES.some((route) => path.startsWith(route))) {
+  // Always allow Better Auth endpoints through
+  if (path.startsWith("/api/auth")) {
+    return withHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
+  }
+
+  // Keep login/register public, but redirect users that already have a session cookie.
+  if (path.startsWith("/login") || path.startsWith("/register")) {
+    if (hasSessionCookie) {
+      return withHeaders(NextResponse.redirect(new URL("/", request.url)));
+    }
+    return withHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
+  }
+
+  // Allow additional public routes (excluding auth pages handled above)
+  if (
+    PUBLIC_ROUTES.some(
+      (route) => route !== "/login" && route !== "/register" && path.startsWith(route),
+    )
+  ) {
     return withHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
@@ -29,12 +50,18 @@ export async function proxy(request: NextRequest) {
     return withHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
+  // Protected pages require a session cookie at minimum.
+  if (!hasSessionCookie) {
+    return withHeaders(NextResponse.redirect(new URL("/login", request.url)));
+  }
+
   // Fetch session for protected routes
   let session: { user?: { role?: string } } | null = null;
   try {
     const baseUrl = request.nextUrl.origin;
     const res = await fetch(`${baseUrl}/api/auth/get-session`, {
-      headers: request.headers,
+      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+      cache: "no-store",
     });
     if (res.ok) {
       session = await res.json();
@@ -43,14 +70,10 @@ export async function proxy(request: NextRequest) {
     console.error("[proxy] Failed to fetch session:", e);
   }
 
-  // Redirect unauthenticated users to login
-  if (!session) {
-    return withHeaders(NextResponse.redirect(new URL("/login", request.url)));
-  }
-
-  // Redirect authenticated users away from login/register
-  if (path.startsWith("/login") || path.startsWith("/register")) {
-    return withHeaders(NextResponse.redirect(new URL("/", request.url)));
+  // In production behind reverse proxies, session lookup can fail even when
+  // the cookie exists. Avoid redirect loops and let server-side handlers verify.
+  if (!session?.user) {
+    return withHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
   // Fetch RBAC config (cached)
