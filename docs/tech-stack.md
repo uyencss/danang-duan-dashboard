@@ -20,6 +20,7 @@
 | **Form Validation** | React Hook Form + Zod | RHF 7.72.x + Zod 3.23.x | Form management & schema validation |
 | **Bundler** | Turbopack | Integrated | Default bundler trong Next.js 16 |
 | **Real-time** | Server-Sent Events (SSE) | Native | Chat & notifications real-time streaming |
+| **Logging** | Pino & rotating-file-stream | 9.x / 3.x | Structured NDJSON logging & file rotation |
 | **Package Manager** | pnpm | 10.x | Fast, disk-efficient package manager |
 
 ---
@@ -293,6 +294,7 @@ type ProjectForm = z.infer<typeof projectSchema>;
 | **Prisma Studio** | Integrated | Database browser |
 | **Next.js Devtools MCP** | Integrated | AI agent debugging |
 | **Turbopack** | Integrated | Bundling |
+| **Pino Pretty** | 13.x | Dev-mode human readable logs console formatter |
 
 ---
 
@@ -339,7 +341,9 @@ npx prisma studio           # Visual DB browser
     "zod": "^3.23.8",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.500.0",
-    "sonner": "^2.0.0"
+    "sonner": "^2.0.0",
+    "pino": "^9.0.0",
+    "rotating-file-stream": "^3.0.0"
   },
   "devDependencies": {
     "prisma": "^7.6.0",

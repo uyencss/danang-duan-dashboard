@@ -53,11 +53,12 @@
 | 17 | [Thông báo Thời gian thực](./task-17-realtime-notifications.md) | NFR-03 | P1 | ✅ Done |
 | 18 | [Chat Dự án Thời gian thực](./task-18-project-chat.md) | FR-19 ~ FR-22 | P1 | ⏳ Todo |
 
-## Phase 6 — Infrastructure: Embedded Replicas
+## Phase 6 — Infrastructure & Observability
 
 | # | Task | FR Ref | Priority | Status |
 |---|------|--------|----------|--------|
 | 23 | [Turso Embedded Replicas & Multi-Instance Sync](./task-23-turso-embedded-replicas.md) | NFR-05, NFR-06, NFR-07 | P0 | ⏳ Todo |
+| 26 | [File System Logging & Monthly Rotation](./task-26-file-system-logging.md) | NFR-04 | P1 | ✅ Done |
 
 ---
 
@@ -69,7 +70,7 @@ Phase 2: [04] → [05, 06, 07] (parallel)
 Phase 3: [08] → [09] → [10, 11] (parallel) → [12]
 Phase 4: [13, 14, 15, 16] (parallel, depend on Phase 3 data)
 Phase 5: [17] → [18] (chat depends on real-time infra from 17)
-Phase 6: [23] (depends on Phase 1 DB setup, independent of Phases 2-5)
+Phase 6: [23] [26] (independent infra tasks, can run parallel with Phases 2-5)
 ```
 
 > **Note:** View 2 (CRM & DS Dự án) đã được tích hợp vào Task 09 (Danh sách Dự án) vì về bản chất là cùng một trang DataGrid.

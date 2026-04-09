@@ -276,7 +276,7 @@ User click "Cập nhật" trên Project List
 | NFR-01 | Performance | Page load < 2 giây cho tất cả trang chính |
 | NFR-02 | Responsiveness | Desktop/Laptop (primary), Tablet portrait (secondary) |
 | NFR-03 | Data Integrity | Ràng buộc FK nghiêm ngặt, không cho phép nhân đôi doanh tự |
-| NFR-04 | Security | Role-based access control, mật khẩu mã hóa, Cloudflare Tunnels (Zero Trust) |
+| NFR-04 | Security & Ops | Role-based access control, mật khẩu mã hóa, Cloudflare Tunnels, và hệ thống Structured Logging (Pino) với Auto-Redaction. |
 | NFR-05 | Scalability | SQLite cục bộ (Dev) → Turso Embedded Replicas (Production) bằng Docker container, hỗ trợ multi-instance |
 | NFR-06 | Availability | Có sẵn hệ thống backup DB, quản lý cấu hình safe db-reset qua script quản trị |
 | NFR-07 | Embedded Replicas | Sử dụng Turso Embedded Replicas cho zero-latency reads — file SQLite cục bộ tự đồng bộ từ remote Turso primary. Reads miễn phí, không giới hạn. Writes forward lên cloud. Bandwidth sync < 3GB/tháng (free tier) |

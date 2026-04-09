@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { TrangThaiDuAn } from "@prisma/client";
-
+import { TrangThaiDuAn, LogStatus } from "@prisma/client";
+import { withLogging } from "@/lib/logger/api-logger";
+import { logger } from "@/lib/logger";
 export const dynamic = "force-dynamic";
 
 /**
@@ -23,7 +24,7 @@ function getActiveMonths(start: Date, end: Date | null, periodStart: Date, perio
   return Math.max(0, months);
 }
 
-export async function GET() {
+export const GET = withLogging(async (req: Request) => {
   try {
     const now = new Date("2026-04-08T00:00:00Z"); // As per user request context
     const currentYear = now.getUTCFullYear();
@@ -52,7 +53,7 @@ export async function GET() {
       include: {
         am: { select: { diaBan: true } },
         nhatKy: {
-          where: { status: "APPROVED" },
+          where: { status: LogStatus.APPROVED },
           orderBy: { ngayGio: "desc" },
           take: 1
         }
@@ -174,7 +175,7 @@ export async function GET() {
     });
 
   } catch (error: any) {
-    console.error("Dashboard calculation error:", error);
+    logger.error({ msg: "Dashboard calculation error", err: error instanceof Error ? error.message : error });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-}
+});

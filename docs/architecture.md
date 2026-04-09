@@ -62,6 +62,7 @@ Hệ thống sử dụng **Layered Monolith** pattern trong Next.js 16 App Route
 | **Service** | `src/lib/services/` | Business logic, validation |
 | **Data Access** | `src/lib/prisma.ts` | Prisma Client + libSQL Embedded Replica |
 | **Sync** | `src/lib/utils/sync.ts` | Replica sync utilities (syncReplica, withSync) |
+| **Observability** | `src/lib/logger/` | Centralized JSON logging and auto-rotation |
 | **Database** | `prisma/` | Schema, migrations, seed |
 
 ---
@@ -447,6 +448,13 @@ export function handleApiError(error: unknown) {
   return { error: { code: "INTERNAL", message: "Lỗi hệ thống" } };
 }
 ```
+
+### 8.2 Logging Strategy (Pino + rotating-file-stream)
+
+- **Format**: NDJSON (Newline Delimited JSON) để tương thích với các hệ thống ELK / Loki.
+- **Auto-Rotation**: Ghi log vào filesystem `logs/app.log`, tự động rotate hàng tháng (`app.YYYY-MM.log.gz`).
+- **Data Redaction**: Tự động mã hóa/che giấu (`*`) các trường thông tin nhạy cảm: `password`, `token`, `email`.
+- **Request Tracing**: `x-request-id` header được inject qua Middleware để theo dõi hành trình của request qua các logs.
 
 ---
 

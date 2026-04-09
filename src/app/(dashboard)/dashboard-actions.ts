@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { TrangThaiDuAn, UserRole, LogStatus } from "@prisma/client";
+import { logger } from "@/lib/logger";
 import { unstable_cache } from "next/cache";
 
 // Cache TTL: 5 minutes. Keyed by user id+role so ADMIN and non-ADMIN get separate caches.
@@ -76,7 +77,7 @@ async function _getDashboardOverview(userId: string, userRole: string) {
             topUrgent
         };
     } catch (error: any) {
-        console.error("Dashboard Stats Error:", error);
+        logger.error({ msg: "Dashboard Stats Error", err: error instanceof Error ? error.message : error });
         return { error: `DEV: ${error?.message || "Unknown error"}` } as any;
     }
 }
@@ -172,7 +173,7 @@ export async function getAMPerformance() {
         // User wants "Dashboard AM" to be intuitive, sorting by revenue helps see leaders.
         return amPerformanceData.sort((a, b) => b.doanhThuDuKienThang - a.doanhThuDuKienThang);
     } catch (e: any) {
-        console.error("AM Performance Error:", e);
+        logger.error({ msg: "AM Performance Error", err: e instanceof Error ? e.message : e });
         return [];
     }
 }
@@ -254,7 +255,7 @@ async function _getKPITimeSeries(userId: string, userRole: string, granularity: 
         };
 
     } catch (error: any) {
-        console.error("getKPITimeSeries Error:", error);
+        logger.error({ msg: "getKPITimeSeries Error", err: error instanceof Error ? error.message : error });
         return { error: `Lỗi tải dữ liệu KPI: ${error?.message || "Unknown error"}` } as any;
     }
 }
@@ -460,7 +461,7 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
             kpiTotal
         };
     } catch (error: any) {
-        console.error("getDiaBanAnalytics Error:", error);
+        logger.error({ msg: "getDiaBanAnalytics Error", err: error instanceof Error ? error.message : error });
         return { error: `Lỗi phân tích địa bàn: ${error?.message}` } as any;
     }
 }

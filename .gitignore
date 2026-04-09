@@ -58,3 +58,7 @@ dev_dump.sql
 local-replica.db
 local-replica.db-shm
 local-replica.db-wal
+
+# System logs
+/logs
+pino-pretty.log

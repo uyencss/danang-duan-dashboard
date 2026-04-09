@@ -315,6 +315,7 @@ const libsqlClient = createClient({
 | Read sau write (cùng instance) | Consistent ngay (manual `sync()` after write) |
 | Read sau write (khác instance) | Eventually consistent (≤ `syncPeriod` seconds) |
 | Chat messages | Real-time qua Ably — không phụ thuộc sync |
+| System Logs | Không lưu trong DB, ghi thẳng vào File System (`logs/app.log`) bằng Pino để tránh tải cho SQLite |
 
 ---
 

@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { logger } from './logger';
 
 interface SendEmailOptions {
   to: string | string[];
@@ -18,6 +19,8 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendEmail = async ({ to, subject, html, text }: SendEmailOptions) => {
+  const emailLogger = logger.child({ module: 'email', to, subject });
+  
   try {
     const from = process.env.SMTP_FROM || process.env.SMTP_USER;
     
@@ -34,10 +37,10 @@ export const sendEmail = async ({ to, subject, html, text }: SendEmailOptions) =
       html,
     });
 
-    console.log('Message sent: %s', info.messageId);
+    emailLogger.info({ msg: 'Message sent', messageId: info.messageId });
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Error sending email:', error);
+    emailLogger.error({ msg: 'Error sending email', err: error instanceof Error ? error.message : error });
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 };

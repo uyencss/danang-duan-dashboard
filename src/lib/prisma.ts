@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { createClient, type Config, type Client } from "@libsql/client";
+import { logger } from "./logger";
 // Cache Busted: 2026-04-08 17:00
 
 
@@ -13,6 +14,7 @@ function getLibSqlConfig(): Config {
   const useEmbeddedReplica = isProd && !isBuild && process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN;
   
   if (useEmbeddedReplica) {
+    logger.info({ msg: 'Initializing Turso Embedded Replica' });
     return {
       url: process.env.LOCAL_REPLICA_PATH || "file:./data/local-replica.db",
       syncUrl: process.env.TURSO_DATABASE_URL!,
