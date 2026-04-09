@@ -1,14 +1,10 @@
 import { getDuAnList, getPendingStepLogs } from "./actions";
 import { ProjectsTable } from "./projects-table";
-import { PlusCircle, ClipboardList, LayoutGrid } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { TrangThaiDuAn } from "@prisma/client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrackingTab } from "./tracking-tab";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getCurrentUser } from "@/lib/auth-utils";
 
 export const metadata = {
   title: "CRM & Danh sách Dự án",
@@ -31,19 +27,15 @@ export default async function DuAnPage({
     pageSize: 200,
   };
 
-  const sessionRes = await (auth.api as any).getSession({
-    headers: await headers()
-  });
-  const user = sessionRes?.user;
-  const isAdminOrCV = ["ADMIN", "CV", "USER", "AM"].includes(user?.role);
+  const user = await getCurrentUser();
+  const isQuảnTrịViên = user?.role === "ADMIN" || user?.role === "USER";
 
   const [result, pendingLogsRes] = await Promise.all([
     getDuAnList(filters),
-    isAdminOrCV ? getPendingStepLogs() : Promise.resolve({ data: [] })
+    isQuảnTrịViên ? getPendingStepLogs() : Promise.resolve({ data: [] })
   ]);
 
   const data = result?.data ?? [];
-  const pendingLogs = pendingLogsRes?.data ?? [];
   const total = (result as any)?.total ?? data.length;
   const error = result?.error;
 
@@ -69,12 +61,10 @@ export default async function DuAnPage({
     const dateA = new Date(a.ngayBatDau).getTime();
     const dateB = new Date(b.ngayBatDau).getTime();
 
-    // Priority 4 (Trọng điểm + Đã ký HĐ): lâu nhất xếp lên (ASC)
     if (prioA === 4) {
        return dateA - dateB;
     }
     
-    // Tất cả các trường hợp còn lại: mới nhất xếp lên, lâu nhất xếp cuối (DESC)
     return dateB - dateA;
   });
 

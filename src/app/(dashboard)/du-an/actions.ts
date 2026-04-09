@@ -712,7 +712,8 @@ export async function markNotificationRead(id: number) {
 
 export async function getPendingStepLogs() {
     try {
-        await requireRole("ADMIN", "USER");
+        const user = await getCurrentUser();
+        if (!user || !["ADMIN", "USER"].includes(user.role)) return { data: [] };
 
         const data = await prisma.nhatKyCongViec.findMany({
             where: { status: "PENDING" },
