@@ -6,6 +6,7 @@ import { z } from "zod";
 import { PhanLoaiKH } from "@prisma/client";
 import { syncReplica } from "@/lib/utils/sync";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
+import { cacheInvalidate } from "@/lib/cache";
 
 // Zod Schema for Validation
 const KhachHangSchema = z.object({
@@ -86,6 +87,7 @@ export async function createKhachHang(data: any) {
       data: dataToSave,
     });
 
+    await cacheInvalidate("options:khachhang");
     revalidatePath("/admin/khach-hang");
     await syncReplica();
     return { success: true };
@@ -116,6 +118,7 @@ export async function updateKhachHang(id: number, data: any) {
       data: dataToUpdate,
     });
 
+    await cacheInvalidate("options:khachhang");
     revalidatePath("/admin/khach-hang");
     await syncReplica();
     return { success: true };
@@ -135,6 +138,7 @@ export async function toggleKhachHangStatus(id: number, isActive: boolean) {
       where: { id },
       data: { isActive },
     });
+    await cacheInvalidate("options:khachhang");
     revalidatePath("/admin/khach-hang");
     await syncReplica();
     return { success: true };
@@ -159,6 +163,7 @@ export async function deleteKhachHang(id: number) {
       where: { id },
     });
 
+    await cacheInvalidate("options:khachhang");
     revalidatePath("/admin/khach-hang");
     await syncReplica();
     return { success: true };

@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { syncReplica } from "@/lib/utils/sync";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
+import { cacheInvalidate } from "@/lib/cache";
 
 export async function getKpiTargets(year: number) {
     try {
@@ -33,6 +34,7 @@ export async function updateKpiTarget(year: number, month: number, data: { anNin
                 ...data
             }
         });
+        await cacheInvalidate("dashboard:overview");
         await syncReplica();
         return { success: true };
     } catch (error: any) {

@@ -15,7 +15,7 @@ export default async function AdminRolesPage() {
     headers: await headers(),
   });
 
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session || (session.user as any)?.role !== "ADMIN") {
     redirect("/");
   }
 

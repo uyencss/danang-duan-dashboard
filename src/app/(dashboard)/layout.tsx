@@ -18,12 +18,12 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const role = (session.user.role as AppRole) || "USER";
+  const role = ((session.user as any).role as AppRole) || "USER";
   const rawMenuItems = await getMenuItemsForRole(role);
   const menuItems = rawMenuItems.sort((a, b) => a.sortOrder - b.sortOrder);
 
   return (
-    <DashboardWrapper user={session.user} menuItems={menuItems}>
+    <DashboardWrapper user={session.user as any} menuItems={menuItems}>
       {children}
     </DashboardWrapper>
   );

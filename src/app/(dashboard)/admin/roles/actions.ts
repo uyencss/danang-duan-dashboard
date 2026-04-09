@@ -12,7 +12,7 @@ async function requireAdmin() {
     headers: await headers(),
   });
   
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session || (session.user as any)?.role !== "ADMIN") {
     throw new Error("Unauthorized: ADMIN role required");
   }
   return session;
