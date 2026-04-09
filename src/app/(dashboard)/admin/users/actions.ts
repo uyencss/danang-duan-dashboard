@@ -7,6 +7,8 @@ import { UserRole } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { syncReplica } from "@/lib/utils/sync";
+import { requireRole } from "@/lib/auth-utils";
+import { logger } from "@/lib/logger";
 
 const UserSchema = z.object({
   name: z.string().min(2, "Họ tên tối thiểu 2 ký tự"),
@@ -21,6 +23,7 @@ const UserSchema = z.object({
 
 export async function getUserList(params?: { search?: string, role?: string }) {
   try {
+    await requireRole("ADMIN", "USER");
     const whereClause: any = {};
     if (params?.search) {
       whereClause.OR = [
@@ -44,6 +47,7 @@ export async function getUserList(params?: { search?: string, role?: string }) {
 
 export async function createUser(data: any) {
   try {
+    await requireRole("ADMIN", "USER");
     const validated = UserSchema.parse(data);
     if (!validated.password) return { error: "Mật khẩu là bắt buộc khi tạo mới" };
 
@@ -103,8 +107,18 @@ export async function createUser(data: any) {
 
 export async function updateUser(id: string, data: any) {
   try {
+    await requireRole("ADMIN", "USER");
     const validated = UserSchema.parse(data);
     
+    // --- Fetch old user state to see what changed ---
+    const oldUser = await prisma.user.findUnique({
+      where: { id },
+      select: { role: true, email: true, name: true, diaBan: true, banned: true },
+    });
+
+    const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
+    const callerId = sessionRes?.user?.id;
+
     await prisma.user.update({
       where: { id },
       data: {
@@ -118,6 +132,22 @@ export async function updateUser(id: string, data: any) {
       },
     });
 
+    // Log the update
+    logger.info({
+      msg: 'Update user',
+      callerId,
+      targetUserId: id,
+      targetUserEmail: oldUser?.email,
+      oldRole: oldUser?.role,
+      newRole: validated.role,
+      oldBanned: oldUser?.banned,
+      newBanned: validated.banned,
+      changes: {
+        role: validated.role !== oldUser?.role ? { from: oldUser?.role, to: validated.role } : undefined,
+        banned: validated.banned !== oldUser?.banned ? { from: oldUser?.banned, to: validated.banned } : undefined,
+      }
+    }, `User ${id} updated`);
+
     revalidatePath("/admin/users");
     await syncReplica();
     return { success: true };
@@ -129,6 +159,7 @@ export async function updateUser(id: string, data: any) {
 
 export async function toggleUserStatus(id: string, currentActive: boolean) {
   try {
+    await requireRole("ADMIN", "USER");
     const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
     if (sessionRes?.user?.id === id) {
         return { error: "Bạn không thể tự khóa chính mình!" };
@@ -150,6 +181,7 @@ export async function toggleUserStatus(id: string, currentActive: boolean) {
 
 export async function deleteUser(id: string) {
     try {
+        await requireRole("ADMIN", "USER");
         const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
         if (sessionRes?.user?.id === id) {
             return { error: "Bạn không thể tự xóa chính mình!" };
@@ -173,6 +205,7 @@ export async function deleteUser(id: string) {
 
 export async function resetUserPassword(id: string) {
   try {
+    await requireRole("ADMIN", "USER");
     const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
     if (!sessionRes?.user) return { error: "Không có quyền thực hiện" };
 
@@ -197,6 +230,7 @@ export async function resetUserPassword(id: string) {
 
 export async function bulkCreateUsers(users: any[]) {
     try {
+        await requireRole("ADMIN", "USER");
         const results = {
             total: users.length,
             successCount: 0,
@@ -224,5 +258,67 @@ export async function bulkCreateUsers(users: any[]) {
         return { success: true, results };
     } catch (error) {
         return { error: "Lỗi hệ thống khi tải lên danh sách" };
+    }
+}
+
+export async function bulkUpdateRole(userIds: string[], newRole: UserRole) {
+    try {
+        await requireRole("ADMIN", "USER");
+
+        const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
+        const caller = sessionRes?.user;
+
+        if (userIds.includes(caller?.id)) {
+            return { error: "Bạn không thể đổi role chính mình trong thao tác hàng loạt" };
+        }
+
+        // --- Fetch old roles for accurate logging ---
+        const targetUsers = await prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, role: true, email: true },
+        });
+
+        const roleChanges = targetUsers.map(u => ({
+            id: u.id,
+            email: u.email,
+            oldRole: u.role,
+            newRole: newRole
+        }));
+
+        await prisma.user.updateMany({
+            where: { id: { in: userIds } },
+            data: { role: newRole },
+        });
+
+        logger.info({ 
+            msg: 'Bulk update user role', 
+            callerId: caller?.id,
+            count: userIds.length,
+            changes: roleChanges
+        }, "User role bulk updated");
+
+        revalidatePath("/admin/users");
+        await syncReplica();
+        return { success: true, count: userIds.length };
+    } catch (error) {
+        console.error("Bulk update role error:", error);
+        return { error: "Lỗi hệ thống khi cập nhật role hàng loạt" };
+    }
+}
+
+export async function getUserCountsByRole() {
+    try {
+        await requireRole("ADMIN", "USER");
+        const counts = await prisma.user.groupBy({
+            by: ["role"],
+            _count: { id: true },
+        });
+        const result: Record<string, number> = {};
+        for (const c of counts) {
+            result[c.role] = c._count.id;
+        }
+        return { data: result };
+    } catch (error) {
+        return { error: "Lỗi khi lấy thống kê role" };
     }
 }

@@ -2,9 +2,11 @@
 
 import prisma from "@/lib/prisma";
 import { TrangThaiDuAn, UserRole } from "@prisma/client";
+import { requireRole } from "@/lib/auth-utils";
 
 export async function getAMManagementData(filters?: { year?: number, quarter?: number, month?: number }) {
   try {
+    await requireRole("ADMIN", "USER");
     const now = new Date();
     const contextYear = filters?.year || 2026;
     

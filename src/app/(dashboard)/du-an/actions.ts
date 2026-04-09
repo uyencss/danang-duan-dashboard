@@ -12,6 +12,7 @@ import fs from "fs/promises";
 import path from "path";
 import { existsSync, mkdirSync } from "fs";
 import { syncReplica } from "@/lib/utils/sync";
+import { requireAuth, requireRole } from "@/lib/auth-utils";
 
 // ── Schema for the NEW creation flow ────────────────────────────────
 // Customer can be an existing ID or a new inline entry
@@ -85,6 +86,7 @@ const DuAnSchema = z.object({
 // ═══════════════════════════════════════════════════════════════════
 export async function createDuAn(data: any) {
   try {
+    await requireRole("ADMIN", "USER", "AM", "CV");
     const validated = CreateDuAnSchema.parse(data);
 
     // ── Resolve customer ID ──
@@ -219,6 +221,7 @@ export async function createDuAn(data: any) {
 // ═══════════════════════════════════════════════════════════════════
 export async function updateDuAn(id: number, data: any) {
     try {
+        await requireRole("ADMIN", "USER", "AM", "CV");
         const validated = DuAnSchema.parse(data);
         const { tuan, thang, quy, nam } = extractTimeFields(validated.ngayBatDau);
 
@@ -260,6 +263,7 @@ export async function updateDuAn(id: number, data: any) {
 
 export async function updateNhatKy(id: number, content: string, status?: TrangThaiDuAn, date?: Date) {
     try {
+        await requireRole("ADMIN", "USER", "AM", "CV");
         await prisma.nhatKyCongViec.update({
             where: { id },
             data: { 
@@ -279,6 +283,7 @@ export async function updateNhatKy(id: number, content: string, status?: TrangTh
 
 export async function deleteNhatKy(id: number) {
     try {
+        await requireRole("ADMIN", "USER", "AM", "CV");
         await prisma.nhatKyCongViec.delete({
             where: { id }
         });
@@ -302,8 +307,7 @@ export async function getDuAnList(params?: {
   page?: number,
   pageSize?: number
 }) {
-  try {
-    const sessionRes = await (auth.api as any).getSession({
+  try {    await requireRole("ADMIN", "USER", "AM", "CV");    const sessionRes = await (auth.api as any).getSession({
       headers: await headers()
     });
     const user = sessionRes?.user;
@@ -376,6 +380,7 @@ export async function getDuAnList(params?: {
 
 export async function getDuAnDetail(id: number) {
   try {
+    await requireRole("ADMIN", "USER", "AM", "CV");
     const sessionRes = await (auth.api as any).getSession({
       headers: await headers()
     });
@@ -426,6 +431,7 @@ export async function createTaskLog(data: {
   files?: { name: string, type: string, size: number, filePath: string }[]
 }) {
   try {
+    await requireRole("ADMIN", "USER", "AM", "CV");
     const sessionRes = await (auth.api as any).getSession({
       headers: await headers()
     });
@@ -557,6 +563,7 @@ export async function getUserOptions() {
 
 export async function requestDeleteDuAn(id: number) {
   try {
+    await requireRole("ADMIN", "USER", "AM", "CV");
     const sessionRes = await (auth.api as any).getSession({
       headers: await headers()
     });
@@ -581,6 +588,7 @@ export async function requestDeleteDuAn(id: number) {
 
 export async function approveDeleteDuAn(id: number) {
   try {
+    await requireRole("ADMIN", "USER");
     const sessionRes = await (auth.api as any).getSession({
       headers: await headers()
     });
@@ -603,6 +611,7 @@ export async function approveDeleteDuAn(id: number) {
 
 export async function restoreDuAn(id: number) {
   try {
+    await requireRole("ADMIN", "USER");
     const sessionRes = await (auth.api as any).getSession({
       headers: await headers()
     });
@@ -632,6 +641,7 @@ export async function restoreDuAn(id: number) {
 
 export async function approveStep(logId: number) {
     try {
+        await requireRole("ADMIN", "USER");
         const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
         const adminUser = sessionRes?.user;
         if (!["ADMIN", "USER"].includes(adminUser?.role)) return { error: "Không có quyền duyệt" };
@@ -673,6 +683,7 @@ export async function approveStep(logId: number) {
 
 export async function rejectStep(logId: number, reason: string) {
     try {
+        await requireRole("ADMIN", "USER");
         const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
         const adminUser = sessionRes?.user;
         if (!["ADMIN", "USER"].includes(adminUser?.role)) return { error: "Không có quyền" };
@@ -734,6 +745,7 @@ export async function markNotificationRead(id: number) {
 
 export async function getPendingStepLogs() {
     try {
+        await requireRole("ADMIN", "USER");
         const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
         const user = sessionRes?.user;
         if (!["ADMIN", "USER"].includes(user?.role)) return { data: [] };
@@ -755,6 +767,7 @@ export async function getPendingStepLogs() {
 
 export async function revokeStepLog(logId: number) {
     try {
+        await requireRole("ADMIN", "USER");
         const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
         if (!sessionRes?.user) return { error: "Yêu cầu đăng nhập" };
 

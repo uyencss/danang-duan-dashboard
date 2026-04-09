@@ -2,9 +2,11 @@
 
 import prisma from "@/lib/prisma";
 import { syncReplica } from "@/lib/utils/sync";
+import { requireAuth, requireRole } from "@/lib/auth-utils";
 
 export async function getKpiTargets(year: number) {
     try {
+        await requireRole("ADMIN", "USER", "AM", "CV");
         const data = await prisma.chiTieuKpi.findMany({
             where: { nam: year },
             orderBy: { thang: 'asc' }
@@ -17,6 +19,7 @@ export async function getKpiTargets(year: number) {
 
 export async function updateKpiTarget(year: number, month: number, data: { anNinhMang: number, giaiPhapCntt: number, duAnCds: number, cnsAnNinh: number }) {
     try {
+        await requireRole("ADMIN", "USER", "AM", "CV");
         await prisma.chiTieuKpi.upsert({
             where: {
                 nam_thang: { nam: year, thang: month }

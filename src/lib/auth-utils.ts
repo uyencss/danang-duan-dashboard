@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-export type AppRole = "ADMIN" | "USER" | "AM" | "CV";
+export type { AppRole } from "@/lib/rbac";
 
 export async function getCurrentUser() {
   const session = await auth.api.getSession({
@@ -47,4 +47,36 @@ export async function requireRole(...allowedRoles: AppRole[]) {
  */
 export function hasAccess(userRole: string, allowedRoles: AppRole[]): boolean {
   return allowedRoles.includes(userRole as AppRole);
+}
+
+/**
+ * Role guard for API route handlers. Returns the user or a 403 Response.
+ */
+export async function requireApiRole(...allowedRoles: AppRole[]): Promise<
+  | { user: Record<string, unknown>; error?: never }
+  | { user?: never; error: Response }
+> {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user) {
+    return {
+      error: new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }),
+    };
+  }
+
+  if (!allowedRoles.includes(session.user.role as AppRole)) {
+    return {
+      error: new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      }),
+    };
+  }
+
+  return { user: session.user as unknown as Record<string, unknown> };
 }

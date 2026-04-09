@@ -1,8 +1,7 @@
-import { requireRole } from "@/lib/auth-utils";
-import { getUserList } from "./actions";
+import { getUserList, getUserCountsByRole } from "./actions";
 import { UsersTable } from "./users-table";
+import { RoleOverviewCards } from "./role-overview-cards";
 import { Users2, ShieldCheck } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 
 import { auth } from "@/lib/auth";
@@ -19,12 +18,18 @@ export default async function NhanVienPage() {
     redirect("/du-an");
   }
 
-  const { data = [], error } = await getUserList();
+  const [usersResult, countsResult] = await Promise.all([
+    getUserList(),
+    getUserCountsByRole(),
+  ]);
+
+  const { data = [], error } = usersResult;
+  const roleCounts = countsResult.data || {};
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <Breadcrumb items={[{ label: "Hệ thống" }, { label: "Người dùng & Nhân sự" }]} />
-      {/* Page Header */}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-6">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -38,15 +43,17 @@ export default async function NhanVienPage() {
           </p>
         </div>
         
-        <div className="flex items-center gap-2 px-12 md:px-0 bg-yellow-50 px-4 py-2 rounded-xl border border-yellow-100">
+        <div className="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-xl border border-yellow-100">
            <ShieldCheck className="size-4 text-yellow-600" />
            <span className="text-xs font-bold text-yellow-700 uppercase tracking-wide">Chế độ Quản trị tối cao</span>
         </div>
       </div>
 
+      <RoleOverviewCards roleCounts={roleCounts} />
+
       {error ? (
         <div className="p-12 text-center bg-red-50 text-red-500 rounded-2xl border border-red-200">
-           ⚠️ {error}
+           {error}
         </div>
       ) : (
         <UsersTable data={data} />

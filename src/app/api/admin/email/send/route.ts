@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email";
 import { withLogging } from "@/lib/logger/api-logger";
-
-// TODO: Ensure this endpoint is protected so only Admin can call it
-// Import better-auth session logic depending on project setup
+import { requireApiRole } from "@/lib/auth-utils";
 
 export const POST = withLogging(async (request: Request) => {
   try {
+    const authResult = await requireApiRole("ADMIN", "USER");
+    if (authResult.error) return authResult.error;
+
     const body = await request.json();
     const { to, subject, message } = body;
 
