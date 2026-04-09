@@ -159,7 +159,8 @@ export function TaskLogTable({ logs }: TaskLogTableProps) {
                 key={log.id} 
                 className={cn(
                   "hover:bg-slate-50/50 border-b border-[#f2f4f6] group transition-all",
-                  log.status === "REJECTED" && "bg-slate-100/80 grayscale-[0.3] opacity-80"
+                  log.status === "REJECTED" && "bg-slate-100/80 grayscale-[0.3] opacity-80",
+                  log.status === "PENDING" && "bg-amber-50/30"
                 )}
               >
                 <TableCell className="pl-6 py-4 align-top">
@@ -184,14 +185,13 @@ export function TaskLogTable({ logs }: TaskLogTableProps) {
                             "text-[10px] uppercase font-black px-2 py-0.5 rounded-lg flex items-center gap-1",
                             log.status === "REJECTED" 
                               ? "bg-red-50 text-red-600 border-red-200" 
-                              : "bg-blue-50 text-blue-700 border-blue-200"
+                              : log.status === "PENDING"
+                                ? "bg-amber-50 text-amber-600 border-amber-200"
+                                : "bg-blue-50 text-blue-700 border-blue-200"
                         )}>
                           <CheckCircle2 className="size-3" />
                           {log.buoc}
                         </Badge>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                          {log.status === "REJECTED" ? "Bước bị từ chối" : "Cập nhật bước mới"}
-                        </span>
 
                         {log.status === "REJECTED" && (
                           <div className="flex flex-col items-center gap-0 ml-auto mr-4">
@@ -199,7 +199,15 @@ export function TaskLogTable({ logs }: TaskLogTableProps) {
                               <AlertTriangle className="size-3" />
                               Không duyệt
                             </Badge>
-                            <span className="text-[9px] text-slate-400 font-bold italic leading-none mt-0.5">Yêu cầu cập nhật lại</span>
+                          </div>
+                        )}
+                        
+                        {log.status === "PENDING" && (
+                          <div className="flex flex-col items-center gap-0 ml-auto mr-4">
+                            <Badge className="bg-amber-50 text-amber-600 border-amber-200 text-[10px] font-black uppercase px-2 py-0.5 rounded-lg flex items-center gap-1">
+                              <Clock className="size-3" />
+                              Chờ duyệt
+                            </Badge>
                           </div>
                         )}
                       </div>

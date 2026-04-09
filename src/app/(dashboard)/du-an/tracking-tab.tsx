@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import * as Ably from "ably";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Check, X, Eye, User, Calendar, ClipboardCheck, History } from "lucide-react";
@@ -13,6 +14,41 @@ import { cn } from "@/lib/utils";
 export function TrackingTab({ initialData }: { initialData: any[] }) {
   const [data, setData] = useState(initialData);
   const [loadingId, setLoadingId] = useState<number | null>(null);
+  const ablyRef = useRef<Ably.Realtime | null>(null);
+
+  useEffect(() => {
+    // Chỉ kích hoạt Ably trên client
+    const key = process.env.NEXT_PUBLIC_ABLY_KEY;
+    if (!key || key === "test_key") return;
+
+    const client = new Ably.Realtime({ key, autoConnect: true });
+    ablyRef.current = client;
+
+    const channel = client.channels.get("tracking");
+    
+    channel.subscribe("step-deleted", (msg) => {
+      const { logId } = msg.data;
+      setData(prev => {
+        const itemToDelete = prev.find(item => item.id === logId);
+        if (itemToDelete) {
+           toast.info(`Người dùng vừa xóa nội dung chờ duyệt cho dự án: ${itemToDelete.duAn?.tenDuAn}`);
+           return prev.filter(item => item.id !== logId);
+        }
+        return prev;
+      });
+    });
+
+    return () => {
+      try {
+        channel.unsubscribe();
+        if (client.connection.state !== "closed") {
+          client.close();
+        }
+      } catch (e) {
+        // Silently fail on unmount
+      }
+    };
+  }, []);
 
   const handleApprove = async (logId: number) => {
     setLoadingId(logId);

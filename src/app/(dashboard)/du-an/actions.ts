@@ -282,14 +282,71 @@ export async function updateNhatKy(id: number, content: string, status?: TrangTh
     }
 }
 
+/**
+ * Hàm hỗ trợ tính toán lại bước hiện tại cao nhất của dự án dựa trên các nhật ký đã được duyệt.
+ */
+async function updateProjectHighestStep(projectId: number, tx: any) {
+    const approvedLogs = await tx.nhatKyCongViec.findMany({
+        where: {
+            projectId,
+            status: "APPROVED",
+            buoc: { not: null }
+        },
+        select: { buoc: true }
+    });
+
+    let highestStep = null;
+    let maxLevel = -1;
+
+    for (const log of approvedLogs) {
+        const match = (log.buoc as string).match(/Bước (\d+)/);
+        if (match) {
+            const level = parseInt(match[1]);
+            if (level > maxLevel) {
+                maxLevel = level;
+                highestStep = log.buoc;
+            }
+        }
+    }
+
+    await tx.duAn.update({
+        where: { id: projectId },
+        data: { hienTaiBuoc: highestStep }
+    });
+}
+
 export async function deleteNhatKy(id: number) {
     try {
         await requireRole("ADMIN", "USER", "AM", "CV");
-        await prisma.nhatKyCongViec.delete({
-            where: { id }
+        
+        // Lấy thông tin nhật ký trước khi xóa để kiểm tra nếu là bước quy trình đang chờ duyệt
+        const log = await prisma.nhatKyCongViec.findUnique({
+            where: { id },
+            select: { buoc: true, status: true, projectId: true }
         });
+
+        await prisma.$transaction(async (tx) => {
+            await tx.nhatKyCongViec.delete({
+                where: { id }
+            });
+
+            // Nếu nhật ký bị xóa đã được duyệt và có chứa bước quy trình, ta cần tính toán lại bước hiện tại của dự án
+            if (log.buoc && log.status === "APPROVED") {
+                await updateProjectHighestStep(log.projectId, tx);
+            }
+        });
+
         revalidatePath("/du-an/[id]", "page");
         await syncReplica();
+
+        // Nếu là bước quy trình đang chờ duyệt, thông báo cho admin qua Ably
+        if (log && log.buoc && log.status === "PENDING" && ablyServerClient) {
+            const channel = ablyServerClient.channels.get("tracking");
+            channel.publish("step-deleted", { logId: id }).catch((err) => {
+                console.error("Ably publish error (deleteNhatKy):", err);
+            });
+        }
+
         return { success: true };
     } catch (error) {
         console.error("Delete Log Error:", error);
@@ -597,16 +654,19 @@ export async function approveStep(logId: number) {
 
         if (!log || !log.buoc) return { error: "Dữ liệu không hợp lệ" };
 
-        await prisma.$transaction([
-            prisma.nhatKyCongViec.update({
+        await prisma.$transaction(async (tx) => {
+            // 1. Phê duyệt nhật ký này
+            await tx.nhatKyCongViec.update({
                 where: { id: logId },
                 data: { status: "APPROVED" }
-            }),
-            prisma.duAn.update({
-                where: { id: log.projectId },
-                data: { hienTaiBuoc: log.buoc }
-            }),
-            prisma.notification.create({
+            });
+
+            // 2. Tính toán lại bước cao nhất đã được duyệt cho dự án này
+            // Điều này đảm bảo nếu admin duyệt Bước 2 trước Bước 1, dự án vẫn giữ ở Bước 2
+            await updateProjectHighestStep(log.projectId, tx);
+
+            // 3. Tạo thông báo
+            await tx.notification.create({
                 data: {
                     userId: log.userId,
                     title: "Bước quy trình đã được duyệt",
@@ -614,15 +674,17 @@ export async function approveStep(logId: number) {
                     type: "APPROVAL_RESULT",
                     projectId: log.projectId,
                 }
-            }),
-            prisma.notification.updateMany({
+            });
+
+            // 4. Đánh dấu các yêu cầu duyệt liên quan là đã đọc
+            await tx.notification.updateMany({
                 where: {
                     relatedId: String(logId),
                     type: "APPROVAL_REQUEST"
                 },
                 data: { isRead: true }
-            })
-        ]);
+            });
+        });
 
         revalidatePath(`/du-an/${log.projectId}`);
         await syncReplica();
@@ -750,20 +812,8 @@ export async function revokeStepLog(logId: number) {
                 data: { status: "REJECTED" }
             });
 
-            const lastApproved = await tx.nhatKyCongViec.findFirst({
-                where: {
-                    projectId,
-                    status: "APPROVED",
-                    buoc: { not: null },
-                    id: { not: logId }
-                },
-                orderBy: { ngayGio: "desc" }
-            });
-
-            await tx.duAn.update({
-                where: { id: projectId },
-                data: { hienTaiBuoc: lastApproved?.buoc || null }
-            });
+            // Tính toán lại bước quy trình cao nhất của dự án (loại bỏ bước vừa bị thu hồi)
+            await updateProjectHighestStep(projectId, tx);
         });
 
         revalidatePath(`/du-an/${projectId}`);
