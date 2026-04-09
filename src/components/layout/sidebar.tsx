@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   FolderKanban,
-  Users,
   TrendingUp,
   MapPin,
   Building2,
@@ -20,10 +19,9 @@ import {
   Target,
   Trash2,
   ClipboardList,
-  Mail,
 } from "lucide-react";
 
-import type { AppRole } from "@/lib/auth-utils";
+import type { AppRole } from "@/lib/rbac";
 
 interface SidebarItem {
   label: string;

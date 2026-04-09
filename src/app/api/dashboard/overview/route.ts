@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { TrangThaiDuAn, LogStatus } from "@prisma/client";
 import { withLogging } from "@/lib/logger/api-logger";
 import { logger } from "@/lib/logger";
+import { requireApiRole } from "@/lib/auth-utils";
 export const dynamic = "force-dynamic";
 
 /**
@@ -26,6 +27,8 @@ function getActiveMonths(start: Date, end: Date | null, periodStart: Date, perio
 
 export const GET = withLogging(async (req: Request) => {
   try {
+    const authResult = await requireApiRole("ADMIN", "USER", "AM", "CV");
+    if (authResult.error) return authResult.error;
     const now = new Date("2026-04-08T00:00:00Z"); // As per user request context
     const currentYear = now.getUTCFullYear();
     const currentMonth = now.getUTCMonth() + 1;

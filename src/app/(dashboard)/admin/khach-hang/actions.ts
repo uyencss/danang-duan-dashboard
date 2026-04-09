@@ -1,11 +1,11 @@
 "use server";
 
-// Re-triggered sync to resolve Prisma Client argument mismatch
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { PhanLoaiKH } from "@prisma/client";
 import { syncReplica } from "@/lib/utils/sync";
+import { requireAuth, requireRole } from "@/lib/auth-utils";
 
 // Zod Schema for Validation
 const KhachHangSchema = z.object({
@@ -25,6 +25,7 @@ const KhachHangSchema = z.object({
 
 export async function getKhachHangList(params?: { search?: string, phanLoai?: string }) {
   try {
+    await requireRole("ADMIN", "USER", "AM", "CV");
     const whereClause: any = {};
     
     if (params?.search) {
@@ -69,6 +70,7 @@ const toSafeDate = (val?: string) => {
 
 export async function createKhachHang(data: any) {
   try {
+    await requireRole("ADMIN", "USER", "AM", "CV");
     const validated = KhachHangSchema.parse(data);
     
     // Convert date strings to Date objects safely
@@ -98,6 +100,7 @@ export async function createKhachHang(data: any) {
 
 export async function updateKhachHang(id: number, data: any) {
   try {
+    await requireRole("ADMIN", "USER", "AM", "CV");
     const validated = KhachHangSchema.parse(data);
     
     const dataToUpdate: any = {
@@ -127,6 +130,7 @@ export async function updateKhachHang(id: number, data: any) {
 
 export async function toggleKhachHangStatus(id: number, isActive: boolean) {
   try {
+    await requireRole("ADMIN", "USER", "AM", "CV");
     await prisma.khachHang.update({
       where: { id },
       data: { isActive },
@@ -141,6 +145,7 @@ export async function toggleKhachHangStatus(id: number, isActive: boolean) {
 
 export async function deleteKhachHang(id: number) {
   try {
+    await requireRole("ADMIN", "USER", "AM", "CV");
     // Check for existing projects
     const count = await prisma.duAn.count({
       where: { customerId: id }

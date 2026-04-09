@@ -4,6 +4,7 @@ import {
   ColumnDef,
   ColumnFiltersState,
   SortingState,
+  RowSelectionState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -19,16 +20,18 @@ import {
   UserPlus,
   ShieldCheck,
   ShieldAlert,
-  MapPin,
   Trash2,
   Lock,
-  Unlock,
   Upload,
   Download,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  UserCog,
+  GraduationCap,
+  Users,
+  RefreshCw,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -39,9 +42,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { deleteUser, resetUserPassword, bulkCreateUsers } from "./actions";
+import { deleteUser, resetUserPassword, bulkCreateUsers, bulkUpdateRole } from "./actions";
 import * as React from "react";
 import * as XLSX from "xlsx";
 
@@ -63,10 +65,41 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { UserRole } from "@prisma/client";
 import { UserFormDialog } from "./user-form-dialog";
 import { toggleUserStatus } from "./actions";
 import { toast } from "sonner";
+import { ROLE_METADATA } from "@/lib/rbac";
+import type { AppRole } from "@/lib/rbac";
+
+const ROLE_FILTER_TABS: { label: string; value: string; icon: React.ElementType }[] = [
+  { label: "Tất cả", value: "ALL", icon: Users },
+  { label: "Admin", value: "ADMIN", icon: ShieldCheck },
+  { label: "Chuyên viên QT", value: "USER", icon: UserCog },
+  { label: "AM", value: "AM", icon: ShieldAlert },
+  { label: "Chuyên viên", value: "CV", icon: GraduationCap },
+];
+
+function RoleBadge({ role }: { role: string }) {
+  const meta = ROLE_METADATA[role as AppRole];
+  if (!meta) return <Badge variant="outline">{role}</Badge>;
+
+  const Icon = role === "ADMIN" ? ShieldCheck :
+               role === "USER" ? UserCog :
+               role === "AM" ? ShieldAlert :
+               GraduationCap;
+
+  return (
+    <Badge
+      variant="outline"
+      className={`${meta.badgeColor} ${meta.textColor} ${meta.borderColor}`}
+    >
+      <Icon className="size-3 mr-1" />
+      {meta.label}
+    </Badge>
+  );
+}
 
 export function UsersTable({ data }: { data: any[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -75,6 +108,10 @@ export function UsersTable({ data }: { data: any[] }) {
   const [selectedUser, setSelectedUser] = React.useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [userToBeDeleted, setUserToBeDeleted] = React.useState<any>(null);
+  const [roleFilter, setRoleFilter] = React.useState("ALL");
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
+  const [bulkRoleDialogOpen, setBulkRoleDialogOpen] = React.useState(false);
+  const [bulkTargetRole, setBulkTargetRole] = React.useState<UserRole>(UserRole.CV);
 
   const handleToggle = async (id: string, current: boolean) => {
     const result = await toggleUserStatus(id, current);
@@ -82,7 +119,31 @@ export function UsersTable({ data }: { data: any[] }) {
     else toast.error(result.error);
   };
 
+  const filteredData = React.useMemo(() => {
+    if (roleFilter === "ALL") return data;
+    return data.filter((u) => u.role === roleFilter);
+  }, [data, roleFilter]);
+
   const columns: ColumnDef<any>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       accessorKey: "name",
       header: ({ column }) => (
@@ -101,30 +162,7 @@ export function UsersTable({ data }: { data: any[] }) {
     {
       accessorKey: "role",
       header: "Quyền hạn",
-      cell: ({ row }) => {
-        const role = row.getValue("role") as any;
-        return (
-          <Badge 
-            variant="outline" 
-            className={
-              role === "ADMIN" ? "bg-purple-50 text-purple-700 border-purple-200" : 
-              role === "USER" ? "bg-purple-50 text-purple-700 border-purple-200" :
-              role === "AM" ? "bg-blue-50 text-blue-700 border-blue-200" :
-              "bg-emerald-50 text-emerald-700 border-emerald-200"
-            }
-          >
-            {role === "ADMIN" ? (
-                <><ShieldCheck className="size-3 mr-1" /> Quản trị</>
-            ) : role === "USER" || role === "CV" ? (
-                <><ShieldCheck className="size-3 mr-1" /> Chuyên viên</>
-            ) : role === "AM" ? (
-                <><ShieldAlert className="size-3 mr-1" /> AM</>
-            ) : (
-                <div className="flex items-center"><ShieldAlert className="size-3 mr-1" /> {role}</div>
-            )}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => <RoleBadge role={row.getValue("role") as string} />,
     },
     {
       accessorKey: "diaBan",
@@ -213,15 +251,16 @@ export function UsersTable({ data }: { data: any[] }) {
   ];
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    state: { sorting, columnFilters },
+    state: { sorting, columnFilters, rowSelection },
     initialState: {
       pagination: {
         pageSize: 10,
@@ -229,17 +268,82 @@ export function UsersTable({ data }: { data: any[] }) {
     },
   });
 
+  const selectedRows = table.getFilteredSelectedRowModel().rows;
+  const selectedCount = selectedRows.length;
+
+  const handleBulkRoleUpdate = async () => {
+    const ids = selectedRows.map((r) => r.original.id);
+    const toastId = toast.loading(`Đang cập nhật role cho ${ids.length} tài khoản...`);
+    const res = await bulkUpdateRole(ids, bulkTargetRole);
+    if (res.success) {
+      toast.success(`Đã cập nhật role cho ${res.count} tài khoản`, { id: toastId });
+      setRowSelection({});
+      setBulkRoleDialogOpen(false);
+    } else {
+      toast.error(res.error, { id: toastId });
+    }
+  };
+
   return (
     <div className="w-full space-y-4">
+      {/* Role Filter Tabs */}
+      <div className="flex items-center gap-1.5 bg-gray-50 p-1 rounded-xl border border-gray-100 w-fit">
+        {ROLE_FILTER_TABS.map((tab) => {
+          const isActive = roleFilter === tab.value;
+          const count = tab.value === "ALL" ? data.length : data.filter((u) => u.role === tab.value).length;
+          return (
+            <button
+              key={tab.value}
+              onClick={() => {
+                setRoleFilter(tab.value);
+                setRowSelection({});
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                isActive
+                  ? "bg-white text-[#003466] shadow-sm border border-gray-200"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
+              }`}
+            >
+              <tab.icon className="size-3.5" />
+              {tab.label}
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
+                isActive ? "bg-blue-100 text-blue-700" : "bg-gray-200 text-gray-500"
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Toolbar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center bg-white px-3 py-1.5 rounded-xl border border-gray-100 w-full max-sm mb: max-w-sm shadow-sm font-medium">
-          <Search className="size-4 text-gray-400 mr-2" />
-          <Input
-            placeholder="Tìm theo tên hoặc email..."
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) => table.getColumn("name")?.setFilterValue(event.target.value)}
-            className="border-none bg-transparent h-6 focus-visible:ring-0 text-sm shadow-none p-0"
-          />
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-white px-3 py-1.5 rounded-xl border border-gray-100 w-full max-w-sm shadow-sm font-medium">
+            <Search className="size-4 text-gray-400 mr-2" />
+            <Input
+              placeholder="Tìm theo tên hoặc email..."
+              value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+              onChange={(event) => table.getColumn("name")?.setFilterValue(event.target.value)}
+              className="border-none bg-transparent h-6 focus-visible:ring-0 text-sm shadow-none p-0"
+            />
+          </div>
+
+          {selectedCount > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
+                {selectedCount} đã chọn
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl border-indigo-200 hover:bg-indigo-50 text-indigo-700 h-8 text-xs font-bold"
+                onClick={() => setBulkRoleDialogOpen(true)}
+              >
+                <RefreshCw className="mr-1.5 size-3" /> Đổi role
+              </Button>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -277,7 +381,6 @@ export function UsersTable({ data }: { data: any[] }) {
                                     const ws = wb.Sheets[wsname];
                                     const dataArr = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[];
 
-                                    // Skip header row
                                     const rows = dataArr.slice(1);
                                     const usersToCreate = rows.map(row => ({
                                         name: row[0],
@@ -325,6 +428,7 @@ export function UsersTable({ data }: { data: any[] }) {
         </div>
       </div>
 
+      {/* Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-gray-50/50">
@@ -341,7 +445,7 @@ export function UsersTable({ data }: { data: any[] }) {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-3">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -351,7 +455,7 @@ export function UsersTable({ data }: { data: any[] }) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-gray-400">
+                <TableCell colSpan={columns.length} className="h-24 text-center text-gray-400">
                   Không tìm thấy tài khoản.
                 </TableCell>
               </TableRow>
@@ -360,7 +464,7 @@ export function UsersTable({ data }: { data: any[] }) {
         </Table>
       </div>
 
-      {/* Pagination Controls */}
+      {/* Pagination */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <span>Hiển thị</span>
@@ -425,6 +529,7 @@ export function UsersTable({ data }: { data: any[] }) {
         </div>
       </div>
       
+      {/* Dialogs */}
       <UserFormDialog 
         open={openForm} 
         setOpen={setOpenForm} 
@@ -456,6 +561,52 @@ export function UsersTable({ data }: { data: any[] }) {
               }}
             >
               Xác nhận xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Role Update Dialog */}
+      <AlertDialog open={bulkRoleDialogOpen} onOpenChange={setBulkRoleDialogOpen}>
+        <AlertDialogContent className="rounded-2xl border-indigo-100">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold text-[#003466] text-left">
+              Đổi role hàng loạt
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-500 text-left">
+              Bạn đang thay đổi role cho <span className="font-bold text-gray-900">{selectedCount}</span> tài khoản.
+              Chọn role mới bên dưới.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid grid-cols-2 gap-2 py-4">
+            {(Object.keys(ROLE_METADATA) as AppRole[]).map((role) => {
+              const meta = ROLE_METADATA[role];
+              const isSelected = bulkTargetRole === role;
+              return (
+                <button
+                  key={role}
+                  onClick={() => setBulkTargetRole(role as UserRole)}
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${
+                    isSelected
+                      ? `${meta.borderColor} ${meta.badgeColor} ring-2 ring-offset-1 ring-blue-400`
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <p className={`text-xs font-black ${isSelected ? meta.textColor : "text-gray-600"}`}>
+                    {meta.label}
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{meta.description.slice(0, 60)}...</p>
+                </button>
+              );
+            })}
+          </div>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-xl font-bold">Hủy</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-gradient-to-r from-[#0058bc] to-blue-500 rounded-xl font-black shadow-lg"
+              onClick={handleBulkRoleUpdate}
+            >
+              Xác nhận đổi role
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -13,7 +13,7 @@ import path from "path";
 import { existsSync, mkdirSync } from "fs";
 import { syncReplica } from "@/lib/utils/sync";
 import { ablyServerClient } from "@/lib/realtime";
-import { getCurrentUser } from "@/lib/auth-utils";
+import { getCurrentUser, requireRole } from "@/lib/auth-utils";
 
 // ── Schema for the NEW creation flow ────────────────────────────────
 // Customer can be an existing ID or a new inline entry
@@ -87,6 +87,7 @@ const DuAnSchema = z.object({
 // ═══════════════════════════════════════════════════════════════════
 export async function createDuAn(data: any) {
   try {
+    await requireRole("ADMIN", "USER", "AM", "CV");
     const validated = CreateDuAnSchema.parse(data);
 
     // ── Resolve customer ID ──
@@ -221,6 +222,7 @@ export async function createDuAn(data: any) {
 // ═══════════════════════════════════════════════════════════════════
 export async function updateDuAn(id: number, data: any) {
     try {
+        await requireRole("ADMIN", "USER", "AM", "CV");
         const validated = DuAnSchema.parse(data);
         const { tuan, thang, quy, nam } = extractTimeFields(validated.ngayBatDau);
 
@@ -262,6 +264,7 @@ export async function updateDuAn(id: number, data: any) {
 
 export async function updateNhatKy(id: number, content: string, status?: TrangThaiDuAn, date?: Date) {
     try {
+        await requireRole("ADMIN", "USER", "AM", "CV");
         await prisma.nhatKyCongViec.update({
             where: { id },
             data: { 
@@ -281,6 +284,7 @@ export async function updateNhatKy(id: number, content: string, status?: TrangTh
 
 export async function deleteNhatKy(id: number) {
     try {
+        await requireRole("ADMIN", "USER", "AM", "CV");
         await prisma.nhatKyCongViec.delete({
             where: { id }
         });
@@ -312,8 +316,6 @@ export async function getDuAnList(params?: {
       isPendingDelete: params?.isDeleted === true ? true : false
     };
     
-    // All accounts can see all projects (no role-based filtering)
-
     // Search
     if (params?.search) {
       whereClause.tenDuAn = { contains: params.search };
@@ -404,8 +406,6 @@ export async function getDuAnDetail(id: number) {
 
     if (!project) return { error: "Không tìm thấy dự án" };
 
-    // All accounts can view any project detail (no role-based restriction)
-
     return { data: project };
   } catch (error: any) {
     console.error("Fetch Project Detail Error:", error);
@@ -456,17 +456,16 @@ export async function createTaskLog(data: {
             }
         }
 
-        // 2. Cập nhật dự án (Chỉ cập nhật trạng thái nếu không phải bước mới cần duyệt, hoặc cứ cập nhật trạng thái còn Bước thì đợi duyệt)
+        // 2. Cập nhật dự án
         await tx.duAn.update({
             where: { id: data.projectId },
             data: {
                 trangThaiHienTai: data.trangThaiMoi,
                 ngayChamsocCuoiCung: data.ngayGio,
-                // Chú ý: hienTaiBuoc chỉ được update khi Admin duyệt
             }
         });
 
-        // 3. Nếu là bước mới, gửi thông báo cho Admin & CV (Quản trị viên chuyên viên)
+        // 3. Thông báo
         if (isStepUpdate) {
             const admins = await tx.user.findMany({
                 where: {
@@ -494,12 +493,8 @@ export async function createTaskLog(data: {
         return log;
     });
 
-    revalidatePath("/du-an");
-    revalidatePath("/quan-ly-am");
-    revalidatePath("/quan-ly-cv");
-    revalidatePath("/kpi");
-    revalidatePath("/dia-ban");
     revalidatePath(`/du-an/${data.projectId}`);
+    revalidatePath("/du-an");
     await syncReplica();
     return { success: true, data: result };
   } catch (error: any) {
@@ -508,9 +503,6 @@ export async function createTaskLog(data: {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// OPTIONS – used by forms
-// ═══════════════════════════════════════════════════════════════════
 export async function getKhachHangOptions() {
   const data = await prisma.khachHang.findMany({ 
     where: { isActive: true }, 
@@ -544,13 +536,9 @@ export async function getUserOptions() {
   return { data };
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// DELETE FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════
-
 export async function requestDeleteDuAn(id: number) {
   try {
-    const user = await getCurrentUser();
+    const user = await requireRole("ADMIN", "USER", "AM", "CV");
     if (!user) return { error: "Yêu cầu đăng nhập" };
 
     await prisma.duAn.update({
@@ -558,10 +546,6 @@ export async function requestDeleteDuAn(id: number) {
       data: { isPendingDelete: true, deleteRequestedAt: new Date() }
     });
     revalidatePath("/du-an");
-    revalidatePath("/quan-ly-am");
-    revalidatePath("/quan-ly-cv");
-    revalidatePath("/kpi");
-    revalidatePath("/dia-ban");
     await syncReplica();
     return { success: true };
   } catch (error) {
@@ -571,16 +555,12 @@ export async function requestDeleteDuAn(id: number) {
 
 export async function approveDeleteDuAn(id: number) {
   try {
-    const user = await getCurrentUser();
-    if (user?.role !== "ADMIN") return { error: "Chỉ Admin mới có quyền duyệt xoá" };
+    const user = await requireRole("ADMIN");
+    if (user.role !== "ADMIN") return { error: "Chỉ Admin mới có quyền duyệt xoá" };
 
     await prisma.duAn.delete({ where: { id }});
     revalidatePath("/admin/du-an-da-xoa");
     revalidatePath("/du-an");
-    revalidatePath("/quan-ly-am");
-    revalidatePath("/quan-ly-cv");
-    revalidatePath("/kpi");
-    revalidatePath("/dia-ban");
     await syncReplica();
     return { success: true };
   } catch (error) {
@@ -590,8 +570,8 @@ export async function approveDeleteDuAn(id: number) {
 
 export async function restoreDuAn(id: number) {
   try {
-    const user = await getCurrentUser();
-    if (user?.role !== "ADMIN") return { error: "Chỉ Admin mới có quyền khôi phục" };
+    const user = await requireRole("ADMIN");
+    if (user.role !== "ADMIN") return { error: "Chỉ Admin mới có quyền khôi phục" };
 
     await prisma.duAn.update({
       where: { id },
@@ -599,10 +579,6 @@ export async function restoreDuAn(id: number) {
     });
     revalidatePath("/admin/du-an-da-xoa");
     revalidatePath("/du-an");
-    revalidatePath("/quan-ly-am");
-    revalidatePath("/quan-ly-cv");
-    revalidatePath("/kpi");
-    revalidatePath("/dia-ban");
     await syncReplica();
     return { success: true };
   } catch (error) {
@@ -610,14 +586,9 @@ export async function restoreDuAn(id: number) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// APPROVAL & NOTIFICATIONS
-// ═══════════════════════════════════════════════════════════════════
-
 export async function approveStep(logId: number) {
     try {
-        const user = await getCurrentUser();
-        if (!["ADMIN", "USER"].includes(user?.role || "")) return { error: "Không có quyền duyệt" };
+        const user = await requireRole("ADMIN", "USER");
 
         const log = await prisma.nhatKyCongViec.findUnique({
             where: { id: logId },
@@ -656,7 +627,6 @@ export async function approveStep(logId: number) {
         revalidatePath(`/du-an/${log.projectId}`);
         await syncReplica();
 
-        // Notify real-time components to mark related notifications as read
         if (ablyServerClient) {
             const channel = ablyServerClient.channels.get("notifications");
             channel.publish("mark-read-related", { relatedId: String(logId) }).catch(() => {});
@@ -670,8 +640,7 @@ export async function approveStep(logId: number) {
 
 export async function rejectStep(logId: number, reason: string) {
     try {
-        const user = await getCurrentUser();
-        if (!["ADMIN", "USER"].includes(user?.role || "")) return { error: "Không có quyền" };
+        const user = await requireRole("ADMIN", "USER");
 
         const log = await prisma.nhatKyCongViec.findUnique({
             where: { id: logId },
@@ -706,7 +675,6 @@ export async function rejectStep(logId: number, reason: string) {
         revalidatePath(`/du-an/${log.projectId}`);
         await syncReplica();
 
-        // Notify real-time components to mark related notifications as read
         if (ablyServerClient) {
             const channel = ablyServerClient.channels.get("notifications");
             channel.publish("mark-read-related", { relatedId: String(logId) }).catch(() => {});
@@ -744,8 +712,7 @@ export async function markNotificationRead(id: number) {
 
 export async function getPendingStepLogs() {
     try {
-        const user = await getCurrentUser();
-        if (!["ADMIN", "USER"].includes(user?.role || "")) return { data: [] };
+        await requireRole("ADMIN", "USER");
 
         const data = await prisma.nhatKyCongViec.findMany({
             where: { status: "PENDING" },
@@ -764,8 +731,7 @@ export async function getPendingStepLogs() {
 
 export async function revokeStepLog(logId: number) {
     try {
-        const user = await getCurrentUser();
-        if (!user) return { error: "Yêu cầu đăng nhập" };
+        const user = await requireRole("ADMIN", "USER");
 
         const log = await prisma.nhatKyCongViec.findUnique({
             where: { id: logId },
@@ -778,13 +744,11 @@ export async function revokeStepLog(logId: number) {
         const projectId = log.projectId;
 
         await prisma.$transaction(async (tx) => {
-            // 1. Update this log to REJECTED
             await tx.nhatKyCongViec.update({
                 where: { id: logId },
                 data: { status: "REJECTED" }
             });
 
-            // 2. Find the most recent approved step log that ISN'T this one
             const lastApproved = await tx.nhatKyCongViec.findFirst({
                 where: {
                     projectId,
@@ -795,7 +759,6 @@ export async function revokeStepLog(logId: number) {
                 orderBy: { ngayGio: "desc" }
             });
 
-            // 3. Update Project's current step
             await tx.duAn.update({
                 where: { id: projectId },
                 data: { hienTaiBuoc: lastApproved?.buoc || null }
