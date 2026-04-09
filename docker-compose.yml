@@ -1,4 +1,15 @@
 services:
+  init-perms:
+    image: alpine:latest
+    container_name: danang-dashboard-perms
+    command: >
+      sh -c "mkdir -p /app/data /app/logs /app/uploads &&
+             chown -R 1001:1001 /app/data /app/logs /app/uploads"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+
   web:
     build:
       context: .
@@ -23,6 +34,9 @@ services:
       - ./data:/app/data
       - ./logs:/app/logs
       - ./uploads:/app/uploads
+    depends_on:
+      init-perms:
+        condition: service_completed_successfully
     deploy:
       resources:
         limits:
