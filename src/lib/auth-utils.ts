@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-export type { AppRole } from "@/lib/rbac";
+import type { AppRole } from "@/lib/rbac";
 
 export async function getCurrentUser() {
   const session = await auth.api.getSession({

@@ -1,5 +1,5 @@
 # Tech Stack — MobiFone Project Tracker
-**Version:** 1.2.0 | **Updated:** 2026-04-07
+**Version:** 1.3.0 | **Updated:** 2026-04-09
 
 ---
 
@@ -45,40 +45,52 @@ npx create-next-app@latest ./ --typescript --tailwind --app --src-dir --turbopac
 | **Server Actions** | Mutate data trực tiếp từ server | CRUD operations |
 | **Cache Components** | `use cache` directive thay PPR | Dashboard data caching |
 | **React Compiler** | Auto-memoization, không cần `useMemo`/`useCallback` | Toàn bộ codebase |
-| **proxy.ts** | Thay thế `middleware.ts` — rõ ràng hơn về network boundary | Auth guards |
+| **proxy.ts** | Thay thế `middleware.ts` — rõ ràng hơn về network boundary | Auth + RBAC guards (4-role enforcement) |
 | **Metadata API** | SEO-optimized metadata per route | Mọi trang |
 | **Streaming** | Progressive rendering with `<Suspense>` | Dashboard charts loading |
 | **SSE** | Server-Sent Events for real-time data push | Chat & notification streams |
 
 **Cấu trúc routing:**
 ```
-src/app/
-├── (auth)/                    # Auth group (login, register)
-│   ├── login/page.tsx
-│   └── register/page.tsx
-├── (dashboard)/               # Protected dashboard group
-│   ├── layout.tsx             # Sidebar + Header layout
-│   ├── page.tsx               # Dashboard Tổng quan
-│   ├── du-an/
-│   │   ├── page.tsx           # CRM & DS Dự án
-│   │   ├── tao-moi/page.tsx   # Tạo dự án mới
-│   │   └── [id]/page.tsx      # Chi tiết dự án
-│   ├── nhan-su/page.tsx       # Tổng hợp nhân sự
-│   ├── kpi/page.tsx           # KPI Thời gian
-│   ├── dia-ban/page.tsx       # Top Địa bàn
-│   └── admin/                 # Admin-only routes
-│       ├── khach-hang/page.tsx
-│       ├── san-pham/page.tsx
-│       ├── nhan-vien/page.tsx
-│       └── users/page.tsx
-├── api/                       # API Routes (Route Handlers)
-│   ├── auth/[...all]/route.ts
-│   ├── du-an/route.ts
-│   ├── khach-hang/route.ts
-│   └── analytics/route.ts
-├── layout.tsx                 # Root layout
-├── proxy.ts                   # Auth proxy (replaces middleware)
-└── globals.css                # Tailwind CSS v4 config
+src/
+├── proxy.ts                       # Auth + RBAC proxy gate (Next.js 16)
+├── lib/
+│   ├── rbac.ts                    # Centralized RBAC config
+│   └── auth-utils.ts              # Server-side auth helpers
+├── contexts/
+│   └── user-context.tsx           # Client-side RBAC context
+├── app/
+│   ├── (auth)/                    # Auth group (login, register)
+│   │   ├── login/page.tsx
+│   │   └── register/page.tsx
+│   ├── (dashboard)/               # Protected dashboard group
+│   │   ├── layout.tsx             # Sidebar + Header layout
+│   │   ├── dashboard-wrapper.tsx  # UserProvider wrapper
+│   │   ├── page.tsx               # Dashboard Tổng quan
+│   │   ├── du-an/
+│   │   │   ├── page.tsx           # CRM & DS Dự án
+│   │   │   ├── tao-moi/page.tsx   # Tạo dự án mới
+│   │   │   └── [id]/page.tsx      # Chi tiết dự án
+│   │   ├── nhan-su/page.tsx       # Tổng hợp nhân sự (ADMIN, USER only)
+│   │   ├── kpi/page.tsx           # KPI Thời gian (ADMIN, USER only)
+│   │   ├── dia-ban/page.tsx       # Top Địa bàn (ADMIN, USER only)
+│   │   └── admin/                 # Admin-area routes (mixed access)
+│   │       ├── khach-hang/        # ALL roles
+│   │       ├── san-pham/          # ADMIN, USER only
+│   │       ├── kpi/               # ALL roles
+│   │       └── users/             # ADMIN, USER only
+│   │           ├── page.tsx       # User management + role overview
+│   │           ├── actions.ts     # CRUD + bulk role update
+│   │           ├── users-table.tsx # Role filter tabs, checkboxes
+│   │           └── role-overview-cards.tsx
+│   ├── api/                       # API Routes (with requireApiRole guards)
+│   │   ├── auth/[...all]/route.ts
+│   │   ├── du-an/route.ts
+│   │   ├── dashboard/overview/route.ts  # requireApiRole(ALL)
+│   │   ├── admin/email/send/route.ts    # requireApiRole(ADMIN, USER)
+│   │   └── analytics/route.ts
+│   ├── layout.tsx                 # Root layout
+│   └── globals.css                # Tailwind CSS v4 config
 ```
 
 **Custom Hooks:**
@@ -240,7 +252,7 @@ const client = createClient({
 
 ---
 
-### 2.6 Better Auth
+### 2.6 Better Auth + RBAC Layer
 
 **Thay thế:** Auth.js / NextAuth.js v5 (deprecated, chuyển sang Better Auth)
 
@@ -251,10 +263,64 @@ npm install better-auth
 **Tính năng:**
 - Email/Password authentication
 - Session management (JWT + Database sessions)
-- Role-based access control (ADMIN / USER)
+- 4-role RBAC system (ADMIN, USER, AM, CV) — centralized in `src/lib/rbac.ts`
 - Next.js App Router integration
-- Edge-compatible
-- Built-in middleware guards
+- Edge-compatible via `proxy.ts` (Next.js 16 pattern)
+
+**RBAC Architecture:**
+
+The RBAC system is **not** a Better Auth plugin — it's a custom layer built on top of Better Auth sessions, enforced at 4 levels:
+
+```
+src/lib/rbac.ts          ← Single source of truth for role-route mappings
+src/lib/auth-utils.ts    ← Server-side helpers: requireRole(), requireApiRole()
+src/proxy.ts             ← Edge-level enforcement on every request
+src/contexts/user-context.tsx ← Client-side role context for UI
+```
+
+| File | Purpose | Used By |
+|------|---------|---------|
+| `rbac.ts` | `AppRole` type, `ROLE_METADATA`, `ROUTE_PERMISSIONS[]`, `getRequiredRoles()`, `canRoleAccess()` | proxy, sidebar, server actions, client components |
+| `auth-utils.ts` | `requireAuth()`, `requireRole()`, `requireApiRole()`, `hasAccess()` | Server components, server actions, API routes |
+| `proxy.ts` | Intercepts every non-public request, checks session + RBAC | Next.js 16 proxy layer |
+| `user-context.tsx` | `UserProvider` + `useUser()` hook, exposes `canAccess(route)` | Client components, sidebar, dashboard wrapper |
+
+**Role Definitions:**
+
+| Role | Vietnamese | Access Level |
+|------|-----------|-------------|
+| `ADMIN` | Quản trị viên (Admin) | Full access — all menus, user management, system config |
+| `USER` | Quản trị viên (Chuyên viên) | Full access — all menus, similar to ADMIN |
+| `AM` | Account Manager | Restricted — Dashboard, CRM, Khách hàng, KPI, Tạo dự án |
+| `CV` | Chuyên viên | Restricted — Dashboard, CRM, Khách hàng, KPI, Tạo dự án |
+
+**Server-Side Usage Examples:**
+
+```typescript
+// In a Server Action (src/app/(dashboard)/admin/users/actions.ts)
+export async function createUser(data) {
+  await requireRole("ADMIN", "USER");
+  // ...mutation logic
+}
+
+// In an API Route Handler (src/app/api/admin/email/send/route.ts)
+export const POST = async (request: Request) => {
+  const authResult = await requireApiRole("ADMIN", "USER");
+  if (authResult.error) return authResult.error;
+  // ...endpoint logic
+};
+```
+
+**Client-Side Usage Example:**
+
+```typescript
+// Any client component within DashboardWrapper
+const { role, canAccess, roleLabel } = useUser();
+
+if (canAccess("/admin/users")) {
+  return <AdminLink />;
+}
+```
 
 ---
 

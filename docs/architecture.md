@@ -1,5 +1,5 @@
 # System Architecture — MobiFone Project Tracker
-**Version:** 1.2.0 | **Updated:** 2026-04-07
+**Version:** 1.3.0 | **Updated:** 2026-04-09
 
 ---
 
@@ -15,10 +15,13 @@
 │              NEXT.JS 16 SERVER (Instance 1 / 2)          │
 │  ┌─────────────┐ ┌──────────────┐ ┌──────────────────┐   │
 │  │  proxy.ts   │ │ App Router   │ │  Server Actions  │   │
-│  │ (Auth Gate) │ │ (Pages/API)  │ │    SSE / Chat    │   │
+│  │ (Auth+RBAC) │ │ (Pages/API)  │ │  (Role Guards)   │   │
 │  └──────┬──────┘ └──────┬───────┘ └────────┬─────────┘   │
 │         │               │                  │              │
 │  ┌──────▼───────────────▼──────────────────▼──────────┐   │
+│  │       RBAC Layer (src/lib/rbac.ts + auth-utils.ts) │   │
+│  └──────────────────────┬─────────────────────────────┘   │
+│  ┌──────────────────────▼─────────────────────────────┐   │
 │  │              Service Layer (Business Logic)         │   │
 │  │  projectService │ analyticsService │ chatService    │   │
 │  └──────────────────────┬─────────────────────────────┘   │
@@ -55,9 +58,10 @@ Hệ thống sử dụng **Layered Monolith** pattern trong Next.js 16 App Route
 | Layer | Thư mục | Vai trò |
 |-------|--------|---------|
 | **Presentation** | `src/app/`, `src/components/` | UI rendering, user interactions |
-| **Proxy/Auth** | `src/app/proxy.ts` | Authentication gate (replaces middleware) |
+| **Proxy/Auth** | `src/proxy.ts` | Authentication + RBAC gate (Next.js 16 proxy pattern) |
+| **RBAC** | `src/lib/rbac.ts` | Centralized role-permission config, route-to-role mapping |
 | **API** | `src/app/api/` | REST Route Handlers |
-| **Server Actions** | `src/actions/` | Direct server mutations |
+| **Server Actions** | `src/app/(dashboard)/*/actions.ts` | Direct server mutations (with role guards) |
 | **Real-time** | `src/app/api/*/stream/` | SSE streams for chat & notifications |
 | **Service** | `src/lib/services/` | Business logic, validation |
 | **Data Access** | `src/lib/prisma.ts` | Prisma Client + libSQL Embedded Replica |
@@ -86,7 +90,7 @@ danang-dashboard/
 │   ├── app/
 │   │   ├── globals.css            # Tailwind v4 @theme config
 │   │   ├── layout.tsx             # Root layout (fonts, providers)
-│   │   ├── proxy.ts               # Auth proxy gate
+│   │   ├── proxy.ts               # Auth + RBAC proxy gate (Next.js 16)
 │   │   ├── (auth)/
 │   │   │   ├── login/page.tsx
 │   │   │   └── layout.tsx
@@ -106,7 +110,11 @@ danang-dashboard/
 │   │   │       ├── khach-hang/page.tsx
 │   │   │       ├── san-pham/page.tsx
 │   │   │       ├── nhan-vien/page.tsx
-│   │   │       └── users/page.tsx
+│   │   │       └── users/
+│   │   │           ├── page.tsx            # User management (role overview cards)
+│   │   │           ├── actions.ts          # CRUD + bulkUpdateRole + getUserCountsByRole
+│   │   │           ├── users-table.tsx     # Role filter tabs, bulk role update
+│   │   │           └── role-overview-cards.tsx  # Visual role summary cards
 │   │   └── api/
 │   │       ├── auth/[...all]/route.ts
 │   │       ├── du-an/
@@ -127,15 +135,12 @@ danang-dashboard/
 │   │           ├── nhan-su/route.ts
 │   │           ├── kpi-thoi-gian/route.ts
 │   │           └── dia-ban/route.ts
-│   ├── actions/
-│   │   ├── project.actions.ts     # Server Actions for projects
-│   │   ├── tasklog.actions.ts     # Server Actions for task logs
-│   │   ├── admin.actions.ts       # Server Actions for CRUD
-│   │   └── chat.actions.ts        # Server Actions for chat messages
+│   ├── contexts/
+│   │   └── user-context.tsx       # UserProvider + useUser (client-side RBAC)
 │   ├── components/
 │   │   ├── ui/                    # shadcn/ui components
 │   │   ├── layout/
-│   │   │   ├── Sidebar.tsx
+│   │   │   ├── Sidebar.tsx        # Role-aware menu filtering
 │   │   │   ├── Header.tsx
 │   │   │   └── MobileNav.tsx
 │   │   ├── dashboard/
@@ -163,6 +168,8 @@ danang-dashboard/
 │   ├── lib/
 │   │   ├── prisma.ts              # Prisma + libSQL Embedded Replica singleton
 │   │   ├── auth.ts                # Better Auth config
+│   │   ├── auth-utils.ts          # requireAuth, requireRole, requireApiRole helpers
+│   │   ├── rbac.ts                # Centralized RBAC config (roles, route-permissions)
 │   │   ├── services/
 │   │   │   ├── project.service.ts
 │   │   │   ├── analytics.service.ts
@@ -174,7 +181,7 @@ danang-dashboard/
 │   │       ├── chatUnread.ts      # Unread message tracking
 │   │       ├── dateExtract.ts     # Week/Month/Quarter/Year
 │   │       ├── formatters.ts      # Currency, date formatting
-│   │       ├── permissions.ts     # Role-based access helpers
+│   │       ├── permissions.ts     # Legacy permission helpers (superseded by rbac.ts)
 │   │       └── sync.ts           # Turso Embedded Replica sync utilities
 │   ├── hooks/
 │   │   ├── use-project-chat.ts    # Chat state & SSE connection
@@ -202,9 +209,12 @@ danang-dashboard/
 | Component Type | Rendering | Ví dụ |
 |---------------|-----------|-------|
 | **Layout Shell** | Server Component | Sidebar, Header |
+| **Dashboard Wrapper** | Client Component | DashboardWrapper (provides UserProvider) |
+| **Sidebar** | Client Component | Role-aware menu filtering via `canRoleAccess()` |
 | **Dashboard Charts** | Client Component | FunnelChart, BarChart |
-| **Data Tables** | Client Component | ProjectTable (interactive) |
+| **Data Tables** | Client Component | ProjectTable, UsersTable (role filter tabs) |
 | **KPI Cards** | Server Component + `use cache` | KPICard (cached data) |
+| **Role Overview Cards** | Client Component | RoleOverviewCards (user count per role) |
 | **Forms** | Client Component | ProjectForm, QuickLogModal |
 | **Detail Page** | Server Component (data) + Client (interactive) | ProjectDetail |
 | **Chat UI** | Client Component (SSE) | ProjectChat, ChatInput |
@@ -276,9 +286,9 @@ export async function ProjectList({ filters }) {
 
 ---
 
-## 5. Authentication & Authorization
+## 5. Authentication & Authorization (RBAC)
 
-### 5.1 Auth Flow (Better Auth)
+### 5.1 Auth Flow (Better Auth + RBAC)
 
 ```
 ┌─────────┐     ┌────────────┐     ┌──────────┐
@@ -288,64 +298,153 @@ export async function ProjectList({ filters }) {
                       │
                       ▼
               ┌──────────────┐
-              │  proxy.ts    │ ←── Checks session on every request
-              │  (Auth Gate) │
+              │  proxy.ts    │ ←── Checks session + RBAC on every request
+              │(Auth + RBAC) │
               └──────┬───────┘
                      │
           ┌──────────┼──────────┐
           ▼          ▼          ▼
-      /dashboard  /admin    /api/*
-      (all users) (ADMIN)   (role check)
+      /dashboard  /admin/*   /api/*
+      (ALL roles) (varies)   (role guard)
 ```
 
-### 5.2 Role-Based Access
+### 5.2 Four-Role System
 
-```typescript
-// src/lib/utils/permissions.ts
-export const PERMISSIONS = {
-  ADMIN: {
-    canManageMasterData: true,
-    canManageUsers: true,
-    canViewAllProjects: true,
-    canCommentOnAll: true,
-    canViewDashboards: true,
-  },
-  USER: {
-    canManageMasterData: false,
-    canManageUsers: false,
-    canViewAllProjects: false,  // Only assigned projects
-    canCommentOnAll: false,     // Reply only
-    canViewDashboards: false,   // Only personal KPI
-  },
-} as const;
+The system defines four roles with distinct access levels, configured centrally in `src/lib/rbac.ts`:
+
+| Role | Label (Vietnamese) | Full Access | Restricted Access |
+|------|-------------------|-------------|-------------------|
+| **ADMIN** | Quản trị viên (Admin) | All menus, all admin pages, user management | — |
+| **USER** | Quản trị viên (Chuyên viên) | All menus, same as ADMIN except user management scope | — |
+| **AM** | Account Manager | — | Dashboard, CRM & DS dự án, Khách hàng, Giao KPI, Khởi tạo dự án CĐS |
+| **CV** | Chuyên viên | — | Dashboard, CRM & DS dự án, Khách hàng, Giao KPI, Khởi tạo dự án CĐS |
+
+### 5.3 RBAC Architecture — Defense in Depth
+
+Access control is enforced at **four layers**, ensuring no single bypass can grant unauthorized access:
+
+```
+Request Flow:
+
+[Browser] ──→ [1. proxy.ts] ──→ [2. Server Component] ──→ [3. Server Action] ──→ [4. API Route]
+               (edge RBAC)       (page-level guard)       (mutation guard)       (endpoint guard)
 ```
 
-### 5.3 proxy.ts (Replaces middleware.ts)
+| Layer | File(s) | Mechanism | Failure Behavior |
+|-------|---------|-----------|-----------------|
+| **1. Edge Proxy** | `src/proxy.ts` | `getRequiredRoles(path)` from `rbac.ts` | Redirect to `/du-an` |
+| **2. Server Components** | `page.tsx` files | `requireRole()` from `auth-utils.ts` | Redirect to `/du-an` |
+| **3. Server Actions** | `actions.ts` files | `requireRole("ADMIN", "USER")` guard | Throws / redirect |
+| **4. API Routes** | `route.ts` files | `requireApiRole()` returns 401/403 Response | JSON error response |
+
+### 5.4 Centralized RBAC Config (`src/lib/rbac.ts`)
+
+All route-to-role mappings live in a single file, making it easy to audit and modify:
 
 ```typescript
-// src/app/proxy.ts
-import { auth } from "@/lib/auth";
+// src/lib/rbac.ts
+export type AppRole = "ADMIN" | "USER" | "AM" | "CV";
 
-export default async function proxy(request: Request) {
-  const session = await auth.getSession(request);
-  const path = new URL(request.url).pathname;
+export const ROUTE_PERMISSIONS: RoutePermission[] = [
+  // ALL roles can access:
+  { pattern: "/",               roles: ALL_ROLES, exact: true },
+  { pattern: "/du-an",          roles: ALL_ROLES },
+  { pattern: "/du-an/tao-moi",  roles: ALL_ROLES },
+  { pattern: "/admin/khach-hang", roles: ALL_ROLES },
+  { pattern: "/admin/kpi",      roles: ALL_ROLES },
 
-  // Public routes
-  if (path.startsWith("/login") || path.startsWith("/api/auth")) {
-    return;
+  // ADMIN + USER only:
+  { pattern: "/kpi",            roles: MANAGER_ROLES },
+  { pattern: "/dia-ban",        roles: MANAGER_ROLES },
+  { pattern: "/quan-ly-am",     roles: MANAGER_ROLES },
+  { pattern: "/quan-ly-cv",     roles: MANAGER_ROLES },
+  { pattern: "/admin/san-pham", roles: MANAGER_ROLES },
+  { pattern: "/admin/users",    roles: MANAGER_ROLES },
+  { pattern: "/admin/du-an-da-xoa", roles: MANAGER_ROLES },
+  { pattern: "/du-an/tracking", roles: MANAGER_ROLES },
+  { pattern: "/email-service",  roles: MANAGER_ROLES },
+];
+
+export function getRequiredRoles(pathname: string): AppRole[];
+export function canRoleAccess(role: AppRole, pathname: string): boolean;
+```
+
+### 5.5 proxy.ts (Next.js 16 Proxy — Auth + RBAC Gate)
+
+```typescript
+// src/proxy.ts — replaces traditional middleware.ts in Next.js 16
+import { getRequiredRoles, PUBLIC_ROUTES, STATIC_PREFIXES } from "@/lib/rbac";
+import type { AppRole } from "@/lib/rbac";
+
+export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
+  // 1. Allow static assets and public routes through
+  if (STATIC_PREFIXES.some(p => path.startsWith(p))) return next();
+  if (PUBLIC_ROUTES.some(r => path.startsWith(r)))    return next();
+
+  // 2. API routes handle their own auth via requireApiRole()
+  if (path.startsWith("/api/")) return next();
+
+  // 3. Fetch session from Better Auth
+  const session = await fetchSession(request);
+  if (!session) return redirect("/login");
+
+  // 4. RBAC check: match route → get allowed roles → verify
+  const userRole = (session.user?.role || "CV") as AppRole;
+  const allowedRoles = getRequiredRoles(path);
+  if (!allowedRoles.includes(userRole)) {
+    return redirect("/du-an"); // fallback to CRM page
   }
 
-  // Require authentication
-  if (!session) {
-    return Response.redirect(new URL("/login", request.url));
-  }
-
-  // Admin-only routes
-  if (path.startsWith("/admin") && session.user.role !== "ADMIN") {
-    return Response.redirect(new URL("/", request.url));
-  }
+  return next();
 }
 ```
+
+### 5.6 Server-Side Auth Helpers (`src/lib/auth-utils.ts`)
+
+```typescript
+// Page-level guard (Server Components)
+export async function requireRole(...allowedRoles: AppRole[]);
+//   Usage: await requireRole("ADMIN", "USER");
+
+// API route guard (Route Handlers)
+export async function requireApiRole(...allowedRoles: AppRole[]);
+//   Returns { user } or { error: Response(401|403) }
+
+// General helpers
+export async function requireAuth();    // Redirect if not logged in
+export async function requireAdmin();   // Redirect if not ADMIN
+export function hasAccess(role: string, allowedRoles: AppRole[]): boolean;
+```
+
+### 5.7 Client-Side RBAC (`src/contexts/user-context.tsx`)
+
+The `UserProvider` wraps the entire dashboard layout, making role information available to all client components:
+
+```typescript
+// Any client component can use:
+const { role, canAccess, roleLabel } = useUser();
+
+// Conditionally render UI:
+if (canAccess("/admin/users")) {
+  return <AdminLink />;
+}
+```
+
+The `Sidebar` component uses this to filter menu items based on the user's role, and `dashboard-wrapper.tsx` provides the `UserProvider` context.
+
+### 5.8 Future: Dynamic RBAC (Task 29)
+
+The current RBAC config is static in `src/lib/rbac.ts`. **Task 29** will migrate this to a database-driven model:
+
+| Model | Purpose |
+|-------|---------|
+| `MenuItem` | Registry of all menu/routes in the system |
+| `MenuPermission` | Join table: which roles can access which menu items |
+| `RoleConfig` | Role metadata stored in DB |
+
+This will enable admins to assign menu access to roles via a dedicated UI at `/admin/roles` without code changes.
 
 ---
 
@@ -353,31 +452,33 @@ export default async function proxy(request: Request) {
 
 ### 6.1 REST Endpoints
 
-| Method | Endpoint | Auth | Description |
-|--------|---------|------|-------------|
+| Method | Endpoint | Role Guard | Description |
+|--------|---------|------------|-------------|
 | `POST` | `/api/auth/*` | Public | Better Auth routes |
-| `GET` | `/api/du-an` | User+ | List projects (filtered) |
-| `POST` | `/api/du-an` | User+ | Create project |
-| `GET` | `/api/du-an/[id]` | User+ | Project detail |
-| `PUT` | `/api/du-an/[id]` | User+ | Update project |
-| `POST` | `/api/du-an/[id]/nhat-ky` | User+ | Add task log |
-| `GET` | `/api/du-an/[id]/nhat-ky` | User+ | Task log timeline |
-| `POST` | `/api/du-an/[id]/binh-luan` | User+ | Add comment |
-| `GET` | `/api/du-an/[id]/chat` | User+ | Get chat messages (cursor pagination) |
-| `POST` | `/api/du-an/[id]/chat` | User+ | Send chat message |
-| `PUT` | `/api/du-an/[id]/chat/[msgId]` | User+ | Edit message (owner only, 15min) |
-| `DELETE` | `/api/du-an/[id]/chat/[msgId]` | User+ | Soft-delete message |
-| `GET` | `/api/du-an/[id]/chat/stream` | User+ | SSE stream (real-time messages, typing, presence) |
-| `GET` | `/api/khach-hang` | User+ | List customers |
-| `POST` | `/api/khach-hang` | Admin | Create customer |
-| `PUT` | `/api/khach-hang/[id]` | Admin | Update customer |
-| `GET` | `/api/san-pham` | User+ | List products |
-| `POST` | `/api/san-pham` | Admin | Create product |
-| `GET` | `/api/nhan-vien` | User+ | List staff |
-| `GET` | `/api/analytics/tong-quan` | Admin | Dashboard overview |
-| `GET` | `/api/analytics/nhan-su` | Admin | Staff analytics |
-| `GET` | `/api/analytics/kpi-thoi-gian` | Admin | Time-based KPI |
-| `GET` | `/api/analytics/dia-ban` | Admin | Territory analytics |
+| `GET` | `/api/du-an` | ALL roles | List projects (filtered) |
+| `POST` | `/api/du-an` | ALL roles | Create project |
+| `GET` | `/api/du-an/[id]` | ALL roles | Project detail |
+| `PUT` | `/api/du-an/[id]` | ALL roles | Update project |
+| `POST` | `/api/du-an/[id]/nhat-ky` | ALL roles | Add task log |
+| `GET` | `/api/du-an/[id]/nhat-ky` | ALL roles | Task log timeline |
+| `POST` | `/api/du-an/[id]/binh-luan` | ALL roles | Add comment |
+| `GET` | `/api/du-an/[id]/chat` | ALL roles | Get chat messages (cursor pagination) |
+| `POST` | `/api/du-an/[id]/chat` | ALL roles | Send chat message |
+| `PUT` | `/api/du-an/[id]/chat/[msgId]` | ALL roles | Edit message (owner only, 15min) |
+| `DELETE` | `/api/du-an/[id]/chat/[msgId]` | ALL roles | Soft-delete message |
+| `GET` | `/api/du-an/[id]/chat/stream` | ALL roles | SSE stream (real-time messages, typing, presence) |
+| `GET` | `/api/khach-hang` | ALL roles | List customers |
+| `POST` | `/api/khach-hang` | ADMIN, USER | Create customer |
+| `PUT` | `/api/khach-hang/[id]` | ADMIN, USER | Update customer |
+| `GET` | `/api/san-pham` | ALL roles | List products |
+| `POST` | `/api/san-pham` | ADMIN, USER | Create product |
+| `GET` | `/api/nhan-vien` | ALL roles | List staff |
+| `GET` | `/api/dashboard/overview` | ALL roles | Dashboard overview (`requireApiRole`) |
+| `POST` | `/api/admin/email/send` | ADMIN, USER | Send email (`requireApiRole`) |
+| `GET` | `/api/analytics/tong-quan` | ADMIN, USER | Analytics overview |
+| `GET` | `/api/analytics/nhan-su` | ADMIN, USER | Staff analytics |
+| `GET` | `/api/analytics/kpi-thoi-gian` | ADMIN, USER | Time-based KPI |
+| `GET` | `/api/analytics/dia-ban` | ADMIN, USER | Territory analytics |
 
 ### 6.2 Response Format
 

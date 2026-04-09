@@ -2,7 +2,12 @@ import { createClient } from "@libsql/client";
 import "dotenv/config";
 
 async function main() {
-  const localClient = createClient({ url: "file:dev.db" });
+  const localUrl = process.env.LOCAL_DATABASE_URL;
+  if (!localUrl) {
+    console.warn("LOCAL_DATABASE_URL not set, skipping sync. This script is intended for migrating local data to Turso.");
+    return;
+  }
+  const localClient = createClient({ url: localUrl });
   const remoteUrl = process.env.TURSO_DATABASE_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN;
 

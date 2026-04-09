@@ -4,8 +4,8 @@
 
 ---
 
-**Version:** 1.3.0  
-**Date:** 2026-04-07  
+**Version:** 1.4.0  
+**Date:** 2026-04-09  
 **Product Manager:** Trung tâm Kinh doanh Giải pháp số - MobiFone Đà Nẵng  
 **Status:** Draft
 
@@ -52,25 +52,85 @@ Hiện tại toàn bộ quy trình theo dõi dự án, chăm sóc khách hàng v
 
 ## 3. Đối tượng người dùng & Phân quyền (User Roles & Permissions)
 
-### 3.1 Admin (Lãnh đạo)
+Hệ thống sử dụng **4 vai trò (roles)** với mô hình RBAC (Role-Based Access Control) tập trung, được kiểm soát ở 4 tầng: Edge Proxy → Server Component → Server Action → API Route.
+
+### 3.1 ADMIN — Quản trị viên (Admin)
 
 | Quyền | Mô tả |
 |-------|-------|
-| Dashboard | Toàn quyền truy cập tất cả Dashboard views |
-| Master Data | Quản lý CRUD hoàn chỉnh Danh mục (Khách hàng, Sản phẩm, Nhân viên) |
-| Quản lý User | Tạo/khóa tài khoản, phân quyền Role |
-| Dự án | Xem tất cả dự án, bình luận (comment) trên mọi dự án |
-| Chat | Truy cập chat trên mọi dự án, gửi/sửa/xóa tin nhắn |
+| Dashboard Tổng quan | Toàn quyền truy cập |
+| CRM & DS Dự án | Xem/tạo/sửa tất cả dự án |
+| Khách hàng | CRUD quản lý khách hàng |
+| Giao KPI | Xem và cấu hình KPI |
+| Tổng hợp Nhân sự | Truy cập đầy đủ |
+| KPI Thời gian | Truy cập đầy đủ |
+| Top Địa bàn | Truy cập đầy đủ |
+| Quản lý AM / CV | Xem và quản lý AM, CV |
+| Sản phẩm | CRUD quản lý sản phẩm |
+| Quản lý User | Tạo/khóa tài khoản, **phân quyền role**, bulk role update |
+| Email Service | Gửi email từ hệ thống |
+| Dự án đã xóa | Xem, khôi phục, xóa vĩnh viễn |
+| Tracking | Theo dõi tiến độ dự án |
 
-### 3.2 User (AM / Chuyên viên)
+### 3.2 USER — Quản trị viên (Chuyên viên)
 
 | Quyền | Mô tả |
 |-------|-------|
-| Dự án | Chỉ thao tác trên dự án được phân công (AM hoặc Chuyên viên) |
-| Nhật ký | Thêm/cập nhật Task Log cho dự án của mình |
-| KPI | Xem báo cáo KPI cá nhân |
-| Bình luận | Reply bình luận từ Admin |
-| Chat | Gửi/nhận tin nhắn trong chat dự án được phân công |
+| Tất cả tab chức năng | Truy cập giống ADMIN |
+| Quản lý User | Có thể xem và chỉnh sửa user |
+| Master Data | Quản lý CRUD Sản phẩm, Khách hàng |
+
+> **Lưu ý:** ADMIN và USER có quyền truy cập **tất cả các Tab chức năng** trong hệ thống.
+
+### 3.3 AM — Account Manager
+
+| Quyền | Mô tả |
+|-------|-------|
+| Dashboard Tổng quan | ✅ Truy cập |
+| CRM & DS Dự án | ✅ Xem/thao tác dự án được giao |
+| Khách hàng | ✅ Xem danh sách khách hàng |
+| Giao KPI | ✅ Xem KPI |
+| Khởi tạo dự án CĐS | ✅ Tạo dự án mới |
+| Tổng hợp Nhân sự | ❌ Không truy cập |
+| KPI Thời gian | ❌ Không truy cập |
+| Top Địa bàn | ❌ Không truy cập |
+| Admin pages | ❌ Không truy cập (trừ Khách hàng, KPI) |
+
+### 3.4 CV — Chuyên viên
+
+| Quyền | Mô tả |
+|-------|-------|
+| Dashboard Tổng quan | ✅ Truy cập |
+| CRM & DS Dự án | ✅ Xem/thao tác dự án được giao |
+| Khách hàng | ✅ Xem danh sách khách hàng |
+| Giao KPI | ✅ Xem KPI |
+| Khởi tạo dự án CĐS | ✅ Tạo dự án mới |
+| Tổng hợp Nhân sự | ❌ Không truy cập |
+| KPI Thời gian | ❌ Không truy cập |
+| Top Địa bàn | ❌ Không truy cập |
+| Admin pages | ❌ Không truy cập (trừ Khách hàng, KPI) |
+
+> **Quy tắc:** AM và CV chỉ được truy cập **Dashboard Tổng quan, CRM & DS dự án, Khách hàng, Giao KPI**, và nút **Khởi tạo dự án CĐS**.
+
+### 3.5 Permission Matrix (Tổng hợp)
+
+| Menu / Route | ADMIN | USER | AM | CV |
+|-------------|:-----:|:----:|:--:|:--:|
+| Dashboard Tổng quan (`/`) | ✅ | ✅ | ✅ | ✅ |
+| CRM & DS Dự án (`/du-an`) | ✅ | ✅ | ✅ | ✅ |
+| Tạo dự án (`/du-an/tao-moi`) | ✅ | ✅ | ✅ | ✅ |
+| Khách hàng (`/admin/khach-hang`) | ✅ | ✅ | ✅ | ✅ |
+| Giao KPI (`/admin/kpi`) | ✅ | ✅ | ✅ | ✅ |
+| Tổng hợp Nhân sự (`/nhan-su`) | ✅ | ✅ | ❌ | ❌ |
+| KPI Thời gian (`/kpi`) | ✅ | ✅ | ❌ | ❌ |
+| Top Địa bàn (`/dia-ban`) | ✅ | ✅ | ❌ | ❌ |
+| Quản lý AM (`/quan-ly-am`) | ✅ | ✅ | ❌ | ❌ |
+| Quản lý CV (`/quan-ly-cv`) | ✅ | ✅ | ❌ | ❌ |
+| Sản phẩm (`/admin/san-pham`) | ✅ | ✅ | ❌ | ❌ |
+| User Management (`/admin/users`) | ✅ | ✅ | ❌ | ❌ |
+| Dự án đã xóa (`/admin/du-an-da-xoa`) | ✅ | ✅ | ❌ | ❌ |
+| Tracking (`/du-an/tracking`) | ✅ | ✅ | ❌ | ❌ |
+| Email Service (`/email-service`) | ✅ | ✅ | ❌ | ❌ |
 
 ---
 
@@ -87,7 +147,8 @@ Hệ thống web application quản lý toàn bộ vòng đời dự án từ gi
 - Bình luận & trao đổi trên dự án (Project Comments)
 - Chat thời gian thực theo dự án (Real-time Project Chat)
 - Dashboard & báo cáo phân tích (Analytics & Reporting)
-- Phân quyền người dùng (Role-based Access Control)
+- Phân quyền người dùng 4 vai trò (RBAC: ADMIN, USER, AM, CV) — bảo vệ multi-layer
+- Quản lý user & role (Admin user page with bulk role update)
 - Cảnh báo thông minh (Smart Alerts)
 
 ### 4.2 Ngoài phạm vi (Out of Scope — v1.0)
@@ -167,6 +228,14 @@ Hệ thống web application quản lý toàn bộ vòng đời dự án từ gi
 | FR-14 | User reply bình luận (threaded comments — self-referencing) | P1 |
 | FR-15 | Hiển thị thread bình luận trên trang chi tiết dự án | P1 |
 
+### 6.5 Smart Alerts — Cảnh báo Thông minh
+
+| ID | Yêu cầu | Priority |
+|----|---------|----------|
+| FR-16 | Tự động tính `(NgàyHiệnTại - ngayChamsocCuoiCung)` | P0 |
+| FR-17 | Nếu > 15 ngày → hiển thị badge **RED** "Cần chăm sóc gấp" trên Dashboard và Project List | P0 |
+| FR-18 | Dự án chưa từng được chăm sóc (`ngayChamsocCuoiCung = null`) → cũng flag cảnh báo | P0 |
+
 ### 6.6 Chat Dự án Thời gian thực (Project Chat)
 
 | ID | Yêu cầu | Priority |
@@ -176,13 +245,20 @@ Hệ thống web application quản lý toàn bộ vòng đời dự án từ gi
 | FR-21 | Typing indicator ("Nguyễn Văn A đang nhập...") và online presence (ai đang online) | P1 |
 | FR-22 | Tin nhắn hệ thống tự động khi trạng thái dự án thay đổi (ví dụ: "Dự án đã chuyển sang Đang làm việc") | P2 |
 
-### 6.5 Smart Alerts — Cảnh báo Thông minh
+### 6.7 RBAC — Phân quyền truy cập (Role-Based Access Control)
 
-| ID | Yêu cầu | Priority |
-|----|---------|----------|
-| FR-16 | Tự động tính `(NgàyHiệnTại - ngayChamsocCuoiCung)` | P0 |
-| FR-17 | Nếu > 15 ngày → hiển thị badge **RED** "Cần chăm sóc gấp" trên Dashboard và Project List | P0 |
-| FR-18 | Dự án chưa từng được chăm sóc (`ngayChamsocCuoiCung = null`) → cũng flag cảnh báo | P0 |
+| ID | Yêu cầu | Priority | Status |
+|----|---------|----------|--------|
+| FR-23 | Hệ thống hỗ trợ 4 role: ADMIN, USER, AM, CV với cấu hình tập trung | P0 | ✅ Done |
+| FR-24 | proxy.ts kiểm tra RBAC trên mọi request (edge-level protection) | P0 | ✅ Done |
+| FR-25 | Server Actions có `requireRole()` guard bảo vệ mutations | P0 | ✅ Done |
+| FR-26 | API Routes có `requireApiRole()` trả 401/403 JSON response | P0 | ✅ Done |
+| FR-27 | Sidebar ẩn/hiện menu items dựa trên role người dùng | P0 | ✅ Done |
+| FR-28 | Admin page `/admin/users` hiển thị role overview cards và filter tabs | P1 | ✅ Done |
+| FR-29 | Bulk role update: Admin chọn nhiều user và đổi role cùng lúc | P1 | ✅ Done |
+| FR-30 | `UserContext` cung cấp `canAccess(route)` cho client components | P1 | ✅ Done |
+| FR-31 | Dynamic RBAC: Admin cấu hình menu → role qua UI, lưu DB | P2 | 🔲 Planned (Task 29) |
+| FR-32 | Role management page tại `/admin/roles` với permission matrix UI | P2 | 🔲 Planned (Task 29) |
 
 ---
 
@@ -276,7 +352,7 @@ User click "Cập nhật" trên Project List
 | NFR-01 | Performance | Page load < 2 giây cho tất cả trang chính |
 | NFR-02 | Responsiveness | Desktop/Laptop (primary), Tablet portrait (secondary) |
 | NFR-03 | Data Integrity | Ràng buộc FK nghiêm ngặt, không cho phép nhân đôi doanh tự |
-| NFR-04 | Security & Ops | Role-based access control, mật khẩu mã hóa, Cloudflare Tunnels, và hệ thống Structured Logging (Pino) với Auto-Redaction. |
+| NFR-04 | Security & Ops | Multi-layer RBAC (4 roles × 4 enforcement layers: proxy, server component, server action, API route), mật khẩu mã hóa, Cloudflare Tunnels, và hệ thống Structured Logging (Pino) với Auto-Redaction. |
 | NFR-05 | Scalability | SQLite cục bộ (Dev) → Turso Embedded Replicas (Production) bằng Docker container, hỗ trợ multi-instance |
 | NFR-06 | Availability | Có sẵn hệ thống backup DB, quản lý cấu hình safe db-reset qua script quản trị |
 | NFR-07 | Embedded Replicas | Sử dụng Turso Embedded Replicas cho zero-latency reads — file SQLite cục bộ tự đồng bộ từ remote Turso primary. Reads miễn phí, không giới hạn. Writes forward lên cloud. Bandwidth sync < 3GB/tháng (free tier) |
@@ -290,12 +366,14 @@ User click "Cập nhật" trên Project List
 
 | Phase | Scope | Deliverables | Status |
 |-------|-------|-------------|--------|
-| **Phase 1** | Initialization & DB Schema | Setup project (Next.js, Shadcn, Tailwind, Prisma). Viết `schema.prisma`, seed data | ⏳ Todo |
-| **Phase 2** | Layout & Master Data CRUD | MobiFone-themed Sidebar layout. Admin pages CRUD: Khách hàng, Sản phẩm, Nhân viên | ⏳ Todo |
-| **Phase 3** | Project Master & Task Logs | Form tạo dự án (Search & Select), Project List, 1-Click Update modal, Detail page (Timeline + Comments), 15-day Smart Alert | ⏳ Todo |
-| **Phase 4** | Analytics & Dashboards | 5 Dashboard views với Recharts: Tổng quan, CRM, Nhân sự, KPI, Địa bàn | ⏳ Todo |
-| **Phase 5** | Real-time & Chat | Thông báo thời gian thực (SSE/Pusher), Chat channel per project với typing indicator & online presence | ⏳ Todo |
-| **Phase 6** | Embedded Replicas & Multi-Instance | Turso Embedded Replicas cho zero-latency reads. 2 Docker instances với local SQLite sync. Sync utilities, health checks | ⏳ Todo |
+| **Phase 1** | Initialization & DB Schema | Setup project (Next.js, Shadcn, Tailwind, Prisma). Viết `schema.prisma`, seed data | ✅ Done |
+| **Phase 2** | Layout & Master Data CRUD | MobiFone-themed Sidebar layout. Admin pages CRUD: Khách hàng, Sản phẩm, Nhân viên | ✅ Done |
+| **Phase 3** | Project Master & Task Logs | Form tạo dự án (Search & Select), Project List, 1-Click Update modal, Detail page (Timeline + Comments), 15-day Smart Alert | ✅ Done |
+| **Phase 4** | Analytics & Dashboards | 5 Dashboard views với Recharts: Tổng quan, CRM, Nhân sự, KPI, Địa bàn | ✅ Done |
+| **Phase 5** | Real-time & Chat | Thông báo thời gian thực (SSE/Pusher), Chat channel per project với typing indicator & online presence | ✅ Done |
+| **Phase 6** | Embedded Replicas & Multi-Instance | Turso Embedded Replicas cho zero-latency reads. 2 Docker instances với local SQLite sync. Sync utilities, health checks | ✅ Done |
+| **Phase 7** | RBAC — Static Role System | 4-role RBAC (ADMIN, USER, AM, CV), proxy.ts + Server Action + API guards, UserContext, admin user management UI | ✅ Done (Task 28) |
+| **Phase 8** | RBAC — Dynamic Role Management | DB-driven role-menu config, admin `/admin/roles` page with permission matrix, MenuItem/MenuPermission tables | 🔲 Planned (Task 29) |
 
 ---
 
@@ -303,14 +381,26 @@ User click "Cập nhật" trên Project List
 
 ### Chức năng
 
-- [ ] Admin CRUD đầy đủ Master Data (Khách hàng, Sản phẩm, Nhân viên)
-- [ ] User tạo dự án mới với Search & Select dropdown phản hồi thời gian thực
-- [ ] 1-Click Update tạo Task Log và cập nhật đúng `ngayChamsocCuoiCung` + `trangThaiHienTai` (transaction)
-- [ ] Smart Alert hiển thị badge khi > 15 ngày không chăm sóc hoặc chưa từng chăm sóc
-- [ ] Threaded comments hoạt động đúng (Admin comment, User reply)
-- [ ] Chat thời gian thực: gửi/nhận tin nhắn < 1s, typing indicator, online presence
-- [ ] Mỗi dự án có chat channel riêng, chỉ thành viên truy cập
-- [ ] 5 Dashboard views render đúng dữ liệu với Recharts
+- [x] Admin CRUD đầy đủ Master Data (Khách hàng, Sản phẩm, Nhân viên)
+- [x] User tạo dự án mới với Search & Select dropdown phản hồi thời gian thực
+- [x] 1-Click Update tạo Task Log và cập nhật đúng `ngayChamsocCuoiCung` + `trangThaiHienTai` (transaction)
+- [x] Smart Alert hiển thị badge khi > 15 ngày không chăm sóc hoặc chưa từng chăm sóc
+- [x] Threaded comments hoạt động đúng (Admin comment, User reply)
+- [x] Chat thời gian thực: gửi/nhận tin nhắn < 1s, typing indicator, online presence
+- [x] Mỗi dự án có chat channel riêng, chỉ thành viên truy cập
+- [x] 5 Dashboard views render đúng dữ liệu với Recharts
+
+### RBAC (Role-Based Access Control)
+
+- [x] 4 role hoạt động đúng: ADMIN, USER có full access; AM, CV restricted access
+- [x] proxy.ts chặn request tới route không được phép, redirect về `/du-an`
+- [x] Server Actions bảo vệ bởi `requireRole()` — reject nếu role không hợp lệ
+- [x] API Routes trả JSON error 401/403 qua `requireApiRole()`
+- [x] Sidebar ẩn menu items khi user không có quyền truy cập
+- [x] Admin user page hiển thị role overview cards, filter tabs theo role
+- [x] Bulk role update hoạt động đúng cho nhiều user cùng lúc
+- [x] `UserContext` cung cấp `canAccess(route)` cho conditional UI rendering
+- [ ] Dynamic RBAC: Admin cấu hình role → menu qua UI (Task 29)
 
 ### UI/UX
 

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getRequiredRoles, PUBLIC_ROUTES, STATIC_PREFIXES } from "@/lib/rbac";
-import type { AppRole } from "@/lib/rbac";
+import { matchRequiredRoles, PUBLIC_ROUTES, STATIC_PREFIXES, ROUTE_PERMISSIONS } from "@/lib/rbac";
+import type { AppRole, RoutePermission } from "@/lib/rbac";
 
 export async function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
@@ -53,9 +53,26 @@ export async function proxy(request: NextRequest) {
     return withHeaders(NextResponse.redirect(new URL("/", request.url)));
   }
 
+  // Fetch RBAC config (cached)
+  let rbacConfig: RoutePermission[] = ROUTE_PERMISSIONS;
+  try {
+    const baseUrl = request.nextUrl.origin;
+    const res = await fetch(`${baseUrl}/api/rbac/config`, {
+      next: { revalidate: 30 },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.permissions)) {
+        rbacConfig = data.permissions;
+      }
+    }
+  } catch (e) {
+    console.error("[proxy] Failed to fetch RBAC config:", e);
+  }
+
   // RBAC: check if user's role is allowed for this route
   const userRole = ((session?.user?.role as string) || "CV") as AppRole;
-  const allowedRoles = getRequiredRoles(path);
+  const allowedRoles = matchRequiredRoles(path, rbacConfig);
 
   if (!allowedRoles.includes(userRole)) {
     return withHeaders(NextResponse.redirect(new URL("/du-an", request.url)));

@@ -11,6 +11,8 @@ Generated with **Stitch MCP** — MobiFone Enterprise Design System (Dark Navy +
 | `03-chi-tiet-du-an.png` | Chi tiết Dự án | Timeline CSKH, comments section, financial summary |
 | `04-phan-tich-kpi.png` | Phân tích & KPI | Bar chart nhân sự, Line chart KPI time, Top Địa bàn matrix |
 | `05-tao-du-an-moi.png` | Tạo dự án mới | Form Search & Select, auto-extract date fields, validation |
+| `06-role-management.html` | Quản lý Vai trò | Ma trận phân quyền (Permissions Matrix), chỉnh sửa Metadata vai trò, cấu hình API. |
+
 
 ## Design System
 

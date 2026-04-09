@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html class="light" lang="vi">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>MobiFone Project Tracker - Quản lý Vai trò</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#e0e3e5",
+                        "tertiary-fixed-dim": "#eebd93",
+                        "outline-variant": "#c5c6ce",
+                        "primary-fixed-dim": "#b6c7ec",
+                        "primary": "#000719",
+                        "on-surface-variant": "#44474d",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed-variant": "#004493",
+                        "secondary": "#0058bc",
+                        "tertiary": "#100500",
+                        "surface-container-high": "#e6e8ea",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-primary-container": "#7787aa",
+                        "outline": "#75777e",
+                        "on-primary-fixed-variant": "#374766",
+                        "surface-bright": "#f7f9fb",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#613f1f",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed": "#ffdcc0",
+                        "primary-container": "#0d1f3c",
+                        "surface-container": "#eceef0",
+                        "on-secondary-container": "#fefcff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#331900",
+                        "on-tertiary-container": "#a97f59",
+                        "surface-tint": "#4e5e7f",
+                        "secondary-container": "#0070eb",
+                        "surface": "#f7f9fb",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#e0e3e5",
+                        "inverse-on-surface": "#eff1f3",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#2d1600",
+                        "inverse-primary": "#b6c7ec",
+                        "on-primary-fixed": "#081b38",
+                        "on-surface": "#191c1e",
+                        "primary-fixed": "#d7e2ff",
+                        "on-background": "#191c1e",
+                        "surface-container-low": "#f2f4f6",
+                        "inverse-surface": "#2d3133",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#d8e2ff",
+                        "background": "#f7f9fb",
+                        "surface-dim": "#d8dadc",
+                        "on-secondary-fixed": "#001a41",
+                        "on-tertiary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); }
+        .role-card-active { border-left: 4px solid #0058bc; background-color: #f0f7ff; }
+        .permission-toggle:checked + .permission-slider { background-color: #0058bc; }
+        .permission-toggle:checked + .permission-slider:before { transform: translateX(1.25rem); }
+        
+        /* Custom scrollbar for matrix */
+        .matrix-scroll::-webkit-scrollbar { height: 6px; }
+        .matrix-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .matrix-scroll::-webkit-scrollbar-thumb { background: #c5c6ce; border-radius: 10px; }
+        .matrix-scroll::-webkit-scrollbar-thumb:hover { background: #75777e; }
+    </style>
+</head>
+<body class="text-on-surface overflow-hidden">
+
+<aside class="bg-[#0D1F3C] h-screen w-72 fixed left-0 top-0 overflow-y-auto shadow-2xl shadow-[#191c1e]/20 flex flex-col py-8 px-4 z-50">
+    <div class="mb-10 px-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#000719] to-[#0d1f3c] flex items-center justify-center">
+                <span class="text-white font-black text-xl">M</span>
+            </div>
+            <div>
+                <h1 class="text-white font-black text-xl tracking-tight leading-tight">MobiFone</h1>
+                <p class="text-slate-400 text-xs font-medium uppercase tracking-widest">Project Tracker</p>
+            </div>
+        </div>
+    </div>
+    <nav class="flex-1 space-y-2">
+        <a class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 rounded-lg flex items-center gap-4 px-4 py-3" href="01-dashboard-tong-quan.html">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span class="font-['Inter'] font-medium text-sm tracking-wide uppercase">Dashboard Tổng quan</span>
+        </a>
+        <a class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 rounded-lg flex items-center gap-4 px-4 py-3" href="02-crm-danh-sach-du-an.html">
+            <span class="material-symbols-outlined">dataset</span>
+            <span class="font-['Inter'] font-medium text-sm tracking-wide uppercase">CRM & DS Dự án</span>
+        </a>
+        <a class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 rounded-lg flex items-center gap-4 px-4 py-3" href="#">
+            <span class="material-symbols-outlined">group</span>
+            <span class="font-['Inter'] font-medium text-sm tracking-wide uppercase">Tổng hợp Nhân sự</span>
+        </a>
+        <a class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 rounded-lg flex items-center gap-4 px-4 py-3" href="04-phan-tich-kpi.html">
+            <span class="material-symbols-outlined">timer</span>
+            <span class="font-['Inter'] font-medium text-sm tracking-wide uppercase">KPI Thời gian</span>
+        </a>
+        <a class="bg-white/10 text-white rounded-lg font-bold flex items-center gap-4 px-4 py-3 transition-all duration-200" href="#">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">admin_panel_settings</span>
+            <span class="font-['Inter'] font-medium text-sm tracking-wide uppercase">Phân quyền Vai trò</span>
+        </a>
+        <a class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 rounded-lg flex items-center gap-4 px-4 py-3" href="#">
+            <span class="material-symbols-outlined">settings</span>
+            <span class="font-['Inter'] font-medium text-sm tracking-wide uppercase">Cấu hình Hệ thống</span>
+        </a>
+    </nav>
+    <div class="mt-auto px-2">
+        <button class="w-full py-4 rounded-xl bg-gradient-to-br from-[#000719] to-[#0d1f3c] text-white font-bold text-sm tracking-wide uppercase shadow-lg shadow-black/20 hover:scale-[1.02] active:scale-[0.98] transition-transform">
+            Thêm Nhân Viên Mới
+        </button>
+    </div>
+</aside>
+
+<header class="fixed top-0 right-0 w-[calc(100%-18rem)] h-16 bg-[#f7f9fb]/80 backdrop-blur-md flex justify-between items-center px-8 z-40">
+    <div class="flex items-center gap-8">
+        <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+            <input class="bg-surface-container-low border-none rounded-full pl-10 pr-4 py-2 text-sm w-80 focus:ring-2 focus:ring-[#0058bc]" placeholder="Tìm kiếm vai trò, quyền..." type="text"/>
+        </div>
+    </div>
+    <div class="flex items-center gap-4">
+        <button class="p-2 hover:bg-slate-100/50 rounded-full transition-all text-slate-500 relative">
+            <span class="material-symbols-outlined">notifications</span>
+            <span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+        </button>
+        <div class="h-8 w-[1px] bg-outline-variant/30 mx-2"></div>
+        <div class="flex items-center gap-3 pl-2">
+            <div class="text-right">
+                <p class="text-xs font-bold text-on-surface">Admin User</p>
+                <p class="text-[10px] text-slate-500 uppercase tracking-tighter">Ban Công Nghệ</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">A</div>
+        </div>
+    </div>
+</header>
+
+<main class="ml-72 mt-16 p-8 h-[calc(100vh-4rem)] overflow-y-auto bg-slate-50/50">
+    <!-- Header Section -->
+    <section class="mb-10 flex justify-between items-end">
+        <div>
+            <h2 class="text-3xl font-black text-on-surface tracking-tight mb-2 uppercase">Quản lý Quyền hạn</h2>
+            <p class="text-on-surface-variant font-medium text-sm">Thiết lập vai trò người dùng và phạm vi truy cập các chức năng hệ thống.</p>
+        </div>
+        <div class="flex gap-3">
+            <button class="px-5 py-2.5 rounded-xl bg-surface-container-highest font-bold text-sm text-on-surface flex items-center gap-2 hover:bg-surface-container-high transition-colors">
+                <span class="material-symbols-outlined text-lg">history</span>
+                Lịch sử thay đổi
+            </button>
+            <button class="px-5 py-2.5 rounded-xl bg-secondary-container text-white font-bold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity">
+                <span class="material-symbols-outlined text-lg">add_moderator</span>
+                Tạo Vai trò Mới
+            </button>
+        </div>
+    </section>
+
+    <div class="grid grid-cols-12 gap-8">
+        <!-- Sidebar: Role List -->
+        <aside class="col-span-12 lg:col-span-4 space-y-4">
+            <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant px-2 flex items-center gap-2">
+                <span class="w-1 h-3 bg-secondary rounded-full"></span>
+                Danh sách Vai trò
+            </h3>
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-outline-variant/10 overflow-hidden">
+                <!-- Role: ADMIN -->
+                <div class="p-5 role-card-active cursor-pointer hover:bg-slate-50 transition-colors border-b border-outline-variant/5">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="px-2.5 py-1 bg-purple-50 text-purple-700 text-[10px] font-black rounded-lg uppercase tracking-wider border border-purple-100">ADMIN</span>
+                        <span class="material-symbols-outlined text-slate-400 text-sm">edit</span>
+                    </div>
+                    <h4 class="font-bold text-on-surface text-sm mb-1">Quản trị viên (Admin)</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">Toàn quyền quản trị hệ thống, nhân sự, và cấu hình.</p>
+                </div>
+
+                <!-- Role: USER -->
+                <div class="p-5 cursor-pointer hover:bg-slate-50 transition-colors border-b border-outline-variant/5">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-black rounded-lg uppercase tracking-wider border border-indigo-100">USER</span>
+                        <span class="material-symbols-outlined text-slate-400 text-sm">edit</span>
+                    </div>
+                    <h4 class="font-bold text-on-surface text-sm mb-1">Quản trị viên (Chuyên viên)</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">Truy cập tất cả chức năng quản lý dự án và báo cáo.</p>
+                </div>
+
+                <!-- Role: AM -->
+                <div class="p-5 cursor-pointer hover:bg-slate-50 transition-colors border-b border-outline-variant/5">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-black rounded-lg uppercase tracking-wider border border-blue-100">AM</span>
+                        <span class="material-symbols-outlined text-slate-400 text-sm">edit</span>
+                    </div>
+                    <h4 class="font-bold text-on-surface text-sm mb-1">Quản lý Khách hàng (AM)</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">Quản lý khách hàng và dự án được giao.</p>
+                </div>
+
+                <!-- Role: CV -->
+                <div class="p-5 cursor-pointer hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded-lg uppercase tracking-wider border border-emerald-100">CV</span>
+                        <span class="material-symbols-outlined text-slate-400 text-sm">edit</span>
+                    </div>
+                    <h4 class="font-bold text-on-surface text-sm mb-1">Chuyên viên (CV)</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">Thực hiện dự án được giao, truy cập CRM cơ bản.</p>
+                </div>
+            </div>
+
+            <!-- Role Summary Card -->
+            <div class="bg-gradient-to-br from-[#0D1F3C] to-[#1e293b] p-6 rounded-2xl text-white shadow-xl shadow-slate-200">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-white/10 rounded-xl">
+                        <span class="material-symbols-outlined text-white">security</span>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bảo mật hệ thống</p>
+                        <h4 class="font-bold text-lg">Phân quyền động</h4>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-300 mb-6 leading-relaxed">Mọi thay đổi về quyền hạn sẽ có hiệu lực ngay lập tức cho người dùng trong phiên làm việc tới.</p>
+                <div class="flex justify-between items-center text-xs font-bold pt-4 border-t border-white/10 text-slate-400">
+                    <span>Tổng số vai trò</span>
+                    <span class="text-white text-base">04</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Section: Permissions Matrix -->
+        <section class="col-span-12 lg:col-span-8 space-y-6">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant px-2 flex items-center gap-2">
+                    <span class="w-1 h-3 bg-secondary rounded-full"></span>
+                    Ma trận Quyền hạn: <span class="text-secondary">ADMIN</span>
+                </h3>
+                <div class="flex gap-2">
+                    <button class="text-xs font-bold text-secondary hover:underline">Chọn tất cả</button>
+                    <span class="text-slate-300">|</span>
+                    <button class="text-xs font-bold text-slate-400 hover:text-on-surface">Bỏ chọn tất cả</button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-outline-variant/10 overflow-hidden">
+                <div class="overflow-x-auto matrix-scroll">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-outline-variant/10">
+                                <th class="px-8 py-5 text-[10px] font-black text-on-surface-variant uppercase tracking-widest w-64">Danh mục Menu / Module</th>
+                                <th class="px-6 py-5 text-[10px] font-black text-on-surface-variant uppercase tracking-widest text-center">Xem</th>
+                                <th class="px-6 py-5 text-[10px] font-black text-on-surface-variant uppercase tracking-widest text-center">Thêm mới</th>
+                                <th class="px-6 py-5 text-[10px] font-black text-on-surface-variant uppercase tracking-widest text-center">Chỉnh sửa</th>
+                                <th class="px-6 py-5 text-[10px] font-black text-on-surface-variant uppercase tracking-widest text-center">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-outline-variant/5">
+                            <!-- Dashboard -->
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-8 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <span class="material-symbols-outlined text-slate-400 text-lg">dashboard</span>
+                                        <span class="text-sm font-bold text-on-surface">Dashboard Tổng quan</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                            </tr>
+                            <!-- Project List -->
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-8 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <span class="material-symbols-outlined text-slate-400 text-lg">dataset</span>
+                                        <span class="text-sm font-bold text-on-surface">CRM & Danh sách Dự án</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                            </tr>
+                            <!-- KPI Analytics -->
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-8 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <span class="material-symbols-outlined text-slate-400 text-lg">timer</span>
+                                        <span class="text-sm font-bold text-on-surface">Phân tích KPI</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                            </tr>
+                            <!-- User Management -->
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-8 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <span class="material-symbols-outlined text-slate-400 text-lg">manage_accounts</span>
+                                        <span class="text-sm font-bold text-on-surface">Quản lý Nhân sự</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                            </tr>
+                            <!-- Settings -->
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-8 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <span class="material-symbols-outlined text-slate-400 text-lg">settings</span>
+                                        <span class="text-sm font-bold text-on-surface">Cấu hình Danh mục</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <input type="checkbox" checked class="w-4 h-4 text-secondary rounded border-slate-300 focus:ring-secondary cursor-pointer">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="px-8 py-6 bg-slate-50 border-t border-outline-variant/10 flex justify-end gap-3">
+                    <button class="px-6 py-2 rounded-xl border border-outline-variant text-sm font-bold text-on-surface-variant hover:bg-white transition-colors">Hủy bỏ</button>
+                    <button class="px-8 py-2 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-black/10 hover:scale-[1.02] active:scale-[0.98] transition-transform">Lưu Thay đổi</button>
+                </div>
+            </div>
+
+            <!-- Advanced: API Access & System Permissions -->
+            <div class="bg-white rounded-2xl shadow-sm border border-outline-variant/10 p-8">
+                <h4 class="text-sm font-bold text-on-surface mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary">api</span>
+                    Quyền truy cập API & Hệ thống
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-outline-variant/5">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-slate-400">cloud_download</span>
+                            <div>
+                                <p class="text-xs font-bold text-on-surface">Xuất báo cáo Excel/CSV</p>
+                                <p class="text-[10px] text-slate-500">Cho phép tải xuống dữ liệu thô.</p>
+                            </div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-outline-variant/5">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-slate-400">terminal</span>
+                            <div>
+                                <p class="text-xs font-bold text-on-surface">Truy cập Logs Hệ thống</p>
+                                <p class="text-[10px] text-slate-500">Xem nhật ký hoạt động chi tiết.</p>
+                            </div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<!-- Edit Role Modal (Overlay Example) -->
+<div id="editModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-white w-[500px] rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300">
+        <div class="bg-[#0D1F3C] p-8 text-white relative">
+            <button class="absolute top-6 right-6 text-white/50 hover:text-white" onclick="closeModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <span class="px-2.5 py-1 bg-purple-50/10 text-purple-200 text-[10px] font-black rounded-lg uppercase tracking-wider border border-white/10 mb-2 inline-block">Chỉnh sửa Vai trò</span>
+            <h3 class="text-2xl font-black tracking-tight">Cấu hình: ADMIN</h3>
+        </div>
+        <div class="p-8 space-y-6">
+            <div>
+                <label class="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Tên hiển thị (Label)</label>
+                <input type="text" value="Quản trị viên (Admin)" class="w-full px-4 py-3 bg-slate-50 border border-outline-variant/30 rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-transparent">
+            </div>
+            <div>
+                <label class="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Mô tả chi tiết</label>
+                <textarea rows="3" class="w-full px-4 py-3 bg-slate-50 border border-outline-variant/30 rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-transparent">Toàn quyền quản trị hệ thống, quản lý user, cấu hình, và tất cả chức năng.</textarea>
+            </div>
+            <div>
+                <label class="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Màu sắc định danh</label>
+                <div class="flex gap-3">
+                    <button class="w-8 h-8 rounded-full bg-purple-500 border-2 border-white ring-2 ring-purple-500 ring-offset-2"></button>
+                    <button class="w-8 h-8 rounded-full bg-indigo-500"></button>
+                    <button class="w-8 h-8 rounded-full bg-blue-500"></button>
+                    <button class="w-8 h-8 rounded-full bg-emerald-500"></button>
+                    <button class="w-8 h-8 rounded-full bg-amber-500"></button>
+                </div>
+            </div>
+        </div>
+        <div class="px-8 py-6 bg-slate-50 border-t border-outline-variant/10 flex justify-end gap-3">
+            <button class="px-6 py-2 rounded-xl text-sm font-bold text-on-surface-variant hover:bg-white transition-colors" onclick="closeModal()">Hủy</button>
+            <button class="px-8 py-2 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-black/10 hover:scale-[1.02] active:scale-[0.98] transition-transform">Cập nhật</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openModal() {
+        const modal = document.getElementById('editModal');
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        modal.querySelector('div').classList.remove('scale-95');
+        modal.querySelector('div').classList.add('scale-100');
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('editModal');
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        modal.querySelector('div').classList.add('scale-95');
+        modal.querySelector('div').classList.remove('scale-100');
+    }
+
+    // Attach click events to the edit icons in the role list
+    document.querySelectorAll('.material-symbols-outlined').forEach(icon => {
+        if (icon.innerText === 'edit') {
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openModal();
+            });
+        }
+    });
+
+    // Handle role switching visual feedback
+    document.querySelectorAll('.role-card-active').forEach(card => {
+        // card logic...
+    });
+</script>
+
+</body>
+</html>

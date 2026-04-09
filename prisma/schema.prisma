@@ -343,3 +343,48 @@ model FileDinhKem {
   
   @@index([logId])
 }
+
+model RoleConfig {
+  id          Int      @id @default(autoincrement())
+  role        UserRole @unique
+  label       String
+  description String?
+  color       String   @default("purple")
+  updatedBy   String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
+
+model MenuItem {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  label     String
+  href      String
+  icon      String?
+  section   String   @default("main")
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  permissions MenuPermission[]
+
+  @@index([section, sortOrder])
+}
+
+model MenuPermission {
+  id        Int      @id @default(autoincrement())
+  menuKey   String
+  role      UserRole
+  canView   Boolean  @default(false)
+  canCreate Boolean  @default(false)
+  canEdit   Boolean  @default(false)
+  canDelete Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  menu MenuItem @relation(fields: [menuKey], references: [key], onDelete: Cascade)
+
+  @@unique([menuKey, role])
+  @@index([role])
+}

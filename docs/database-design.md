@@ -1,5 +1,5 @@
 # Database Design — MobiFone Project Tracker
-**Version:** 1.2.0 | **Updated:** 2026-04-07  
+**Version:** 1.3.0 | **Updated:** 2026-04-09  
 **ORM:** Prisma v7.6.x | **Database:** SQLite (dev) → Turso Embedded Replicas (prod)
 
 ---
@@ -19,6 +19,8 @@ erDiagram
     DuAn ||--o{ BinhLuan : "comments"
     DuAn ||--o{ TinNhan : "chat"
     BinhLuan ||--o{ BinhLuan : "reply"
+    MenuItem ||--o{ MenuPermission : "grants"
+    MenuPermission }o--|| User : "role-based"
 ```
 
 ---
@@ -27,10 +29,10 @@ erDiagram
 
 ```prisma
 enum UserRole {
-  ADMIN        // Quản trị viên
-  AM           // Account Manager
-  CV           // Chuyên viên
-  USER         // Nhân viên (Legacy)
+  ADMIN        // Quản trị viên (Admin) — Full system access, user management
+  USER         // Quản trị viên (Chuyên viên) — Full access, similar to ADMIN
+  AM           // Account Manager — Restricted to: Dashboard, CRM, Khách hàng, KPI, Tạo dự án
+  CV           // Chuyên viên — Restricted to: Dashboard, CRM, Khách hàng, KPI, Tạo dự án
 }
 
 enum PhanLoaiKH {
@@ -213,6 +215,75 @@ enum LoaiTinNhan {
 
 **Indexes:** `nam`, `(nam, thang)` (unique)
 
+### 3.10 RBAC — Current Implementation (Static Config)
+
+The current RBAC system uses a static configuration file (`src/lib/rbac.ts`) rather than database tables. Roles are stored as the `role` field on the `User` table, and route-to-role mappings are defined in code:
+
+```typescript
+// src/lib/rbac.ts — Route permission config
+export type AppRole = "ADMIN" | "USER" | "AM" | "CV";
+
+export const ROUTE_PERMISSIONS: RoutePermission[] = [
+  { pattern: "/",               roles: ["ADMIN", "USER", "AM", "CV"] },
+  { pattern: "/du-an",          roles: ["ADMIN", "USER", "AM", "CV"] },
+  { pattern: "/admin/khach-hang", roles: ["ADMIN", "USER", "AM", "CV"] },
+  { pattern: "/admin/kpi",      roles: ["ADMIN", "USER", "AM", "CV"] },
+  { pattern: "/kpi",            roles: ["ADMIN", "USER"] },
+  { pattern: "/dia-ban",        roles: ["ADMIN", "USER"] },
+  { pattern: "/admin/users",    roles: ["ADMIN", "USER"] },
+  // ...more routes
+];
+```
+
+**Role Metadata** is also stored in `rbac.ts` with labels, descriptions, and badge colors for UI rendering.
+
+### 3.11 RBAC — Planned Database Models (Task 29 — Dynamic Role Management)
+
+To enable dynamic, admin-configurable role permissions without code changes, the following models will be added:
+
+#### MenuItem (Registry of all menu/routes)
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | Int | PK, auto | |
+| key | String | unique | Identifier, e.g. "dashboard", "crm-du-an" |
+| label | String | required | Display name, e.g. "Dashboard Tổng quan" |
+| href | String | required | Route path, e.g. "/" |
+| icon | String? | nullable | Lucide icon name |
+| section | String | default: "main" | "main" or "admin" |
+| sortOrder | Int | default: 0 | Display order |
+| isActive | Boolean | default: true | Active/inactive toggle |
+| createdAt | DateTime | auto | |
+| updatedAt | DateTime | auto | |
+
+**Indexes:** `(section, sortOrder)`
+
+#### MenuPermission (Join table: Role ↔ MenuItem)
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | Int | PK, auto | |
+| role | String | required | "ADMIN", "USER", "AM", "CV" |
+| menuItemId | Int | FK → MenuItem, CASCADE | Linked menu |
+| createdAt | DateTime | auto | |
+
+**Indexes:** `(role, menuItemId)` (unique)
+
+#### RoleConfig (Role metadata in DB)
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | Int | PK, auto | |
+| role | String | unique | Role key |
+| label | String | required | Vietnamese display name |
+| description | String? | nullable | Role description |
+| badgeColor | String? | nullable | Tailwind class |
+| textColor | String? | nullable | Tailwind class |
+| borderColor | String? | nullable | Tailwind class |
+| isSystem | Boolean | default: false | Cannot be deleted |
+| createdAt | DateTime | auto | |
+| updatedAt | DateTime | auto | |
+
 ---
 
 ## 4. Business Rules
@@ -322,9 +393,14 @@ const libsqlClient = createClient({
 ## 6. Seed Data
 
 Sample seed includes:
-- 1 Admin + 3 Users (AM/CV) with different `diaBan`
+- 1 Admin + 1 USER + AM/CV users with different `diaBan` and roles
 - 6 Khách hàng (mix Chính phủ, DN, Công an)
 - 6 Sản phẩm (Cloud, IOC, Camera AI, mInvoice...)
 - 3 Dự án mẫu with varied statuses
 - 5 NhatKyCongViec entries forming a timeline
 - 3 BinhLuan entries with reply thread
+
+**Planned for Task 29 (Dynamic RBAC):**
+- MenuItem seed: all sidebar routes registered in the MenuItem table
+- MenuPermission seed: default role-menu assignments matching the current static config
+- RoleConfig seed: 4 system roles with Vietnamese labels and badge colors

@@ -15,9 +15,10 @@ interface DashboardWrapperProps {
     role: string;
     avatarUrl?: string | null;
   };
+  menuItems: any[];
 }
 
-export function DashboardWrapper({ children, user }: DashboardWrapperProps) {
+export function DashboardWrapper({ children, user, menuItems }: DashboardWrapperProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
@@ -27,6 +28,7 @@ export function DashboardWrapper({ children, user }: DashboardWrapperProps) {
           userRole={user.role as AppRole}
           isCollapsed={isCollapsed}
           setIsCollapsed={setIsCollapsed}
+          dbMenuItems={menuItems}
         />
 
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
