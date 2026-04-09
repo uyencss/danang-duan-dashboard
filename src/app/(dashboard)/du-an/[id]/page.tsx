@@ -34,6 +34,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { ProjectComments } from "@/components/du-an/project-comments";
 import { ProjectChat } from "@/components/du-an/project-chat";
+import { ProjectFiles } from "@/components/du-an/project-files";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { EditProjectTrigger } from "./edit-project-trigger";
 import prisma from "@/lib/prisma";
@@ -62,6 +63,10 @@ export default async function ProjectDetailPage({
   const allSystemUsers = await prisma.user.findMany({
     select: { id: true, name: true }
   });
+
+  const allFiles = project?.nhatKy?.flatMap((nk: any) => 
+      nk.files?.map((f: any) => ({ ...f, log: { user: nk.user } })) || []
+  ) || [];
 
   if (error || !project) {
     return (
@@ -228,6 +233,12 @@ export default async function ProjectDetailPage({
               >
                 <MessagesSquare className="size-3.5 mr-2" /> Chat
               </TabsTrigger>
+              <TabsTrigger
+                value="documents"
+                className="rounded-full px-6 h-full font-bold text-[10px] uppercase tracking-widest text-[#8a8d93] data-[state=active]:bg-white data-[state=active]:text-[#191c1e] data-[state=active]:shadow-sm transition-all"
+              >
+                <FileText className="size-3.5 mr-2" /> Tài liệu ({allFiles.length})
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -330,6 +341,10 @@ export default async function ProjectDetailPage({
                     : null
                 }
               />
+            </TabsContent>
+
+            <TabsContent value="documents" className="pt-2">
+              <ProjectFiles files={allFiles} />
             </TabsContent>
           </Tabs>
         </div>
