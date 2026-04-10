@@ -63,15 +63,17 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed, dbMenuItems = [
   let finalMainItems: SidebarItem[] = [];
   let finalAdminItems: SidebarItem[] = [];
 
-  const mainDb = dbMenuItems.filter(item => item.section === "main");
-  const adminDb = dbMenuItems.filter(item => item.section === "admin");
+  const mainDb = dbMenuItems.filter(item => item && item.section === "main");
+  const adminDb = dbMenuItems.filter(item => item && item.section === "admin");
   const mapDbItems = (dbItems: any[]): SidebarItem[] => {
-    return dbItems.map(item => ({
-      label: item.label,
-      href: item.href,
-      icon: ICON_MAP[item.icon] || LayoutDashboard,
-      allowedRoles: ["ADMIN", "USER", "AM", "CV"], 
-    }));
+    return dbItems
+      .filter(Boolean)
+      .map(item => ({
+        label: item.label,
+        href: item.href,
+        icon: ICON_MAP[item.icon] || LayoutDashboard,
+        allowedRoles: ["ADMIN", "USER", "AM", "CV"], 
+      }));
   };
   finalMainItems = mapDbItems(mainDb);
   finalAdminItems = mapDbItems(adminDb);

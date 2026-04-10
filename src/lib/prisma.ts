@@ -35,8 +35,14 @@ function getLibSqlConfig(): Config {
 const config = getLibSqlConfig();
 
 const prismaClientSingleton = () => {
-  const adapter = new PrismaLibSql(config);
-  return new PrismaClient({ adapter });
+  try {
+    const adapter = new PrismaLibSql(config);
+    return new PrismaClient({ adapter });
+  } catch (err) {
+    logger.error({ msg: "Failed to initialize Prisma with LibSQL adapter", err });
+    // Return a dummy client or throw a more descriptive error
+    throw err;
+  }
 };
 
 // Expose a dedicated libSQL client just for manual syncs (since Prisma hides its internal client)

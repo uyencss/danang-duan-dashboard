@@ -111,7 +111,10 @@ export async function getMenuItemsForRole(role: AppRole) {
       where: { role, canView: true, menu: { isActive: true } },
       include: { menu: true },
     });
-    return records.map(r => r.menu);
+    return records
+      .map(r => r.menu)
+      .filter((menu): menu is NonNullable<typeof menu> => !!menu)
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   } catch (e) {
     console.warn("Failed to get menu items from DB", e);
     return [];

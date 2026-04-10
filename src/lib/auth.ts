@@ -11,6 +11,8 @@ const authBaseURL =
           ? `https://${process.env.VERCEL_URL}`
           : undefined);
 
+console.log(`[BetterAuth] Base URL: ${authBaseURL || 'undefined (will use request host)'}`);
+
 export const auth = betterAuth({
     baseURL: authBaseURL,
     database: prismaAdapter(prisma, {
