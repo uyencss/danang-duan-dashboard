@@ -4,7 +4,8 @@ services:
     container_name: danang-dashboard-perms
     command: >
       sh -c "mkdir -p /app/data /app/logs /app/uploads &&
-             chown -R 1001:1001 /app/data /app/logs /app/uploads"
+             chown -R 1001:1001 /app/data /app/uploads &&
+             chmod 777 /app/logs"
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
@@ -15,15 +16,12 @@ services:
     container_name: danang-dashboard-redis
     restart: always
     command: >
-      redis-server
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
-      --save 60 1000
-      --loglevel warning
+      sh -c "redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save 60 1000 --loglevel warning 2>&1 | tee -a /app/logs/redis.log"
     environment:
       - TZ=Asia/Ho_Chi_Minh
     volumes:
       - redis-data:/data
+      - ./logs:/app/logs
     deploy:
       resources:
         limits:
@@ -48,6 +46,8 @@ services:
         BUILD_ID: ${BUILD_ID:-default_build_id}
     container_name: danang-dashboard-web
     restart: always
+    command: >
+      sh -c "node server.js 2>&1 | tee -a /app/logs/web.log"
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - DATABASE_URL=${DATABASE_URL}
@@ -89,8 +89,11 @@ services:
     restart: always
     environment:
       - TZ=Asia/Ho_Chi_Minh
+      - TUNNEL_LOGFILE=/app/logs/cloudflared.log
     command: >
       tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    volumes:
+      - ./logs:/app/logs
     deploy:
       resources:
         limits:

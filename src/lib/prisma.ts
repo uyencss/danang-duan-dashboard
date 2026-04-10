@@ -34,19 +34,8 @@ function getLibSqlConfig(): Config {
 
 const config = getLibSqlConfig();
 
-const prismaClientSingleton = () => {
-  const adapter = new PrismaLibSql(config);
-  return new PrismaClient({ adapter });
-};
-
-// Expose a dedicated libSQL client just for manual syncs (since Prisma hides its internal client)
-let libsqlSyncClient: Client | undefined;
-if (config.syncUrl) {
-  libsqlSyncClient = createClient(config);
-}
-
 declare global {
-  var prisma: undefined | ReturnType<typeof prismaClientSingleton>;
+  var prisma: undefined | PrismaClient;
   var libsqlSync: undefined | Client;
 }
 
@@ -56,18 +45,35 @@ if (process.env.NODE_ENV !== "production") {
   delete (globalThis as any).libsqlSync;
 }
 
-const prisma = globalThis.prisma ?? prismaClientSingleton();
-
-if (!globalThis.libsqlSync && libsqlSyncClient) {
-  globalThis.libsqlSync = libsqlSyncClient;
-} else if (globalThis.libsqlSync) {
-  libsqlSyncClient = globalThis.libsqlSync;
+// Create ONE shared libSQL client for both Prisma and manual syncs
+let libsqlSyncClient = globalThis.libsqlSync;
+if (!libsqlSyncClient && config.syncUrl) {
+  libsqlSyncClient = createClient(config);
+  if (process.env.NODE_ENV !== "production") {
+    globalThis.libsqlSync = libsqlSyncClient;
+  }
 }
+
+const prismaClientSingleton = () => {
+  const adapter = new PrismaLibSql(config);
+  
+  // Monkey-patch PrismaLibSql to use our shared client instead of creating another one
+  // This prevents multiple client sync loops from causing WAL database lock conflicts
+  adapter.createClient = (_cfg: Config) => {
+    if (libsqlSyncClient) {
+      return libsqlSyncClient;
+    }
+    return createClient(_cfg);
+  };
+
+  return new PrismaClient({ adapter });
+};
+
+const prisma = globalThis.prisma ?? prismaClientSingleton();
 
 export default prisma;
 export { libsqlSyncClient };
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.prisma = prisma;
-  if (libsqlSyncClient) globalThis.libsqlSync = libsqlSyncClient;
 }

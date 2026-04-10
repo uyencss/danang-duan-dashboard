@@ -28,14 +28,6 @@ export async function proxy(request: NextRequest) {
     return withHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
-  // Keep login/register public, but redirect users that already have a session cookie.
-  if (path.startsWith("/login") || path.startsWith("/register")) {
-    if (hasSessionCookie) {
-      return withHeaders(NextResponse.redirect(new URL("/", request.url)));
-    }
-    return withHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
-  }
-
   // Allow additional public routes (excluding auth pages handled above)
   if (
     PUBLIC_ROUTES.some(
@@ -50,37 +42,44 @@ export async function proxy(request: NextRequest) {
     return withHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
-  // Protected pages require a session cookie at minimum.
-  if (!hasSessionCookie) {
-    return withHeaders(NextResponse.redirect(new URL("/login", request.url)));
-  }
+  // We use localhost for internal fetches to bypass Cloudflare full-roundtrips and SSL mismatch errors.
+  const internalUrl = process.env.INTERNAL_APP_URL || "http://127.0.0.1:3000";
 
-  // Fetch session for protected routes
+  // Fetch session FIRST if cookie exists, to prevent zombie cookie redirect loops
   let session: { user?: { role?: string } } | null = null;
-  try {
-    const baseUrl = request.nextUrl.origin;
-    const res = await fetch(`${baseUrl}/api/auth/get-session`, {
-      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
-      cache: "no-store",
-    });
-    if (res.ok) {
-      session = await res.json();
+  if (hasSessionCookie) {
+    try {
+      const res = await fetch(`${internalUrl}/api/auth/get-session`, {
+        headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+        cache: "no-store",
+      });
+      if (res.ok) {
+        session = await res.json();
+      }
+    } catch (e) {
+      console.error("[proxy] Failed to fetch session:", e);
     }
-  } catch (e) {
-    console.error("[proxy] Failed to fetch session:", e);
   }
 
-  // In production behind reverse proxies, session lookup can fail even when
-  // the cookie exists. Avoid redirect loops and let server-side handlers verify.
-  if (!session?.user) {
+  // Keep login/register public, but redirect users that have a TRULY VALID session.
+  if (path.startsWith("/login") || path.startsWith("/register")) {
+    if (session?.user) {
+      return withHeaders(NextResponse.redirect(new URL("/", request.url)));
+    }
+    // If they have a cookie but it's invalid (old deployment), let them see the login page!
     return withHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
+  }
+
+  // Protected pages strictly require a VERIFIED session.
+  // If the session is invalid or missing, bounce to login.
+  if (!session?.user) {
+    return withHeaders(NextResponse.redirect(new URL("/login", request.url)));
   }
 
   // Fetch RBAC config (cached)
   let rbacConfig: RoutePermission[] = ROUTE_PERMISSIONS;
   try {
-    const baseUrl = request.nextUrl.origin;
-    const res = await fetch(`${baseUrl}/api/rbac/config`, {
+    const res = await fetch(`${internalUrl}/api/rbac/config`, {
       next: { revalidate: 30 },
     });
     if (res.ok) {

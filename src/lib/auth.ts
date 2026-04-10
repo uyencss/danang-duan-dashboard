@@ -40,3 +40,38 @@ export const auth = betterAuth({
         trustHost: true
     } as any
 });
+
+// Monkey-patch to force all server-side session checks to loop back locally
+// bypassing the slow BetterAuth external network requests over Cloudflare.
+const originalGetSession = auth.api.getSession;
+(auth.api as any).getSession = async (opts: any) => {
+    try {
+        const internalUrl = process.env.INTERNAL_APP_URL || "http://127.0.0.1:3000";
+        let cookieHeader = "";
+        
+        if (opts?.headers) {
+            if (typeof opts.headers.get === 'function') {
+                cookieHeader = opts.headers.get("cookie") || "";
+            } else {
+                cookieHeader = opts.headers.cookie || "";
+            }
+        }
+
+        if (cookieHeader) {
+            const res = await fetch(`${internalUrl}/api/auth/get-session`, {
+                headers: { cookie: cookieHeader },
+                cache: "no-store",
+            });
+            
+            if (res.ok) {
+                return await res.json();
+            }
+        }
+        
+    } catch (e) {
+        console.error("[auth] Local session fetch error:", e);
+    }
+
+    // Fallback to original implementation if fetch fails or no cookies 
+    return originalGetSession(opts);
+};
