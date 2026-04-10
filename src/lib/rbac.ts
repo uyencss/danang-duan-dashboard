@@ -79,7 +79,6 @@ export const ROUTE_PERMISSIONS: RoutePermission[] = [
   { pattern: "/admin/users", roles: MANAGER_ROLES },
   { pattern: "/admin/du-an-da-xoa", roles: MANAGER_ROLES },
   { pattern: "/du-an/tracking", roles: MANAGER_ROLES },
-  { pattern: "/email-service", roles: MANAGER_ROLES },
 ];
 
 // Server-side database functions have been moved to rbac-server.ts

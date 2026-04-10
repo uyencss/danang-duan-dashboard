@@ -102,7 +102,6 @@ Hệ thống hiện tại có 4 role: `ADMIN`, `USER`, `AM`, `CV` (định nghĩ
 
 - [ ] Xác nhận "Giao KPI" visible cho ALL roles
 - [ ] Xác nhận "Khởi tạo Dự án CĐS" CTA visible cho ALL roles
-- [ ] Đảm bảo `/email-service` chỉ accessible cho ADMIN/USER
 
 ---
 
