@@ -21,6 +21,9 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# Bust cache for Next.js build
+ARG CACHEBUST=1
+
 # Build Next.js
 ARG BUILD_ID
 ENV BUILD_ID=${BUILD_ID}

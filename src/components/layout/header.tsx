@@ -130,13 +130,6 @@ export function Header({ user }: HeaderProps) {
               <span>Tài khoản cá nhân</span>
             </DropdownMenuItem>
             
-            {/* {user.role === "ADMIN" && (
-              <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/email-service')}>
-                <Mail className="mr-2 h-4 w-4" />
-                <span>Gửi Broadcast Email</span>
-              </DropdownMenuItem>
-            )} */}
-
             <DropdownMenuItem
               className="cursor-pointer text-[#ba1a1a] focus:text-[#ba1a1a] focus:bg-red-50"
               onClick={handleSignOut}

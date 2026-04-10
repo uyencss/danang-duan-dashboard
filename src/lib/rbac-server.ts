@@ -108,7 +108,7 @@ export async function invalidateRbacCache() {
 export async function getMenuItemsForRole(role: AppRole) {
   try {
     const records = await prisma.menuPermission.findMany({
-      where: { role, canView: true },
+      where: { role, canView: true, menu: { isActive: true } },
       include: { menu: true },
     });
     return records.map(r => r.menu);

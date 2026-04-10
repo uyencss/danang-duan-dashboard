@@ -182,6 +182,8 @@ npx shadcn@latest create      # New project (visual builder)
 | `Tooltip` | Help text |
 | `DropdownMenu` | Action menus |
 | `ScrollArea` | Chat message scroll container |
+| `AlertProvider` | Global alert dialog (`useAlert`) |
+| `ModalProvider` | Global generic modal (`useModal`) |
 
 **Cài đặt components:**
 ```bash

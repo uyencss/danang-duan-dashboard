@@ -43,7 +43,9 @@ jobs:
             
             if [ -d "danang-duan-dashboard" ]; then
               cd danang-duan-dashboard
-              git pull origin master
+              git fetch origin master
+              git reset --hard origin/master
+              git clean -fd
             else
               git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/uyencss/danang-duan-dashboard.git
               cd danang-duan-dashboard

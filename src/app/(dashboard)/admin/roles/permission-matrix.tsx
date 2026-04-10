@@ -5,6 +5,7 @@ import { AppRole, ALL_ROLES } from "@/lib/rbac";
 import { updatePermissionsForRole, PermissionInput } from "./actions";
 import { useSearchParams } from "next/navigation";
 import * as LucideIcons from "lucide-react";
+import { useAlert } from "@/components/ui/use-alert";
 
 export function PermissionMatrix({
   menuItems,
@@ -20,6 +21,7 @@ export function PermissionMatrix({
 
   const [permissions, setPermissions] = useState<PermissionInput[]>([]);
   const [loading, setLoading] = useState(false);
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     // initialize state based on active role
@@ -71,9 +73,19 @@ export function PermissionMatrix({
     setLoading(true);
     try {
       await updatePermissionsForRole(activeRole, permissions);
-      alert("Lưu thay đổi thành công!");
+      showAlert({
+        title: "Thành công",
+        description: "Lưu thay đổi thành công!",
+        type: "success",
+        showCancel: false,
+      });
     } catch (e: any) {
-      alert("Có lỗi xảy ra: " + (e?.message || String(e)));
+      showAlert({
+        title: "Lỗi",
+        description: "Có lỗi xảy ra: " + (e?.message || String(e)),
+        type: "error",
+        showCancel: false,
+      });
     }
     setLoading(false);
   };
@@ -128,6 +140,9 @@ export function PermissionMatrix({
                   Danh mục Menu / Module
                 </th>
                 <th className="px-6 py-5 text-[10px] font-black text-on-surface-variant uppercase tracking-widest text-center">
+                  Thứ tự
+                </th>
+                <th className="px-6 py-5 text-[10px] font-black text-on-surface-variant uppercase tracking-widest text-center">
                   Xem
                 </th>
                 <th className="px-6 py-5 text-[10px] font-black text-on-surface-variant uppercase tracking-widest text-center">
@@ -146,7 +161,7 @@ export function PermissionMatrix({
                 const perm = permissions.find((p) => p.menuKey === menu.key);
                 if (!perm) return null;
                 return (
-                  <tr key={menu.key} className="hover:bg-slate-50 transition-colors">
+                  <tr key={menu.key} className={`hover:bg-slate-50 transition-colors ${menu.isActive === false ? 'opacity-50 grayscale' : ''}`}>
                     <td className="px-8 py-4">
                       <div className="flex items-center gap-3">
                         <span className="w-5 h-5 flex items-center justify-center">
@@ -160,6 +175,11 @@ export function PermissionMatrix({
                           <p className="text-[10px] uppercase text-slate-500">{menu.href}</p>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded inline-block w-8">
+                        {menu.sortOrder}
+                      </span>
                     </td>
                     {(["canView", "canCreate", "canEdit", "canDelete"] as const).map(
                       (field) => (

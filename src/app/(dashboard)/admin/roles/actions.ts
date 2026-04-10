@@ -20,7 +20,6 @@ async function requireAdmin() {
 
 export async function getMenuItems() {
   return await prisma.menuItem.findMany({
-    where: { isActive: true },
     orderBy: [
       { section: "asc" },
       { sortOrder: "asc" },
@@ -118,5 +117,37 @@ export async function updateRoleConfig(
   invalidateRbacCache();
   revalidatePath("/admin/roles");
   
+  return { success: true };
+}
+
+export async function updateMenuItems(items: {
+  id: number;
+  label: string;
+  sortOrder: number;
+  section: string;
+  isActive: boolean;
+  icon: string | null;
+}[]) {
+  const session = await requireAdmin();
+
+  await prisma.$transaction(
+    items.map(item => 
+      prisma.menuItem.update({
+        where: { id: item.id },
+        data: {
+          label: item.label,
+          sortOrder: item.sortOrder,
+          section: item.section,
+          isActive: item.isActive,
+          icon: item.icon,
+        }
+      })
+    )
+  );
+
+  invalidateRbacCache();
+  revalidatePath("/admin/roles");
+  revalidatePath("/", "layout");
+
   return { success: true };
 }

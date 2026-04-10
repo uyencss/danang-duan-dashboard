@@ -50,38 +50,6 @@ interface SidebarItem {
   allowedRoles?: AppRole[];
 }
 
-// Main nav items — role-based visibility
-const mainNavItems: SidebarItem[] = [
-  // Dashboard Tổng quan — Visible to ALL (ADMIN, USER, CV, AM)
-  { label: "Dashboard Tổng quan", href: "/", icon: LayoutDashboard },
-  // CRM & DS Dự án — Visible to ALL
-  { label: "CRM & DS Dự án", href: "/du-an", icon: FolderKanban },
-  // Khách hàng — Visible to ALL
-  { label: "Khách hàng", href: "/admin/khach-hang", icon: Building2 },
-  // Phân tích & KPI — Hidden for CV, AM
-  { label: "Phân tích & KPI", href: "/kpi", icon: TrendingUp, allowedRoles: ["ADMIN", "USER"] },
-  // Top Địa bàn — Hidden for CV, AM
-  { label: "Top Địa bàn", href: "/dia-ban", icon: MapPin, allowedRoles: ["ADMIN", "USER"] },
-  // Quản lý AM — Hidden for CV, AM
-  { label: "Quản lý AM", href: "/quan-ly-am", icon: UserCheck, allowedRoles: ["ADMIN", "USER"] },
-  // Quản lý Chuyên viên — Hidden for CV, AM
-  { label: "Quản lý Chuyên viên", href: "/quan-ly-cv", icon: GraduationCap, allowedRoles: ["ADMIN", "USER"] },
-];
-
-// Admin section nav items
-const adminNavItems: SidebarItem[] = [
-  // Sản phẩm — Hidden for CV, AM
-  { label: "Sản phẩm", href: "/admin/san-pham", icon: Package, allowedRoles: ["ADMIN", "USER"] },
-  // Quản lý User — Hidden for CV, AM
-  { label: "Quản lý User", href: "/admin/users", icon: UserCog, allowedRoles: ["ADMIN", "USER"] },
-  // Giao KPI — Visible to ALL per request
-  { label: "Giao KPI", href: "/admin/kpi", icon: Target },
-  // Theo dõi các bước — Hidden for CV, AM
-  { label: "Theo dõi các bước", href: "/du-an/tracking", icon: ClipboardList, allowedRoles: ["ADMIN", "USER"] },
-  // Dự án đã xoá — Hidden for CV, AM
-  { label: "Dự án đã xoá", href: "/admin/du-an-da-xoa", icon: Trash2, allowedRoles: ["ADMIN", "USER"] },
-];
-
 interface SidebarProps {
   userRole: AppRole;
   isCollapsed: boolean;
@@ -95,23 +63,18 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed, dbMenuItems = [
   let finalMainItems: SidebarItem[] = [];
   let finalAdminItems: SidebarItem[] = [];
 
-  if (dbMenuItems && dbMenuItems.length > 0) {
-    const mainDb = dbMenuItems.filter(item => item.section === "main");
-    const adminDb = dbMenuItems.filter(item => item.section === "admin");
-    const mapDbItems = (dbItems: any[]): SidebarItem[] => {
-      return dbItems.map(item => ({
-        label: item.label,
-        href: item.href,
-        icon: ICON_MAP[item.icon] || LayoutDashboard,
-        allowedRoles: ["ADMIN", "USER", "AM", "CV"], // Since they are returned, user can see them
-      }));
-    };
-    finalMainItems = mapDbItems(mainDb);
-    finalAdminItems = mapDbItems(adminDb);
-  } else {
-    finalMainItems = mainNavItems;
-    finalAdminItems = adminNavItems;
-  }
+  const mainDb = dbMenuItems.filter(item => item.section === "main");
+  const adminDb = dbMenuItems.filter(item => item.section === "admin");
+  const mapDbItems = (dbItems: any[]): SidebarItem[] => {
+    return dbItems.map(item => ({
+      label: item.label,
+      href: item.href,
+      icon: ICON_MAP[item.icon] || LayoutDashboard,
+      allowedRoles: ["ADMIN", "USER", "AM", "CV"], 
+    }));
+  };
+  finalMainItems = mapDbItems(mainDb);
+  finalAdminItems = mapDbItems(adminDb);
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -119,13 +82,8 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed, dbMenuItems = [
   };
 
   const isItemVisible = (item: SidebarItem) => {
-    if (dbMenuItems && dbMenuItems.length > 0) return true; // already filtered
+    return true; // Already filtered by RBAC in layout
 
-    // ADMIN and USER see everything
-    if (userRole === "ADMIN" || userRole === "USER") return true;
-    // For others (AM, CV), check allowedRoles
-    if (!item.allowedRoles || item.allowedRoles.length === 0) return true;
-    return item.allowedRoles.includes(userRole);
   };
 
   const renderNavItems = (items: SidebarItem[]) => {

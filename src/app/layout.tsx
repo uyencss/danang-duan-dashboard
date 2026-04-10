@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   description: "Hệ thống Quản trị Báo cáo Dự án Tập trung - MobiFone Đà Nẵng",
 };
 
+import { ModalProvider } from "@/components/ui/use-modal";
+import { AlertProvider } from "@/components/ui/use-alert";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -21,8 +24,12 @@ export default function RootLayout({
   return (
     <html lang="vi" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full" suppressHydrationWarning>
-        {children}
-        <Toaster position="top-right" richColors />
+        <AlertProvider>
+          <ModalProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+          </ModalProvider>
+        </AlertProvider>
       </body>
     </html>
   );

@@ -23,7 +23,6 @@ const DASHBOARD_ROUTES = [
   "/admin/kpi",
   "/admin/du-an-da-xoa",
   "/admin/roles",
-  "/email-service",
 ];
 
 export function PrefetchRoutes() {

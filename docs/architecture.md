@@ -110,6 +110,11 @@ danang-dashboard/
 │   │   │       ├── khach-hang/page.tsx
 │   │   │       ├── san-pham/page.tsx
 │   │   │       ├── nhan-vien/page.tsx
+│   │   │       ├── roles/
+│   │   │       │   ├── page.tsx               # Role Management
+│   │   │       │   ├── actions.ts             # Roles server actions
+│   │   │       │   ├── menu-manager.tsx       # Menu configuration UI
+│   │   │       │   └── permission-matrix.tsx  # Dynamic RBAC matrix
 │   │   │       └── users/
 │   │   │           ├── page.tsx            # User management (role overview cards)
 │   │   │           ├── actions.ts          # CRUD + bulkUpdateRole + getUserCountsByRole
@@ -139,6 +144,8 @@ danang-dashboard/
 │   │   └── user-context.tsx       # UserProvider + useUser (client-side RBAC)
 │   ├── components/
 │   │   ├── ui/                    # shadcn/ui components
+│   │   │   ├── use-alert.tsx      # Global AlertProvider + hook
+│   │   │   └── use-modal.tsx      # Global ModalProvider + hook
 │   │   ├── layout/
 │   │   │   ├── Sidebar.tsx        # Role-aware menu filtering
 │   │   │   ├── Header.tsx
@@ -434,17 +441,17 @@ if (canAccess("/admin/users")) {
 
 The `Sidebar` component uses this to filter menu items based on the user's role, and `dashboard-wrapper.tsx` provides the `UserProvider` context.
 
-### 5.8 Future: Dynamic RBAC (Task 29)
+### 5.8 Dynamic RBAC & Menu Management (Implemented)
 
-The current RBAC config is static in `src/lib/rbac.ts`. **Task 29** will migrate this to a database-driven model:
+The RBAC config in `src/lib/rbac.ts` is now integrated with a database-driven model:
 
 | Model | Purpose |
 |-------|---------|
-| `MenuItem` | Registry of all menu/routes in the system |
+| `MenuItem` | Registry of all menu/routes in the system, includes `sortOrder` and `isActive` |
 | `MenuPermission` | Join table: which roles can access which menu items |
 | `RoleConfig` | Role metadata stored in DB |
 
-This will enable admins to assign menu access to roles via a dedicated UI at `/admin/roles` without code changes.
+Admins can assign menu access to roles and configure menu items (reordering, toggling active states) via a dedicated UI at `/admin/roles` without code changes.
 
 ---
 

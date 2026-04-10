@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Define log directory relative to project root
-const logDir = path.join(process.cwd(), process.env.LOG_DIR || 'logs');
+const logDir = path.join(/*turbopackIgnore: true*/ process.cwd(), process.env.LOG_DIR || 'logs');
 
 // Ensure log directory exists
 if (!fs.existsSync(logDir)) {

@@ -257,8 +257,9 @@ Hệ thống web application quản lý toàn bộ vòng đời dự án từ gi
 | FR-28 | Admin page `/admin/users` hiển thị role overview cards và filter tabs | P1 | ✅ Done |
 | FR-29 | Bulk role update: Admin chọn nhiều user và đổi role cùng lúc | P1 | ✅ Done |
 | FR-30 | `UserContext` cung cấp `canAccess(route)` cho client components | P1 | ✅ Done |
-| FR-31 | Dynamic RBAC: Admin cấu hình menu → role qua UI, lưu DB | P2 | 🔲 Planned (Task 29) |
-| FR-32 | Role management page tại `/admin/roles` với permission matrix UI | P2 | 🔲 Planned (Task 29) |
+| FR-31 | Dynamic RBAC: Admin cấu hình menu → role qua UI, lưu DB | P2 | ✅ Done |
+| FR-32 | Role management page tại `/admin/roles` với permission matrix UI | P2 | ✅ Done |
+| FR-33 | Dynamic Menu Management: Reordering, sorting, active/inactive status via UI | P2 | ✅ Done |
 
 ---
 
@@ -373,7 +374,7 @@ User click "Cập nhật" trên Project List
 | **Phase 5** | Real-time & Chat | Thông báo thời gian thực (SSE/Pusher), Chat channel per project với typing indicator & online presence | ✅ Done |
 | **Phase 6** | Embedded Replicas & Multi-Instance | Turso Embedded Replicas cho zero-latency reads. 2 Docker instances với local SQLite sync. Sync utilities, health checks | ✅ Done |
 | **Phase 7** | RBAC — Static Role System | 4-role RBAC (ADMIN, USER, AM, CV), proxy.ts + Server Action + API guards, UserContext, admin user management UI | ✅ Done (Task 28) |
-| **Phase 8** | RBAC — Dynamic Role Management | DB-driven role-menu config, admin `/admin/roles` page with permission matrix, MenuItem/MenuPermission tables | 🔲 Planned (Task 29) |
+| **Phase 8** | RBAC — Dynamic Role & Menu Management | DB-driven role-menu config, admin `/admin/roles` page with permission matrix, MenuManager, global `useAlert`, `useModal` hooks | ✅ Done (Task 29, 32) |
 
 ---
 
@@ -398,9 +399,10 @@ User click "Cập nhật" trên Project List
 - [x] API Routes trả JSON error 401/403 qua `requireApiRole()`
 - [x] Sidebar ẩn menu items khi user không có quyền truy cập
 - [x] Admin user page hiển thị role overview cards, filter tabs theo role
-- [x] Bulk role update hoạt động đúng cho nhiều user cùng lúc
+- [x] bulk role update hoạt động đúng cho nhiều user cùng lúc
 - [x] `UserContext` cung cấp `canAccess(route)` cho conditional UI rendering
-- [ ] Dynamic RBAC: Admin cấu hình role → menu qua UI (Task 29)
+- [x] Dynamic RBAC: Admin cấu hình role → menu qua UI
+- [x] Dynamic Menu Management: Reorder và vô hiệu hóa menu linh hoạt
 
 ### UI/UX
 

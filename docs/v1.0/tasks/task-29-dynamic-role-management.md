@@ -157,7 +157,7 @@ export const ROUTE_PERMISSIONS: RoutePermission[] = [
         Quản lý Chuyên viên (/quan-ly-cv)
   admin: Sản phẩm (/admin/san-pham), Quản lý User (/admin/users), Giao KPI (/admin/kpi),
          Theo dõi các bước (/du-an/tracking), Dự án đã xoá (/admin/du-an-da-xoa),
-         Email Service (/email-service), Phân quyền (/admin/roles)
+         Phân quyền (/admin/roles)
   cta: Khởi tạo Dự án CĐS (/du-an/tao-moi)
   ```
 - [ ] Tạo seed data cho `MenuPermission`: map quyền hiện tại từ `ROUTE_PERMISSIONS` hardcode
@@ -338,7 +338,6 @@ Sidebar + Proxy now use updated permissions from DB
 | `giao-kpi` | Giao KPI | `/admin/kpi` | admin | All | All | View | View |
 | `tracking` | Theo dõi các bước | `/du-an/tracking` | admin | View | View | - | - |
 | `du-an-da-xoa` | Dự án đã xoá | `/admin/du-an-da-xoa` | admin | All | All | - | - |
-| `email-service` | Email Service | `/email-service` | admin | All | All | - | - |
 | `roles` | Phân quyền | `/admin/roles` | admin | All | - | - | - |
 | `tao-du-an` | Khởi tạo Dự án CĐS | `/du-an/tao-moi` | cta | All | All | All | All |
 
