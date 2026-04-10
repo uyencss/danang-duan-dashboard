@@ -237,9 +237,9 @@ export const ROUTE_PERMISSIONS: RoutePermission[] = [
 
 **Role Metadata** is also stored in `rbac.ts` with labels, descriptions, and badge colors for UI rendering.
 
-### 3.11 RBAC — Planned Database Models (Task 29 — Dynamic Role Management)
+### 3.11 RBAC — Database Models (Dynamic Role Management)
 
-To enable dynamic, admin-configurable role permissions without code changes, the following models will be added:
+The application uses dynamic, admin-configurable role permissions without code changes, incorporating the following models:
 
 #### MenuItem (Registry of all menu/routes)
 
@@ -400,7 +400,7 @@ Sample seed includes:
 - 5 NhatKyCongViec entries forming a timeline
 - 3 BinhLuan entries with reply thread
 
-**Planned for Task 29 (Dynamic RBAC):**
-- MenuItem seed: all sidebar routes registered in the MenuItem table
-- MenuPermission seed: default role-menu assignments matching the current static config
-- RoleConfig seed: 4 system roles with Vietnamese labels and badge colors
+**Implemented Dynamic RBAC:**
+- MenuItem seed: all sidebar routes registered in the MenuItem table, supports `isActive` toggles and `sortOrder`.
+- MenuPermission seed: default role-menu assignments mapped directly to UI (Matrix).
+- RoleConfig seed: system roles with Vietnamese labels and configurable metadata.
