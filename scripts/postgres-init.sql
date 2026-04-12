@@ -1,0 +1,2 @@
+CREATE DATABASE mobi_dev;
+GRANT ALL PRIVILEGES ON DATABASE mobi_dev TO postgres;

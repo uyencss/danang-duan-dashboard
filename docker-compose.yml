@@ -37,6 +37,27 @@ services:
       timeout: 5s
       retries: 3
 
+  db:
+    image: postgres:17-alpine
+    container_name: danang-dashboard-db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: mobi_prod
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d mobi_prod"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   web:
     build:
       context: .
@@ -50,9 +71,6 @@ services:
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - DATABASE_URL=${DATABASE_URL}
-      - TURSO_DATABASE_URL=${TURSO_DATABASE_URL}
-      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN}
-      
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
       - BETTER_AUTH_URL=${BETTER_AUTH_URL}
@@ -66,6 +84,8 @@ services:
       init-perms:
         condition: service_completed_successfully
       redis:
+        condition: service_healthy
+      db:
         condition: service_healthy
     deploy:
       resources:
@@ -104,7 +124,32 @@ services:
     networks:
       - backend
 
+  cloudflared-db:
+    image: cloudflare/cloudflared:latest
+    container_name: danang-dashboard-db-tunnel
+    restart: always
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - TUNNEL_LOGFILE=/app/logs/cloudflared-db.log
+    command: >
+      tunnel --no-autoupdate run --token ${CLOUDFLARE_DB_TUNNEL_TOKEN}
+    volumes:
+      - ./logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
+    depends_on:
+      - db
+    networks:
+      - backend
+
 volumes:
+  postgres-data:
   redis-data:
 
 networks:

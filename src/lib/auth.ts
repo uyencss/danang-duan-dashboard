@@ -1,22 +1,22 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin } from "better-auth/plugins";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 const authBaseURL =
     process.env.BETTER_AUTH_URL ||
     (process.env.VERCEL_PROJECT_PRODUCTION_URL
         ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
         : process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : undefined);
+            ? `https://${process.env.VERCEL_URL}`
+            : undefined);
 
 console.log(`[BetterAuth] Base URL: ${authBaseURL || 'undefined (will use request host)'}`);
 
 export const auth = betterAuth({
     baseURL: authBaseURL,
     database: prismaAdapter(prisma, {
-        provider: "sqlite",
+        provider: "postgresql",
     }),
     plugins: [admin()],
     emailAndPassword: {
@@ -54,7 +54,7 @@ const originalGetSession = auth.api.getSession;
     try {
         const internalUrl = process.env.INTERNAL_APP_URL || "http://127.0.0.1:3000";
         let cookieHeader = "";
-        
+
         if (opts?.headers) {
             if (typeof opts.headers.get === 'function') {
                 cookieHeader = opts.headers.get("cookie") || "";
@@ -68,12 +68,12 @@ const originalGetSession = auth.api.getSession;
                 headers: { cookie: cookieHeader },
                 cache: "no-store",
             });
-            
+
             if (res.ok) {
                 return await res.json();
             }
         }
-        
+
     } catch (e) {
         console.error("[auth] Local session fetch error:", e);
     }

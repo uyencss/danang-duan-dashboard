@@ -1,11 +1,14 @@
 import { auth } from "../src/lib/auth";
 import { PrismaClient, PhanLoaiKH, TrangThaiDuAn, UserRole, LinhVuc } from "@prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import { loadScriptEnv, runMandatoryDbBackup } from "./db-safety";
 
 loadScriptEnv();
 
-const adapter = new PrismaLibSql({ url: process.env.DATABASE_URL! });
+const connectionString = process.env.DATABASE_URL!;
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 type TableCounts = {
@@ -118,14 +121,14 @@ async function main() {
     // we use sign up to let better auth handle hashing
     // After sign up, we might need to manually update the user for role/diaBan if signUpEmail didn't pick them up.
     const user = await prisma.user.update({
-        where: { email: data.email },
-        data: {
-            role: data.role,
-            diaBan: data.diaBan,
-            emailVerified: true
-        }
+      where: { email: data.email },
+      data: {
+        role: data.role,
+        diaBan: data.diaBan,
+        emailVerified: true
+      }
     });
-    
+
     return user;
   };
 
@@ -154,11 +157,11 @@ async function main() {
   });
 
   // ===== KHÁCH HÀNG =====
-  const kh1 = await prisma.khachHang.create({ data: { ten: "Sở Y tế Đà Nẵng", phanLoai: PhanLoaiKH.CHINH_PHU, diaChi: "103 Hùng Vương, Hải Châu" }});
-  const kh2 = await prisma.khachHang.create({ data: { ten: "UBND Quận Hải Châu", phanLoai: PhanLoaiKH.CHINH_PHU, diaChi: "54 Bạch Đằng, Hải Châu" }});
+  const kh1 = await prisma.khachHang.create({ data: { ten: "Sở Y tế Đà Nẵng", phanLoai: PhanLoaiKH.CHINH_PHU, diaChi: "103 Hùng Vương, Hải Châu" } });
+  const kh2 = await prisma.khachHang.create({ data: { ten: "UBND Quận Hải Châu", phanLoai: PhanLoaiKH.CHINH_PHU, diaChi: "54 Bạch Đằng, Hải Châu" } });
 
   // ===== SẢN PHẨM =====
-  const sp1 = await prisma.sanPham.create({ data: { nhom: "Cloud", tenChiTiet: "Cloud Server MobiFone" }});
+  const sp1 = await prisma.sanPham.create({ data: { nhom: "Cloud", tenChiTiet: "Cloud Server MobiFone" } });
 
   // ===== DỰ ÁN MẪU =====
   const duAn1 = await prisma.duAn.create({
