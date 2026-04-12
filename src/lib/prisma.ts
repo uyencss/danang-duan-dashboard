@@ -9,29 +9,13 @@ function getLibSqlConfig(): Config {
   // Force HTTP instead of WebSockets (Hrana) for Turso to prevent proxy drops
   const formatUrl = (url: string) => url.replace(/^libsql:\/\//, "https://").replace(/^wss:\/\//, "https://");
 
-  // Use embedded replica only in standard production runtime.
-  // Next.js dev server (HMR) and Next.js build workers will lock the DB if they start sync threads.
-  const isProd = process.env.NODE_ENV === "production";
-  const isBuild = process.env.npm_lifecycle_event === "build" || process.argv.join(' ').includes('/next build');
-
-  const useEmbeddedReplica = isProd && !isBuild && process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN;
-
-  if (useEmbeddedReplica) {
-    logger.info({ msg: 'Initializing Turso Embedded Replica' });
-    return {
-      url: process.env.LOCAL_REPLICA_PATH || "file:./data/local-replica.db",
-      syncUrl: formatUrl(process.env.TURSO_DATABASE_URL!),
-      authToken: process.env.TURSO_AUTH_TOKEN!,
-      syncInterval: Number(process.env.TURSO_SYNC_PERIOD) || 60,
-    };
-  }
-
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is not defined in your environment variables. Refusing to connect to prevent unwanted local database creation.");
   }
 
   return {
     url: formatUrl(process.env.DATABASE_URL),
+    authToken: process.env.TURSO_AUTH_TOKEN,
   };
 }
 
@@ -51,7 +35,7 @@ if (process.env.NODE_ENV !== "production") {
 
 // Create ONE shared libSQL client for both Prisma and manual syncs
 let libsqlSyncClient = globalThis.libsqlSync;
-if (!libsqlSyncClient && config.syncUrl) {
+if (!libsqlSyncClient) {
   libsqlSyncClient = createClient(config);
   if (process.env.NODE_ENV !== "production") {
     globalThis.libsqlSync = libsqlSyncClient;
@@ -88,11 +72,9 @@ function rebuildClients(): PrismaClient {
   logger.info({ msg: `Rebuilding libSQL + Prisma client (rebuild #${count}) due to stale Hrana stream` });
 
   // Rebuild the shared libSQL client
-  if (config.syncUrl) {
-    libsqlSyncClient = createClient(config);
-    if (process.env.NODE_ENV !== "production") {
-      globalThis.libsqlSync = libsqlSyncClient;
-    }
+  libsqlSyncClient = createClient(config);
+  if (process.env.NODE_ENV !== "production") {
+    globalThis.libsqlSync = libsqlSyncClient;
   }
 
   const fresh = buildPrismaClient();
