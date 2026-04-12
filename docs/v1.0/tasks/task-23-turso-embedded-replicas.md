@@ -1,7 +1,7 @@
 # Task 23 — Turso Embedded Replicas & Multi-Instance Sync
 **Phase:** 6 (Infrastructure — Embedded Replicas)
 **Priority:** P0
-**Status:** ⏳ Todo
+**Status:** ❌ Cancelled / Deprecated (Reverted to Direct HTTP due to Cloudflare/Tailscale proxy issues dropping WebSockets)
 **PRD Ref:** NFR-05, NFR-06, NFR-07
 
 ---

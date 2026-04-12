@@ -20,7 +20,7 @@ Welcome to the Danang Project Dashboard! This guide will help you get your local
 Your `.env` should look something like this to run the app safely:
 ```env
 # Database (Turso)
-TURSO_DATABASE_URL="libsql://..."
+TURSO_DATABASE_URL="https://your-database-id.turso.io"
 TURSO_AUTH_TOKEN="..."
 
 # Authentication (Next-Auth)

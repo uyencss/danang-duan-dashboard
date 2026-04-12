@@ -1,6 +1,6 @@
 # Database Design — MobiFone Project Tracker
 **Version:** 1.3.0 | **Updated:** 2026-04-09  
-**ORM:** Prisma v7.6.x | **Database:** SQLite (dev) → Turso Embedded Replicas (prod)
+**ORM:** Prisma v7.6.x | **Database:** SQLite (dev) → Turso Cloud DB (prod)
 
 ---
 
@@ -337,7 +337,7 @@ export function isNeedsCare(lastCare: Date | null): boolean {
 npx prisma migrate dev --name init
 ```
 
-### 5.2 Production (Turso Embedded Replicas)
+### 5.2 Production (Turso Cloud DB)
 ```bash
 # Prisma CLI still connects to remote Turso for migrations
 # DATABASE_URL points to remote libsql:// URL
@@ -346,23 +346,23 @@ npx prisma migrate deploy
 
 ### 5.3 Embedded Replica Architecture
 
-Production sử dụng **Turso Embedded Replicas** thay vì kết nối trực tiếp:
+Production sử dụng **Turso Cloud DB** thay vì kết nối trực tiếp:
 
 | Aspect | Detail |
 |--------|--------|
-| **Local File** | `./data/local-replica.db` — SQLite file trên disk |
+| **Local File** | `./data/remote-cloud.db` — SQLite file trên disk |
 | **Remote Primary** | Turso Cloud (AWS ap-northeast-1) |
 | **Reads** | Từ local file — zero latency, miễn phí, không giới hạn |
 | **Writes** | Forward lên remote primary → sync ngược về local |
 | **Sync Period** | Tự động mỗi 60 giây (configurable via `TURSO_SYNC_PERIOD`) |
 | **Bandwidth** | < 3GB/tháng (free tier), ước tính sử dụng ~2MB/tháng |
-| **Multi-Instance** | 2 instances, mỗi instance có replica riêng, eventually consistent |
+| **Multi-Instance** | 2 instances, stateless HTTP direct connection |
 
 **Environment Variables:**
 ```env
 TURSO_DATABASE_URL="libsql://xxx.turso.io"    # Remote primary
 TURSO_AUTH_TOKEN="eyJhbG..."                   # Auth token
-LOCAL_REPLICA_PATH="file:./data/local-replica.db"  # Local file
+TURSO_DATABASE_URL="https://<db>.turso.io" 
 TURSO_SYNC_PERIOD=60                           # Auto-sync interval
 DATABASE_URL="libsql://xxx?authToken=xxx"      # Legacy — Prisma CLI only
 ```
@@ -372,7 +372,7 @@ DATABASE_URL="libsql://xxx?authToken=xxx"      # Legacy — Prisma CLI only
 import { createClient } from "@libsql/client";
 
 const libsqlClient = createClient({
-  url: process.env.LOCAL_REPLICA_PATH!,      // Read from local
+  url: process.env.TURSO_DATABASE_URL!,
   syncUrl: process.env.TURSO_DATABASE_URL!,  // Sync with remote
   authToken: process.env.TURSO_AUTH_TOKEN!,
   syncPeriod: Number(process.env.TURSO_SYNC_PERIOD) || 60,

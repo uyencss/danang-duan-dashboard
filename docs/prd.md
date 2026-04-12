@@ -354,10 +354,10 @@ User click "Cập nhật" trên Project List
 | NFR-02 | Responsiveness | Desktop/Laptop (primary), Tablet portrait (secondary) |
 | NFR-03 | Data Integrity | Ràng buộc FK nghiêm ngặt, không cho phép nhân đôi doanh tự |
 | NFR-04 | Security & Ops | Multi-layer RBAC (4 roles × 4 enforcement layers: proxy, server component, server action, API route), mật khẩu mã hóa, Cloudflare Tunnels, và hệ thống Structured Logging (Pino) với Auto-Redaction. |
-| NFR-05 | Scalability | SQLite cục bộ (Dev) → Turso Embedded Replicas (Production) bằng Docker container, hỗ trợ multi-instance |
+| NFR-05 | Scalability | SQLite cục bộ (Dev) → Turso Cloud DB bằng Docker container, hỗ trợ multi-instance |
 | NFR-06 | Availability | Có sẵn hệ thống backup DB, quản lý cấu hình safe db-reset qua script quản trị |
-| NFR-07 | Embedded Replicas | Sử dụng Turso Embedded Replicas cho zero-latency reads — file SQLite cục bộ tự đồng bộ từ remote Turso primary. Reads miễn phí, không giới hạn. Writes forward lên cloud. Bandwidth sync < 3GB/tháng (free tier) |
-| NFR-08 | Multi-Instance | Hỗ trợ 2 instances chạy đồng thời với eventually-consistent data (sync period ≤ 60s). Mỗi instance có replica riêng, Docker volume persist qua restarts |
+| NFR-07 | Direct HTTP | Sử dụng Turso Direct HTTP cho zero-latency reads — file SQLite cục bộ tự đồng bộ từ remote Turso primary. Reads miễn phí, không giới hạn. Writes forward lên cloud. Bandwidth sync < 3GB/tháng (free tier) |
+| NFR-08 | Multi-Instance | Hỗ trợ 2 instances chạy đồng thời với eventually-consistent data (sync period ≤ 60s). Direct HTTP connection |
 
 ---
 
@@ -372,7 +372,7 @@ User click "Cập nhật" trên Project List
 | **Phase 3** | Project Master & Task Logs | Form tạo dự án (Search & Select), Project List, 1-Click Update modal, Detail page (Timeline + Comments), 15-day Smart Alert | ✅ Done |
 | **Phase 4** | Analytics & Dashboards | 5 Dashboard views với Recharts: Tổng quan, CRM, Nhân sự, KPI, Địa bàn | ✅ Done |
 | **Phase 5** | Real-time & Chat | Thông báo thời gian thực (SSE/Pusher), Chat channel per project với typing indicator & online presence | ✅ Done |
-| **Phase 6** | Embedded Replicas & Multi-Instance | Turso Embedded Replicas cho zero-latency reads. 2 Docker instances với local SQLite sync. Sync utilities, health checks | ✅ Done |
+| **Phase 6** | Direct HTTP & Multi-Instance | Turso Direct HTTP cho zero-latency reads. 2 Docker instances với local SQLite sync. Sync utilities, health checks | ✅ Done |
 | **Phase 7** | RBAC — Static Role System | 4-role RBAC (ADMIN, USER, AM, CV), proxy.ts + Server Action + API guards, UserContext, admin user management UI | ✅ Done (Task 28) |
 | **Phase 8** | RBAC — Dynamic Role & Menu Management | DB-driven role-menu config, admin `/admin/roles` page with permission matrix, MenuManager, global `useAlert`, `useModal` hooks | ✅ Done (Task 29, 32) |
 
@@ -416,12 +416,12 @@ User click "Cập nhật" trên Project List
 - [ ] Ràng buộc FK hoạt động đúng (xóa KH → không được xóa nếu còn dự án liên quan)
 - [ ] Auto-extract Tuần/Tháng/Quý/Năm chính xác từ ngày bắt đầu
 
-### Infrastructure — Embedded Replicas
+### Infrastructure — Direct HTTP
 
-- [ ] Reads được phục vụ từ local SQLite replica (latency < 1ms)
+- [ ] Reads được phục vụ từ Turso Cloud via HTTP (latency < 1ms)
 - [ ] Writes được forward lên Turso cloud và sync ngược về local
 - [ ] 2 instances chạy đồng thời, dữ liệu nhất quán sau sync period (≤ 60s)
-- [ ] Docker volumes persist local replica file qua container restarts
+- [ ] Docker instances connect statelessly
 - [ ] Prisma CLI migrations vẫn chạy đúng với remote Turso
 - [ ] Sync bandwidth < 3GB/tháng (free tier limit)
 - [ ] Health check script báo cáo trạng thái sync chính xác
