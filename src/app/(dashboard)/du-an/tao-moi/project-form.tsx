@@ -759,6 +759,24 @@ export default function ProjectForm() {
               </div>
             </div>
           </div>
+
+          {/* Footer Area with duplicate buttons */}
+          <div className="px-8 py-6 border-t border-blue-50/50 bg-gradient-to-r from-transparent via-white to-blue-50/40 flex items-center justify-end gap-3">
+            <Link
+              href="/du-an"
+              className="px-8 py-3 rounded-full border border-slate-200 text-slate-500 font-bold hover:bg-slate-50 transition-all text-sm bg-white shadow-sm"
+            >
+              Hủy
+            </Link>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-12 py-3 rounded-full bg-gradient-to-r from-[#0058bc] to-[#00aaff] text-white font-[1000] text-sm shadow-2xl shadow-blue-500/30 hover:scale-[1.03] active:scale-[0.97] transition-all flex items-center gap-2 border border-white/20"
+            >
+              <CheckCircle className="size-4" />{" "}
+              {loading ? "Đang xử lý..." : "KHỞI TẠO DỰ ÁN"}
+            </button>
+          </div>
         </div>
       </form>
     </Form>
