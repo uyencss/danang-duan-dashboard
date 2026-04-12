@@ -12,6 +12,8 @@ export const metadata = {
   title: "Quản lý Vai trò - Administrator",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminRolesPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
@@ -58,21 +60,19 @@ export default async function AdminRolesPage(props: {
       <div className="mb-6 flex gap-2 border-b border-outline-variant/10">
         <Link
           href={`/admin/roles?tab=permissions${roleParam}`}
-          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${
-            tab === "permissions"
+          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${tab === "permissions"
               ? "border-primary text-primary"
               : "border-transparent text-on-surface-variant hover:text-on-surface hover:bg-slate-50"
-          }`}
+            }`}
         >
           Ma trận Quyền hạn
         </Link>
         <Link
           href={`/admin/roles?tab=menus${roleParam}`}
-          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${
-            tab === "menus"
+          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${tab === "menus"
               ? "border-primary text-primary"
               : "border-transparent text-on-surface-variant hover:text-on-surface hover:bg-slate-50"
-          }`}
+            }`}
         >
           Cấu hình Menu
         </Link>
@@ -82,10 +82,10 @@ export default async function AdminRolesPage(props: {
         {tab === "permissions" ? (
           <>
             <RoleListPanel roleConfigs={roleConfigs} />
-            <PermissionMatrix 
-              menuItems={menuItems} 
-              initialPermissions={permissions} 
-              roleConfigs={roleConfigs} 
+            <PermissionMatrix
+              menuItems={menuItems}
+              initialPermissions={permissions}
+              roleConfigs={roleConfigs}
             />
           </>
         ) : (

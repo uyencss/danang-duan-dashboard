@@ -8,9 +8,11 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function SanPhamPage() {
   const user = await requireRole("ADMIN", "USER");
-  
+
   const { data = [], error } = await getSanPhamList();
 
   return (
@@ -32,7 +34,7 @@ export default async function SanPhamPage() {
 
       {error ? (
         <div className="p-12 text-center bg-red-50 text-red-500 rounded-2xl border border-red-200">
-           ⚠️ {error}
+          ⚠️ {error}
         </div>
       ) : (
         <ProductsTable data={data} />

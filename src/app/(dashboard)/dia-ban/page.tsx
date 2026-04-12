@@ -4,6 +4,8 @@ import { AlertCircle } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { requireRole } from "@/lib/auth-utils";
 
+export const dynamic = "force-dynamic";
+
 export default async function DiaBanPage({ searchParams }: { searchParams: Promise<{ type?: string, year?: string, value?: string }> }) {
     await requireRole("ADMIN", "USER");
     const params = await searchParams;
@@ -23,9 +25,9 @@ export default async function DiaBanPage({ searchParams }: { searchParams: Promi
     if (res.error || !res.diaBanData || !res.topStaffData) {
         return (
             <div className="flex flex-col items-center justify-center p-12 text-center">
-                 <AlertCircle className="size-12 text-red-500 mb-4" />
-                 <h2 className="text-2xl font-black text-gray-800">Lỗi tải dữ liệu</h2>
-                 <p className="text-gray-500 mt-2">{res.error || "Không thể lấy dữ liệu phân tích Địa Bàn."}</p>
+                <AlertCircle className="size-12 text-red-500 mb-4" />
+                <h2 className="text-2xl font-black text-gray-800">Lỗi tải dữ liệu</h2>
+                <p className="text-gray-500 mt-2">{res.error || "Không thể lấy dữ liệu phân tích Địa Bàn."}</p>
             </div>
         );
     }

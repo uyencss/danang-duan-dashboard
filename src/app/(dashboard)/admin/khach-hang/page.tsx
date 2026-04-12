@@ -5,6 +5,8 @@ import { Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 
+export const dynamic = "force-dynamic";
+
 export default async function KhachHangPage() {
   // Ensure Authenticated users can access
   await requireAuth();
@@ -38,7 +40,7 @@ export default async function KhachHangPage() {
       {/* Main Table with all Client interactivity */}
       {error ? (
         <div className="p-12 text-center bg-red-50 text-red-500 rounded-2xl border border-red-200 font-bold">
-           ⚠️ {error}
+          ⚠️ {error}
         </div>
       ) : (
         <CustomersTable data={data} />

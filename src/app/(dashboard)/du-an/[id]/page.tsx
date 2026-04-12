@@ -39,6 +39,8 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { EditProjectTrigger } from "./edit-project-trigger";
 import prisma from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   MOI: { label: "Mới", className: "bg-blue-100 text-blue-700" },
   DANG_LAM_VIEC: { label: "Đang làm việc", className: "bg-amber-100 text-amber-700" },
@@ -64,8 +66,8 @@ export default async function ProjectDetailPage({
     select: { id: true, name: true }
   });
 
-  const allFiles = project?.nhatKy?.flatMap((nk: any) => 
-      nk.files?.map((f: any) => ({ ...f, log: { user: nk.user } })) || []
+  const allFiles = project?.nhatKy?.flatMap((nk: any) =>
+    nk.files?.map((f: any) => ({ ...f, log: { user: nk.user } })) || []
   ) || [];
 
   if (error || !project) {
@@ -190,12 +192,12 @@ export default async function ProjectDetailPage({
         <div className="p-5 flex items-center bg-slate-50/30">
           <div className="w-full">
             <div className="flex items-center justify-between mb-2">
-                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Tiến độ quy trình</p>
-                 <Flag className="size-3 text-blue-400" />
+              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Tiến độ quy trình</p>
+              <Flag className="size-3 text-blue-400" />
             </div>
             {project.hienTaiBuoc ? (
               <div className="px-3 py-2 bg-gradient-to-r from-[#0058bc] to-[#0070eb] text-white rounded-2xl shadow-lg shadow-blue-500/20 border border-blue-400/20 flex items-center justify-center">
-                 <span className="text-[11px] font-black uppercase tracking-tight italic">{project.hienTaiBuoc}</span>
+                <span className="text-[11px] font-black uppercase tracking-tight italic">{project.hienTaiBuoc}</span>
               </div>
             ) : (
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic bg-white px-3 py-2 rounded-2xl border border-slate-100 flex items-center justify-center">Chưa bắt đầu</span>
@@ -334,10 +336,10 @@ export default async function ProjectDetailPage({
                 currentUser={
                   currentUser
                     ? {
-                        id: currentUser.id,
-                        name: currentUser.name,
-                        role: currentUser.role,
-                      }
+                      id: currentUser.id,
+                      name: currentUser.name,
+                      role: currentUser.role,
+                    }
                     : null
                 }
               />
@@ -380,8 +382,8 @@ export default async function ProjectDetailPage({
           {/* Key Project Status - Trong Diem */}
           <div className={cn(
             "p-4 rounded-xl flex items-center justify-center gap-3 border shadow-sm",
-            project.isTrongDiem 
-              ? "bg-red-50 border-red-200 text-red-600" 
+            project.isTrongDiem
+              ? "bg-red-50 border-red-200 text-red-600"
               : "bg-blue-50/50 border-blue-100/50 text-blue-600/30"
           )}>
             <Star className={cn("size-6", project.isTrongDiem ? "fill-current" : "")} />
@@ -394,17 +396,17 @@ export default async function ProjectDetailPage({
 
           {/* Key Project Status - Ky Vong */}
           <div className={cn(
-             "p-4 rounded-xl flex items-center justify-center gap-3 border shadow-sm",
-             project.isKyVong 
-               ? "bg-emerald-50 border-emerald-200 text-emerald-600" 
-               : "bg-blue-50/50 border-blue-100/50 text-blue-600/30"
-           )}>
-             <Banknote className={cn("size-6", project.isKyVong ? "fill-emerald-100/50" : "")} />
-             {project.isKyVong && (
-               <span className="font-black uppercase tracking-widest text-sm">
-                 Dự án Kỳ vọng
-               </span>
-             )}
+            "p-4 rounded-xl flex items-center justify-center gap-3 border shadow-sm",
+            project.isKyVong
+              ? "bg-emerald-50 border-emerald-200 text-emerald-600"
+              : "bg-blue-50/50 border-blue-100/50 text-blue-600/30"
+          )}>
+            <Banknote className={cn("size-6", project.isKyVong ? "fill-emerald-100/50" : "")} />
+            {project.isKyVong && (
+              <span className="font-black uppercase tracking-widest text-sm">
+                Dự án Kỳ vọng
+              </span>
+            )}
           </div>
 
           {/* Health Card */}

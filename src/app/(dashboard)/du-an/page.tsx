@@ -10,6 +10,8 @@ export const metadata = {
   title: "CRM & Danh sách Dự án",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function DuAnPage({
   searchParams,
 }: {
@@ -62,9 +64,9 @@ export default async function DuAnPage({
     const dateB = new Date(b.ngayBatDau).getTime();
 
     if (prioA === 4) {
-       return dateA - dateB;
+      return dateA - dateB;
     }
-    
+
     return dateB - dateA;
   });
 
@@ -99,7 +101,7 @@ export default async function DuAnPage({
         </div>
       ) : (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-           <ProjectsTable data={sortedData} totalCount={total} initialSearch={filters.search} />
+          <ProjectsTable data={sortedData} totalCount={total} initialSearch={filters.search} />
         </div>
       )}
     </div>

@@ -8,6 +8,8 @@ export const metadata = {
   title: "Dự án đã xoá",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function DeletedProjectsPage({
   searchParams,
 }: {

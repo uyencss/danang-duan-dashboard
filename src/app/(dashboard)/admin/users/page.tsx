@@ -6,6 +6,8 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 
 import { requireRole } from "@/lib/auth-utils";
 
+export const dynamic = "force-dynamic";
+
 export default async function NhanVienPage() {
   const user = await requireRole("ADMIN", "USER");
 
@@ -33,10 +35,10 @@ export default async function NhanVienPage() {
             Thiết lập quyền hạn, quản lý địa bàn và quản trị bảo mật cho toàn bộ nhân viên trong hệ thống.
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-xl border border-yellow-100">
-           <ShieldCheck className="size-4 text-yellow-600" />
-           <span className="text-xs font-bold text-yellow-700 uppercase tracking-wide">Chế độ Quản trị tối cao</span>
+          <ShieldCheck className="size-4 text-yellow-600" />
+          <span className="text-xs font-bold text-yellow-700 uppercase tracking-wide">Chế độ Quản trị tối cao</span>
         </div>
       </div>
 
@@ -44,7 +46,7 @@ export default async function NhanVienPage() {
 
       {error ? (
         <div className="p-12 text-center bg-red-50 text-red-500 rounded-2xl border border-red-200">
-           {error}
+          {error}
         </div>
       ) : (
         <UsersTable data={data} />

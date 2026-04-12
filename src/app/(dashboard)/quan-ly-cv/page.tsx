@@ -5,6 +5,8 @@ import { TimeFilters } from "@/components/dashboard/time-filters";
 import { AlertCircle } from "lucide-react";
 import { requireRole } from "@/lib/auth-utils";
 
+export const dynamic = "force-dynamic";
+
 export default async function CVManagementPage({
     searchParams,
 }: {
@@ -21,9 +23,9 @@ export default async function CVManagementPage({
     if (res.error || !res.data) {
         return (
             <div className="flex flex-col items-center justify-center p-12 text-center">
-                 <AlertCircle className="size-12 text-red-500 mb-4" />
-                 <h2 className="text-2xl font-black text-gray-800">Lỗi tải dữ liệu</h2>
-                 <p className="text-gray-500 mt-2">{res.error || "Không thể lấy dữ liệu quản lý Chuyên viên."}</p>
+                <AlertCircle className="size-12 text-red-500 mb-4" />
+                <h2 className="text-2xl font-black text-gray-800">Lỗi tải dữ liệu</h2>
+                <p className="text-gray-500 mt-2">{res.error || "Không thể lấy dữ liệu quản lý Chuyên viên."}</p>
             </div>
         );
     }
@@ -31,7 +33,7 @@ export default async function CVManagementPage({
     return (
         <div className="space-y-6">
             <Breadcrumb items={[{ label: "Báo cáo" }, { label: "Quản lý Chuyên viên" }]} />
-            
+
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-[#191c1e] tracking-tight">Quản lý Chuyên viên</h1>
