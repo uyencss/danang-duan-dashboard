@@ -243,12 +243,10 @@ Production:   Turso Direct HTTP
 ```typescript
 import { createClient } from "@libsql/client";
 
-// Production: local file + remote sync
+// Production: Direct HTTP Connection (Stateless)
 const client = createClient({
-  url: "file:./data/remote-cloud.db",     // Read from local
-  syncUrl: process.env.TURSO_DATABASE_URL!, // Sync with remote
+  url: process.env.TURSO_DATABASE_URL!,     // Direct HTTPS
   authToken: process.env.TURSO_AUTH_TOKEN!,
-  syncPeriod: 60,                           // Auto-sync interval
 });
 ```
 

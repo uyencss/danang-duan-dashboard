@@ -344,27 +344,25 @@ npx prisma migrate dev --name init
 npx prisma migrate deploy
 ```
 
-### 5.3 Embedded Replica Architecture
+### 5.3 Direct Connection Architecture (Stateless HTTP)
 
-Production sử dụng **Turso Cloud DB** thay vì kết nối trực tiếp:
+Production sử dụng **Turso Direct Connection** qua Stateless HTTP thay vì Embedded Replicas để tương thích tốt nhất với các dịch vụ proxy mạng (Cloudflare, Tailscale):
 
 | Aspect | Detail |
 |--------|--------|
-| **Local File** | `./data/remote-cloud.db` — SQLite file trên disk |
+| **Local File** | Không sử dụng (No local replica) |
 | **Remote Primary** | Turso Cloud (AWS ap-northeast-1) |
-| **Reads** | Từ local file — zero latency, miễn phí, không giới hạn |
-| **Writes** | Forward lên remote primary → sync ngược về local |
-| **Sync Period** | Tự động mỗi 60 giây (configurable via `TURSO_SYNC_PERIOD`) |
+| **Reads/Writes** | Execute trực tiếp lên Turso qua proxy-safe HTTPS |
+| **Connection Protocol** | Stateless HTTP (`https://`) (Bypass hoàn toàn WebSocket drops) |
+| **Sync Period** | Real-time (không cần sync định kỳ do query trực tiếp) |
 | **Bandwidth** | < 3GB/tháng (free tier), ước tính sử dụng ~2MB/tháng |
 | **Multi-Instance** | 2 instances, stateless HTTP direct connection |
 
 **Environment Variables:**
 ```env
-TURSO_DATABASE_URL="libsql://xxx.turso.io"    # Remote primary
+TURSO_DATABASE_URL="https://<db>.turso.io"    # Direct Stateless connection
 TURSO_AUTH_TOKEN="eyJhbG..."                   # Auth token
-TURSO_DATABASE_URL="https://<db>.turso.io" 
-TURSO_SYNC_PERIOD=60                           # Auto-sync interval
-DATABASE_URL="libsql://xxx?authToken=xxx"      # Legacy — Prisma CLI only
+DATABASE_URL="https://<db>.turso.io?authToken=..." # Prisma compatible connection
 ```
 
 **Client Configuration:**
@@ -373,9 +371,7 @@ import { createClient } from "@libsql/client";
 
 const libsqlClient = createClient({
   url: process.env.TURSO_DATABASE_URL!,
-  syncUrl: process.env.TURSO_DATABASE_URL!,  // Sync with remote
   authToken: process.env.TURSO_AUTH_TOKEN!,
-  syncPeriod: Number(process.env.TURSO_SYNC_PERIOD) || 60,
 });
 ```
 
