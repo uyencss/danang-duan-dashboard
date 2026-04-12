@@ -28,8 +28,7 @@ async function syncDatabases() {
 
     logger.info({ msg: 'Database sync complete' });
   } catch (err) {
-    logger.error({ msg: 'Database sync failed. Executing via docker compose might be unavailable.', error: err });
-    process.exit(1);
+    logger.warn({ msg: 'Database sync failed or skipped. Are you developing on a separate machine? Continuing to start dev server...', error: err instanceof Error ? err.message : String(err) });
   }
 }
 syncDatabases();
