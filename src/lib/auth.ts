@@ -37,8 +37,12 @@ export const auth = betterAuth({
         }
     },
     advanced: {
-        trustHost: true
-    } as any
+        trustHost: true,
+        defaultCookieAttributes: {
+            sameSite: "lax",
+        }
+    } as any,
+    trustedOrigins: ["http://localhost:3000", "http://127.0.0.1:3000"],
 });
 
 // Monkey-patch to force all server-side session checks to loop back locally

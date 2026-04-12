@@ -16,6 +16,13 @@ function getLibSqlConfig(): Config {
   return {
     url: formatUrl(process.env.DATABASE_URL),
     authToken: process.env.TURSO_AUTH_TOKEN,
+    fetch: async (url: string, init?: RequestInit) => {
+      const res = await globalThis.fetch(url, init);
+      if (res.body && typeof (res.body as any).cancel !== "function") {
+        (res.body as any).cancel = async () => {};
+      }
+      return res;
+    }
   };
 }
 
