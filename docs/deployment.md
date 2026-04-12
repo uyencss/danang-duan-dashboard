@@ -14,7 +14,7 @@ The application runs inside a Docker container for consistency across staging an
 
 ## 3. Database: Turso (libSQL)
 - We utilize Turso for our database. 
-- Production utilizes **Embedded Replicas**. This means the SQLite database runs right beside the Node.js process inside the server, syncing micro-changes back to the central Turso cluster. This avoids high network latency for simple read queries.
+- Production utilizes a **Direct Stateless HTTP** connection to the Turso Cloud. This ensures maximum stability and reliability when routing server traffic through secure proxies (like Cloudflare or Tailscale), bypassing the WebSocket drops that occur with embedded replica syncs.
 
 ## 4. server Logs & Monitoring
 We use **Winston** for robust file-system logging.

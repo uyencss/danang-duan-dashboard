@@ -15,7 +15,7 @@
 | **Charts** | Recharts | 3.8.x | Data visualization cho dashboards |
 | **ORM** | Prisma | 7.6.x | Database access & migration |
 | **Database (Dev)** | SQLite | 3.x | Dev database (local file) |
-| **Database (Prod)** | Turso (libSQL) | Embedded Replicas | Local SQLite replica auto-synced from Turso Cloud primary. Zero-latency reads, writes forwarded to cloud |
+| **Database (Prod)** | Turso (libSQL) | Direct HTTP | Direct HTTP connection to Turso Cloud. Ensures stability through proxy. |
 | **Auth** | Better Auth | latest | Authentication & authorization (thay thế Auth.js/NextAuth) |
 | **Form Validation** | React Hook Form + Zod | RHF 7.72.x + Zod 3.23.x | Form management & schema validation |
 | **Bundler** | Turbopack | Integrated | Default bundler trong Next.js 16 |
@@ -233,22 +233,20 @@ npx prisma init --datasource-provider sqlite
 **Database strategy:**
 ```
 Development:  SQLite (direct)    file:./dev.db
-Production:   Turso Embedded Replicas
-              ├─ Reads:  local-replica.db (zero latency, FREE)
+Production:   Turso Direct HTTP
+              ├─ Reads:  remote-cloud.db (zero latency, FREE)
               ├─ Writes: forwarded to Turso Cloud primary
               └─ Sync:   auto-sync every 60s + manual after writes
 ```
 
-**Embedded Replica Configuration:**
+**Direct HTTP Configuration:**
 ```typescript
 import { createClient } from "@libsql/client";
 
-// Production: local file + remote sync
+// Production: Direct HTTP Connection (Stateless)
 const client = createClient({
-  url: "file:./data/local-replica.db",     // Read from local
-  syncUrl: process.env.TURSO_DATABASE_URL!, // Sync with remote
+  url: process.env.TURSO_DATABASE_URL!,     // Direct HTTPS
   authToken: process.env.TURSO_AUTH_TOKEN!,
-  syncPeriod: 60,                           // Auto-sync interval
 });
 ```
 
@@ -371,8 +369,8 @@ type ProjectForm = z.infer<typeof projectSchema>;
 | Environment | Platform | Database |
 |------------|----------|----------|
 | **Development** | `localhost:3000` | SQLite (direct) |
-| **Production (Instance 1)** | Docker :3000 (VPS) | Turso Embedded Replica |
-| **Production (Instance 2)** | Docker :3001 (VPS) | Turso Embedded Replica |
+| **Production (Instance 1)** | Docker :3000 (VPS) | Direct HTTP |
+| **Production (Instance 2)** | Docker :3001 (VPS) | Direct HTTP |
 
 **Build & Deploy:**
 ```bash

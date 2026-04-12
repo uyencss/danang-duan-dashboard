@@ -7,7 +7,7 @@ RUN apk add --no-cache libc6-compat tzdata
 ENV TZ=Asia/Ho_Chi_Minh
 
 WORKDIR /app
-RUN mkdir -p data && chown -R 1001:1001 /app/data
+
 
 # Install dependencies
 COPY package.json package-lock.json* ./
@@ -45,7 +45,7 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Create data, logs, and uploads directory for Turso, Pino, and file attachments and set permissions
-RUN mkdir -p /app/data /app/logs /app/uploads && chown -R nextjs:nodejs /app/data /app/logs /app/uploads
+RUN mkdir -p logs uploads && chown -R nextjs:nodejs logs uploads
 
 # Copy public assets
 COPY --from=builder /app/public ./public

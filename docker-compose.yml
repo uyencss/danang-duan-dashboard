@@ -3,10 +3,10 @@ services:
     image: alpine:latest
     container_name: danang-dashboard-perms
     command: >
-      sh -c "mkdir -p /app/data /app/logs /app/uploads &&
-             chown -R 1001:1001 /app/data /app/logs /app/uploads"
+      sh -c "mkdir -p /app/logs /app/uploads &&
+             chown -R 1001:1001 /app/uploads &&
+             chmod 777 /app/logs"
     volumes:
-      - ./data:/app/data
       - ./logs:/app/logs
       - ./uploads:/app/uploads
 
@@ -15,15 +15,12 @@ services:
     container_name: danang-dashboard-redis
     restart: always
     command: >
-      redis-server
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
-      --save 60 1000
-      --loglevel warning
+      sh -c "redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save 60 1000 --loglevel warning 2>&1 | tee -a /app/logs/redis.log"
     environment:
       - TZ=Asia/Ho_Chi_Minh
     volumes:
       - redis-data:/data
+      - ./logs:/app/logs
     deploy:
       resources:
         limits:
@@ -48,13 +45,14 @@ services:
         BUILD_ID: ${BUILD_ID:-default_build_id}
     container_name: danang-dashboard-web
     restart: always
+    command: >
+      sh -c "node server.js 2>&1 | tee -a /app/logs/web.log"
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - DATABASE_URL=${DATABASE_URL}
       - TURSO_DATABASE_URL=${TURSO_DATABASE_URL}
       - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN}
-      - TURSO_SYNC_PERIOD=${TURSO_SYNC_PERIOD:-60}
-      - LOCAL_REPLICA_PATH=file:/app/data/local-replica.db
+      
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
       - BETTER_AUTH_URL=${BETTER_AUTH_URL}
@@ -62,7 +60,6 @@ services:
       - NEXT_PUBLIC_ABLY_KEY=${NEXT_PUBLIC_ABLY_KEY}
       - REDIS_URL=redis://redis:6379
     volumes:
-      - ./data:/app/data
       - ./logs:/app/logs
       - ./uploads:/app/uploads
     depends_on:
@@ -89,8 +86,11 @@ services:
     restart: always
     environment:
       - TZ=Asia/Ho_Chi_Minh
+      - TUNNEL_LOGFILE=/app/logs/cloudflared.log
     command: >
       tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    volumes:
+      - ./logs:/app/logs
     deploy:
       resources:
         limits:
