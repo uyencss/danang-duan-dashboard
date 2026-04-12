@@ -6,29 +6,32 @@ import { logger } from "./logger";
 
 
 function getLibSqlConfig(): Config {
+  // Force HTTP instead of WebSockets (Hrana) for Turso to prevent proxy drops
+  const formatUrl = (url: string) => url.replace(/^libsql:\/\//, "https://").replace(/^wss:\/\//, "https://");
+
   // Use embedded replica only in standard production runtime.
   // Next.js dev server (HMR) and Next.js build workers will lock the DB if they start sync threads.
   const isProd = process.env.NODE_ENV === "production";
   const isBuild = process.env.npm_lifecycle_event === "build" || process.argv.join(' ').includes('/next build');
-  
+
   const useEmbeddedReplica = isProd && !isBuild && process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN;
-  
+
   if (useEmbeddedReplica) {
     logger.info({ msg: 'Initializing Turso Embedded Replica' });
     return {
       url: process.env.LOCAL_REPLICA_PATH || "file:./data/local-replica.db",
-      syncUrl: process.env.TURSO_DATABASE_URL!,
+      syncUrl: formatUrl(process.env.TURSO_DATABASE_URL!),
       authToken: process.env.TURSO_AUTH_TOKEN!,
       syncInterval: Number(process.env.TURSO_SYNC_PERIOD) || 60,
     };
   }
-  
+
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is not defined in your environment variables. Refusing to connect to prevent unwanted local database creation.");
   }
 
   return {
-    url: process.env.DATABASE_URL,
+    url: formatUrl(process.env.DATABASE_URL),
   };
 }
 
@@ -57,7 +60,7 @@ if (!libsqlSyncClient && config.syncUrl) {
 
 function buildPrismaClient(): PrismaClient {
   const adapter = new PrismaLibSql(config);
-  
+
   // Monkey-patch PrismaLibSql to use our shared client instead of creating another one
   // This prevents multiple client sync loops from causing WAL database lock conflicts
   adapter.createClient = (_cfg: Config) => {
@@ -107,14 +110,14 @@ let currentPrisma: PrismaClient = globalThis.prisma ?? buildPrismaClient();
 const prisma: PrismaClient = new Proxy(currentPrisma, {
   get(target, prop, receiver) {
     const value = Reflect.get(currentPrisma, prop, receiver);
-    
+
     // Only wrap Prisma model accessors (they return objects with findMany, create, etc.)
     if (typeof value === "object" && value !== null && !Array.isArray(value)) {
       return new Proxy(value, {
         get(modelTarget, modelProp, modelReceiver) {
           const modelMethod = Reflect.get(modelTarget, modelProp, modelReceiver);
           if (typeof modelMethod !== "function") return modelMethod;
-          
+
           return async function (...args: any[]) {
             try {
               return await modelMethod.apply(modelTarget, args);
@@ -130,7 +133,7 @@ const prisma: PrismaClient = new Proxy(currentPrisma, {
         },
       });
     }
-    
+
     // For direct methods like $queryRaw, $executeRaw, $transaction, etc.
     if (typeof value === "function") {
       return async function (...args: any[]) {
@@ -146,7 +149,7 @@ const prisma: PrismaClient = new Proxy(currentPrisma, {
         }
       };
     }
-    
+
     return value;
   },
 });
