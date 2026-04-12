@@ -1,5 +1,5 @@
 # Tech Stack — MobiFone Project Tracker
-**Version:** 1.3.0 | **Updated:** 2026-04-09
+**Version:** 1.4.0 | **Updated:** 2026-04-12
 
 ---
 
@@ -14,8 +14,8 @@
 | **UI Components** | shadcn/ui | CLI v4.x | Copy-paste component library (Radix UI) |
 | **Charts** | Recharts | 3.8.x | Data visualization cho dashboards |
 | **ORM** | Prisma | 7.6.x | Database access & migration |
-| **Database (Dev)** | SQLite | 3.x | Dev database (local file) |
-| **Database (Prod)** | Turso (libSQL) | Direct HTTP | Direct HTTP connection to Turso Cloud. Ensures stability through proxy. |
+| **Database** | sqld (libSQL Server) | latest | Self-hosted libSQL database server (Docker container) |
+| **Database Access** | Prisma + @prisma/adapter-libsql | HTTP | Stateless HTTP connection to sqld (prod: internal Docker, dev: Cloudflare Tunnel) |
 | **Auth** | Better Auth | latest | Authentication & authorization (thay thế Auth.js/NextAuth) |
 | **Form Validation** | React Hook Form + Zod | RHF 7.72.x + Zod 3.23.x | Form management & schema validation |
 | **Bundler** | Turbopack | Integrated | Default bundler trong Next.js 16 |
@@ -232,22 +232,41 @@ npx prisma init --datasource-provider sqlite
 
 **Database strategy:**
 ```
-Development:  SQLite (direct)    file:./dev.db
-Production:   Turso Direct HTTP
-              ├─ Reads:  remote-cloud.db (zero latency, FREE)
-              ├─ Writes: forwarded to Turso Cloud primary
-              └─ Sync:   auto-sync every 60s + manual after writes
+Production:   Self-hosted sqld (Docker container)
+              ├─ URL: http://sqld:8080 (internal Docker network, < 1ms)
+              ├─ Namespace: default (prod data)
+              └─ Auth: Ed25519 JWT token
+
+Development:  Same sqld via Cloudflare Tunnel
+              ├─ URL: https://turso.gpsdna.io.vn (Cloudflare Tunnel)
+              ├─ Namespace: dev (dev data — isolated from prod)
+              └─ Auth: Ed25519 JWT token (separate dev token)
 ```
 
-**Direct HTTP Configuration:**
+**sqld Connection Configuration:**
 ```typescript
 import { createClient } from "@libsql/client";
 
-// Production: Direct HTTP Connection (Stateless)
+// Works for both environments:
+// Prod: http://sqld:8080 (Docker internal)
+// Dev:  https://turso.gpsdna.io.vn (Cloudflare Tunnel)
 const client = createClient({
-  url: process.env.TURSO_DATABASE_URL!,     // Direct HTTPS
+  url: process.env.TURSO_DATABASE_URL!,
   authToken: process.env.TURSO_AUTH_TOKEN!,
 });
+```
+
+**JWT Key Management:**
+- Keys stored in `sqld-keys/` (gitignored via `*.pem`)
+- Token generation: `npx tsx scripts/sqld-keys/generate-token.ts --sub prod|dev`
+- Public key synced to GitHub Secrets → written to server on deploy
+- See `sqld-keys/README.md` for setup instructions
+
+**Database Sync (Dev ↔ Prod):**
+```bash
+pnpm db:sync:prod-to-dev    # Copy prod data to dev
+pnpm db:sync:dev-to-prod    # Promote dev to prod (auto-backup)
+pnpm db:backup               # SQL dump of any namespace
 ```
 
 ---
@@ -368,9 +387,8 @@ type ProjectForm = z.infer<typeof projectSchema>;
 
 | Environment | Platform | Database |
 |------------|----------|----------|
-| **Development** | `localhost:3000` | SQLite (direct) |
-| **Production (Instance 1)** | Docker :3000 (VPS) | Direct HTTP |
-| **Production (Instance 2)** | Docker :3001 (VPS) | Direct HTTP |
+| **Development** | `localhost:3000` | sqld via Cloudflare Tunnel (`https://turso.gpsdna.io.vn`) — dev namespace |
+| **Production** | Docker :3000 (VPS) | sqld via Docker network (`http://sqld:8080`) — default namespace |
 
 **Build & Deploy:**
 ```bash

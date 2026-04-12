@@ -1,5 +1,5 @@
 # System Architecture — MobiFone Project Tracker
-**Version:** 1.4.0 | **Updated:** 2026-04-12
+**Version:** 1.5.0 | **Updated:** 2026-04-12
 
 ---
 
@@ -12,7 +12,7 @@
 └──────────────────────┬───────────────────────────────────┘
                        │ HTTPS (via Cloudflare Tunnel)
 ┌──────────────────────▼───────────────────────────────────┐
-│              NEXT.JS 16 SERVER (Instance 1 / 2)          │
+│              NEXT.JS 16 SERVER (Docker Container)         │
 │  ┌─────────────┐ ┌──────────────┐ ┌──────────────────┐   │
 │  │  proxy.ts   │ │ App Router   │ │  Server Actions  │   │
 │  │ (Auth+RBAC) │ │ (Pages/API)  │ │  (Role Guards)   │   │
@@ -34,14 +34,32 @@
 │  ┌──────────────────────▼─────────────────────────────┐   │
 │  │          libSQL Client (Stateless HTTP)             │   │
 │  │  ┌──────────────────────────────────────────────┐  │   │
-│  │  │        DIRECT CONNECTION TO TURSO CLOUD      │  │   │
-│  │  │   (HTTPS / Stateless / Proxy-safe)           │  │   │
+│  │  │   PROD: http://sqld:8080 (internal Docker)   │  │   │
+│  │  │   DEV:  https://turso.gpsdna.io.vn (Tunnel)  │  │   │
 │  │  └──────────────────────────────────────────────┘  │   │
-│                         │                             │   │
-└─────────────────────────┼─────────────────────────────┼───┘
-                          │                             │
-                          ▼                             ▼
-                  Turso Cloud Primary           Turso Cloud Primary
+│  └──────────────────────┬─────────────────────────────┘   │
+│                         │                                 │
+└─────────────────────────┼─────────────────────────────────┘
+                          │
+    ┌─────────────────────▼─────────────────────────────┐
+    │              sqld (libSQL Server)                   │
+    │        Docker Container: danang-dashboard-db        │
+    │  ┌──────────────┐  ┌───────────────────────────┐   │
+    │  │ prod database │  │ dev database (namespace)  │   │
+    │  │  (default)    │  │ accessed via ?db=dev      │   │
+    │  └──────────────┘  └───────────────────────────┘   │
+    │         ▲                       ▲                   │
+    │         │                       │                   │
+    │    JWT Auth Required       JWT Auth Required         │
+    └─────────────────────────────────────────────────────┘
+                          ▲
+                          │ Cloudflare Tunnel
+                          │ turso.gpsdna.io.vn → sqld:8080
+                          │
+                   ┌──────┴──────────────┐
+                   │  Developer Laptop   │
+                   │  (local npm run dev)│
+                   └─────────────────────┘
 ```
 
 ---
@@ -59,13 +77,61 @@ Hệ thống sử dụng **Layered Monolith** pattern trong Next.js 16 App Route
 | **Server Actions** | `src/app/(dashboard)/*/actions.ts` | Direct server mutations (with role guards) |
 | **Real-time** | `src/app/api/*/stream/` | SSE streams for chat & notifications |
 | **Service** | `src/lib/services/` | Business logic, validation |
-| **Data Access** | `src/lib/prisma.ts` | Prisma Client + libSQL Direct HTTP connection |
+| **Data Access** | `src/lib/prisma.ts` | Prisma Client + libSQL HTTP connection to self-hosted sqld |
 | **Observability** | `src/lib/logger/` | Centralized JSON logging and auto-rotation |
 | **Database** | `prisma/` | Schema, migrations, seed |
 
 ---
 
-## 3. Directory Structure
+## 3. Database Architecture: Self-Hosted sqld
+
+### 3.1 Overview
+
+The database is a **self-hosted `sqld` (libSQL Server)** running as a Docker container within the same `docker-compose.yml` network. This replaces the previous Turso Cloud managed service.
+
+### 3.2 Connection Topology
+
+| Environment | Connection Path | URL | Latency |
+|-------------|----------------|-----|---------|
+| **Production** (Docker `web` container) | Internal Docker network | `http://sqld:8080` | < 1ms |
+| **Development** (Local laptop) | Cloudflare Tunnel (HTTPS) | `https://turso.gpsdna.io.vn` | ~50-100ms |
+
+### 3.3 Database Separation
+
+| Database | Namespace | Purpose |
+|----------|-----------|---------|
+| `default` | Production | Live application data, used by Docker `web` container |
+| `dev` | Development | Developer data, accessed via Cloudflare Tunnel |
+
+> ⚠️ **Critical:** Production and development use **separate database namespaces** within the same sqld instance. This prevents destructive dev migrations from affecting production data.
+
+### 3.4 Security — JWT Authentication
+
+sqld is protected by **Ed25519 JWT authentication**. Every connection (including internal Docker and external Cloudflare Tunnel) must present a valid JWT token.
+
+**Key Storage:** Keys live in `sqld-keys/` within the project root (gitignored via `*.pem`). The public key is synced to **GitHub Actions Secrets** as `SQLD_JWT_PUBLIC_KEY` and written to the server during deployment.
+
+```
+Local Project                           GitHub Secrets              Server (on deploy)
+ sqld-keys/                              SQLD_JWT_PUBLIC_KEY  ──▶  sqld-keys/sqld_jwt_public.pem
+ ├── sqld_jwt_private.pem (gitignored)   TURSO_AUTH_TOKEN     ──▶  .env (TURSO_AUTH_TOKEN)
+ ├── sqld_jwt_public.pem  (gitignored)
+ └── README.md            (committed)
+```
+
+### 3.5 Database Sync (Dev ↔ Prod)
+
+Dev and prod databases can be synced in either direction using built-in scripts:
+
+| Direction | Command | Use Case |
+|-----------|---------|----------|
+| Prod → Dev | `pnpm db:sync:prod-to-dev` | Seed dev with real prod data |
+| Dev → Prod | `pnpm db:sync:dev-to-prod` | Promote tested changes to production |
+| Backup | `pnpm db:backup` | Point-in-time SQL dump of any namespace |
+
+---
+
+## 4. Directory Structure
 
 ```
 danang-dashboard/
@@ -80,13 +146,24 @@ danang-dashboard/
 │   ├── schema.prisma              # Database schema
 │   ├── seed.ts                    # Seed data
 │   └── migrations/                # Migration files
+├── sqld-keys/                     # JWT keys for sqld auth
+│   ├── README.md                  # ✅ Committed — key setup instructions
+│   ├── sqld_jwt_private.pem       # ❌ Gitignored — signs JWT tokens
+│   └── sqld_jwt_public.pem        # ❌ Gitignored — synced to GitHub Secrets
+├── scripts/
+│   ├── sqld-keys/
+│   │   └── generate-token.ts      # JWT token generation from private key
+│   └── db-sync/
+│       ├── sync-prod-to-dev.ts    # Prod → Dev data sync
+│       ├── sync-dev-to-prod.ts    # Dev → Prod data promotion
+│       └── backup.ts              # Database backup utility
 ├── src/
 │   ├── app/
 │   │   ├── globals.css            # Tailwind v4 @theme config
 │   │   ├── layout.tsx             # Root layout (fonts, providers)
 │   │   ├── proxy.ts               # Auth + RBAC proxy gate (Next.js 16)
 │   ├── lib/
-│   │   ├── prisma.ts              # Prisma + libSQL singleton (Stateless HTTP)
+│   │   ├── prisma.ts              # Prisma + libSQL singleton (HTTP to sqld)
 │   │   ├── auth.ts                # Better Auth config
 │   │   ├── auth-utils.ts          # requireAuth, requireRole, requireApiRole helpers
 │   │   ├── rbac.ts                # Centralized RBAC config (roles, route-permissions)
@@ -112,6 +189,7 @@ danang-dashboard/
 ├── public/
 │   ├── logo.svg                   # MobiFone logo
 │   └── favicon.ico
+├── docker-compose.yml             # web + redis + sqld + cloudflared
 ├── .env.local                     # Environment variables
 ├── next.config.ts                 # Next.js 16 config
 ├── package.json
@@ -121,9 +199,9 @@ danang-dashboard/
 
 ---
 
-## 4. Component Architecture
+## 5. Component Architecture
 
-### 4.1 Rendering Strategy
+### 5.1 Rendering Strategy
 
 | Component Type | Rendering | Ví dụ |
 |---------------|-----------|-------|
@@ -139,7 +217,7 @@ danang-dashboard/
 | **Chat UI** | Client Component (SSE) | ProjectChat, ChatInput |
 | **Typing/Presence** | Client Component (SSE) | TypingIndicator, OnlineUsers |
 
-### 4.2 Data Flow (Stateless HTTP)
+### 5.2 Data Flow (Stateless HTTP to sqld)
 
 ```
 // READ & WRITE FLOW
@@ -152,11 +230,12 @@ Client Component (React 19)
             ──→ Service Layer
                 ──→ Prisma
                     ──→ libSQL Client
-                        ──→ DIRECT STATELESS HTTP REQUEST (HTTPS)
-                            ──→ Turso Cloud Primary (AWS)
+                        ──→ STATELESS HTTP REQUEST
+                            ──→ sqld Container (Docker network)
+                                ──→ SQLite database file
 ```
 
-### 4.3 Caching Strategy (Next.js 16 `use cache`)
+### 5.3 Caching Strategy (Next.js 16 `use cache`)
 
 ```typescript
 // Dashboard data — cached 60 seconds
@@ -176,5 +255,50 @@ export async function ProjectList({ filters }) {
 
 ---
 
-## 5. Authentication & Authorization (RBAC)
+## 6. Authentication & Authorization (RBAC)
 ... [rest of file]
+
+---
+
+## 7. Infrastructure — Docker Compose
+
+### 7.1 Service Topology
+
+```
+docker-compose.yml
+├── init-perms      # One-shot: set file permissions
+├── sqld            # libSQL Server (primary database)
+├── redis           # Cache & session store
+├── web             # Next.js application
+└── cloudflared     # Cloudflare Tunnel (routes dashboard + DB)
+```
+
+### 7.2 Network Flow
+
+```
+                     Internet
+                        │
+                   Cloudflare Edge
+                        │
+              ┌─────────▼──────────┐
+              │    cloudflared      │
+              │   (tunnel client)   │
+              └────────┬────┬──────┘
+                       │    │
+    dashboard.gpsdna.io.vn  turso.gpsdna.io.vn
+                       │    │
+              ┌────────▼─┐ ┌▼──────────┐
+              │   web    │ │   sqld     │
+              │ :3000    │ │  :8080     │
+              └────┬─────┘ └───────────┘
+                   │              ▲
+                   │   http://sqld:8080
+                   └──────────────┘
+                         │
+              ┌──────────▼─────────┐
+              │      redis         │
+              │     :6379          │
+              └────────────────────┘
+              
+              All within "backend" Docker network
+```

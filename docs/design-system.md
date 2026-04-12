@@ -1,4 +1,5 @@
 # Design System & UI Guidelines
+**Version:** 1.1.0 | **Updated:** 2026-04-12
 
 Consistency is key to a professional dashboard. When building new features on the `v2.0` roadmap, adhere to the established component patterns defined below.
 

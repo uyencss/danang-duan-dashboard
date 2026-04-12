@@ -1,6 +1,6 @@
 # Database Design — MobiFone Project Tracker
-**Version:** 1.3.0 | **Updated:** 2026-04-09  
-**ORM:** Prisma v7.6.x | **Database:** SQLite (dev) → Turso Cloud DB (prod)
+**Version:** 1.4.0 | **Updated:** 2026-04-12  
+**ORM:** Prisma v7.6.x | **Database:** Self-hosted sqld (libSQL Server) via Docker
 
 ---
 
@@ -332,43 +332,56 @@ export function isNeedsCare(lastCare: Date | null): boolean {
 
 ## 5. Migration Strategy
 
-### 5.1 Development (Direct SQLite)
+### 5.1 Development (via Cloudflare Tunnel → sqld)
 ```bash
+# Local dev connects to self-hosted sqld through Cloudflare Tunnel
+# DATABASE_URL=https://turso.gpsdna.io.vn
 npx prisma migrate dev --name init
+npx prisma db push
 ```
 
-### 5.2 Production (Turso Cloud DB)
+### 5.2 Production (Internal Docker Network → sqld)
 ```bash
-# Prisma CLI still connects to remote Turso for migrations
-# DATABASE_URL points to remote libsql:// URL
+# Production web container connects internally
+# DATABASE_URL=http://sqld:8080
 npx prisma migrate deploy
 ```
 
-### 5.3 Direct Connection Architecture (Stateless HTTP)
+### 5.3 Self-Hosted sqld Architecture
 
-Production sử dụng **Turso Direct Connection** qua Stateless HTTP thay vì Embedded Replicas để tương thích tốt nhất với các dịch vụ proxy mạng (Cloudflare, Tailscale):
+Cả production và development đều sử dụng **self-hosted sqld (libSQL Server)** chạy trong Docker Compose. sqld được bảo vệ bởi JWT authentication (Ed25519).
 
 | Aspect | Detail |
 |--------|--------|
-| **Local File** | Không sử dụng (No local replica) |
-| **Remote Primary** | Turso Cloud (AWS ap-northeast-1) |
-| **Reads/Writes** | Execute trực tiếp lên Turso qua proxy-safe HTTPS |
-| **Connection Protocol** | Stateless HTTP (`https://`) (Bypass hoàn toàn WebSocket drops) |
-| **Sync Period** | Real-time (không cần sync định kỳ do query trực tiếp) |
-| **Bandwidth** | < 3GB/tháng (free tier), ước tính sử dụng ~2MB/tháng |
-| **Multi-Instance** | 2 instances, stateless HTTP direct connection |
+| **Database Engine** | sqld (libSQL Server) — Docker container |
+| **Data Storage** | Docker named volume `sqld-data` → `/var/lib/sqld` |
+| **Prod Connection** | `http://sqld:8080` (internal Docker network, < 1ms) |
+| **Dev Connection** | `https://turso.gpsdna.io.vn` (Cloudflare Tunnel, ~50-100ms) |
+| **Authentication** | Ed25519 JWT tokens (mandatory for all connections) |
+| **Database Separation** | `default` namespace (prod) + `dev` namespace (dev) |
+| **Reads/Writes** | Direct HTTP to sqld container |
+| **Connection Protocol** | Stateless HTTP — no WebSocket/Hrana issues |
+| **Cost** | $0 (self-hosted on existing VPS) |
 
-**Environment Variables:**
+**Environment Variables (Production — Docker `web` container):**
 ```env
-TURSO_DATABASE_URL="https://<db>.turso.io"    # Direct Stateless connection
-TURSO_AUTH_TOKEN="eyJhbG..."                   # Auth token
-DATABASE_URL="https://<db>.turso.io?authToken=..." # Prisma compatible connection
+DATABASE_URL="http://sqld:8080"              # Internal Docker network
+TURSO_DATABASE_URL="http://sqld:8080"        # Internal Docker network
+TURSO_AUTH_TOKEN="<prod-jwt-token>"          # Ed25519 signed JWT
+```
+
+**Environment Variables (Development — Local machine):**
+```env
+DATABASE_URL="https://turso.gpsdna.io.vn"    # Cloudflare Tunnel → sqld
+TURSO_DATABASE_URL="https://turso.gpsdna.io.vn"  # Cloudflare Tunnel → sqld
+TURSO_AUTH_TOKEN="<dev-jwt-token>"           # Ed25519 signed JWT
 ```
 
 **Client Configuration:**
 ```typescript
 import { createClient } from "@libsql/client";
 
+// Works for both prod (http://sqld:8080) and dev (https://turso.gpsdna.io.vn)
 const libsqlClient = createClient({
   url: process.env.TURSO_DATABASE_URL!,
   authToken: process.env.TURSO_AUTH_TOKEN!,
@@ -379,10 +392,43 @@ const libsqlClient = createClient({
 
 | Scenario | Behavior |
 |----------|----------|
-| Read sau write (cùng instance) | Consistent ngay (manual `sync()` after write) |
-| Read sau write (khác instance) | Eventually consistent (≤ `syncPeriod` seconds) |
-| Chat messages | Real-time qua Ably — không phụ thuộc sync |
-| System Logs | Không lưu trong DB, ghi thẳng vào File System (`logs/app.log`) bằng Pino để tránh tải cho SQLite |
+| Single-writer (prod web container) | Fully consistent (single sqld instance) |
+| Dev vs Prod | Separate database namespaces — no cross-contamination |
+| Chat messages | Real-time qua Ably — không phụ thuộc DB sync |
+| System Logs | File System (`logs/app.log`) bằng Pino — không lưu trong DB |
+
+### 5.4 Database Sync (Dev ↔ Prod)
+
+Built-in scripts allow controlled data flow between dev and prod namespaces:
+
+```
+┌─────────────────┐                    ┌─────────────────┐
+│  PROD (default)  │ ── sync ────────▶ │  DEV             │
+│  namespace       │ ◀── promote ──── │  namespace       │
+└─────────────────┘                    └─────────────────┘
+```
+
+| Command | Direction | Use Case |
+|---------|-----------|----------|
+| `pnpm db:sync:prod-to-dev` | Prod → Dev | Seed dev with real prod data for testing |
+| `pnpm db:sync:dev-to-prod` | Dev → Prod | Promote tested schema/data changes to production |
+| `pnpm db:backup` | Any namespace | Create point-in-time SQL dump |
+
+**Safety rules:**
+1. Prod → Dev always overwrites dev (with confirmation prompt)
+2. Dev → Prod always creates auto-backup first, requires double confirmation
+3. Schema-only mode (`--schema-only`) runs `prisma migrate deploy` without touching data
+4. Data-only mode (`--data-only`) copies rows without schema changes
+
+### 5.5 JWT Key Management
+
+Keys are stored in `sqld-keys/` within the project root (all `*.pem` files are gitignored). The public key is synced to GitHub Actions Secrets as `SQLD_JWT_PUBLIC_KEY` and written to the server during `deploy.yml` execution.
+
+```
+Developer Laptop                    GitHub Secrets             Server
+sqld-keys/*.pem (gitignored)   →   SQLD_JWT_PUBLIC_KEY   →   sqld-keys/sqld_jwt_public.pem
+generate-token.ts              →   TURSO_AUTH_TOKEN       →   .env (prod token)
+```
 
 ---
 

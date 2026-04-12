@@ -4,8 +4,8 @@
 
 ---
 
-**Version:** 1.4.0  
-**Date:** 2026-04-09  
+**Version:** 1.5.0  
+**Date:** 2026-04-12  
 **Product Manager:** Trung tâm Kinh doanh Giải pháp số - MobiFone Đà Nẵng  
 **Status:** Draft
 
@@ -353,11 +353,12 @@ User click "Cập nhật" trên Project List
 | NFR-01 | Performance | Page load < 2 giây cho tất cả trang chính |
 | NFR-02 | Responsiveness | Desktop/Laptop (primary), Tablet portrait (secondary) |
 | NFR-03 | Data Integrity | Ràng buộc FK nghiêm ngặt, không cho phép nhân đôi doanh tự |
-| NFR-04 | Security & Ops | Multi-layer RBAC (4 roles × 4 enforcement layers: proxy, server component, server action, API route), mật khẩu mã hóa, Cloudflare Tunnels, và hệ thống Structured Logging (Pino) với Auto-Redaction. |
-| NFR-05 | Scalability | SQLite cục bộ (Dev) → Turso Cloud DB bằng Docker container, hỗ trợ multi-instance |
-| NFR-06 | Availability | Có sẵn hệ thống backup DB, quản lý cấu hình safe db-reset qua script quản trị |
-| NFR-07 | Direct HTTP | Sử dụng Turso Direct HTTP (Stateless) thay thế WebSockets để tránh bị drop kết nối bởi proxy. Kết nối trực tiếp lên Cloud đảm bảo tính thống nhất. |
-| NFR-08 | Multi-Instance | Hỗ trợ 2 instances chạy đồng thời với eventually-consistent data (sync period ≤ 60s). Direct HTTP connection |
+| NFR-04 | Security & Ops | Multi-layer RBAC (4 roles × 4 enforcement layers), mật khẩu mã hóa, Cloudflare Tunnels, JWT-authenticated sqld (in-project keys synced via GitHub Secrets), và hệ thống Structured Logging (Pino) với Auto-Redaction. |
+| NFR-05 | Scalability | Self-hosted sqld (libSQL Server) trong Docker Compose, hỗ trợ tách biệt dev/prod namespaces |
+| NFR-06 | Availability | Có sẵn hệ thống backup DB (Docker volume + SQL dump script), quản lý cấu hình safe db-reset qua script quản trị |
+| NFR-07 | Stateless HTTP | Sử dụng Stateless HTTP kết nối đến sqld container (prod: internal Docker, dev: Cloudflare Tunnel) để tránh WebSocket/Hrana issues |
+| NFR-08 | Self-Hosted DB | Database tự host trên VPS, không phụ thuộc dịch vụ cloud bên ngoài (Turso). Chi phí $0 cho database. |
+| NFR-09 | Dev ↔ Prod Sync | Hỗ trợ đồng bộ dữ liệu giữa dev và prod database namespaces qua script (`pnpm db:sync:*`). Auto-backup trước khi sync prod. |
 
 ---
 
@@ -372,7 +373,7 @@ User click "Cập nhật" trên Project List
 | **Phase 3** | Project Master & Task Logs | Form tạo dự án (Search & Select), Project List, 1-Click Update modal, Detail page (Timeline + Comments), 15-day Smart Alert | ✅ Done |
 | **Phase 4** | Analytics & Dashboards | 5 Dashboard views với Recharts: Tổng quan, CRM, Nhân sự, KPI, Địa bàn | ✅ Done |
 | **Phase 5** | Real-time & Chat | Thông báo thời gian thực (SSE/Pusher), Chat channel per project với typing indicator & online presence | ✅ Done |
-| **Phase 6** | Direct HTTP & Multi-Instance | Chuyển đổi hoàn toàn sang Turso Stateless HTTP kết nối trực tiếp đến Cloud. Bỏ qua web socket sync để tăng độ ổn định. | ✅ Done |
+| **Phase 6** | Self-Hosted sqld & Stateless HTTP | Chuyển đổi từ Turso Cloud sang self-hosted sqld (libSQL Server) trong Docker Compose. Kết nối qua Stateless HTTP. Prod: internal Docker, Dev: Cloudflare Tunnel. | ✅ Done |
 | **Phase 7** | RBAC — Static Role System | 4-role RBAC (ADMIN, USER, AM, CV), proxy.ts + Server Action + API guards, UserContext, admin user management UI | ✅ Done (Task 28) |
 | **Phase 8** | RBAC — Dynamic Role & Menu Management | DB-driven role-menu config, admin `/admin/roles` page with permission matrix, MenuManager, global `useAlert`, `useModal` hooks | ✅ Done (Task 29, 32) |
 
@@ -416,15 +417,16 @@ User click "Cập nhật" trên Project List
 - [ ] Ràng buộc FK hoạt động đúng (xóa KH → không được xóa nếu còn dự án liên quan)
 - [ ] Auto-extract Tuần/Tháng/Quý/Năm chính xác từ ngày bắt đầu
 
-### Infrastructure — Direct HTTP
+### Infrastructure — Self-Hosted sqld
 
-- [ ] Reads được phục vụ từ Turso Cloud via HTTP (latency < 1ms)
-- [ ] Kết nối ổn định qua Cloudflare WARP/Tailscale bằng Stateless HTTP
-- [ ] 2 instances chạy đồng thời, dữ liệu nhất quán sau sync period (≤ 60s)
-- [ ] Docker instances connect statelessly
-- [ ] Prisma CLI migrations vẫn chạy đúng với remote Turso
-- [ ] Sync bandwidth < 3GB/tháng (free tier limit)
-- [ ] Health check script báo cáo trạng thái sync chính xác
+- [ ] sqld container chạy ổn định trong Docker Compose với healthcheck
+- [ ] Production (`web` container) kết nối thành công qua `http://sqld:8080` (internal Docker network)
+- [ ] Development (local laptop) kết nối thành công qua `https://turso.gpsdna.io.vn` (Cloudflare Tunnel)
+- [ ] JWT authentication bắt buộc trên mọi kết nối (không cho anonymous access)
+- [ ] Dev và Prod sử dụng tách biệt database namespaces (để tránh dev migration phá prod data)
+- [ ] Prisma CLI migrations chạy đúng với cả hai môi trường
+- [ ] Docker volume `sqld-data` lưu trữ dữ liệu bền vững qua restart
+- [ ] Backup và restore database hoạt động đúng
 
 ---
 
