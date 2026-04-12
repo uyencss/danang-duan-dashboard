@@ -7,6 +7,8 @@ export const metadata = {
   title: "Tạo dự án mới | MobiFone Tracker",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function CreateProjectPage() {
   return (
     <div className="w-full mx-auto space-y-4 lg:space-y-6 animate-in slide-in-from-bottom-2 duration-500">

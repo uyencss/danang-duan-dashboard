@@ -10,6 +10,8 @@ export const metadata = {
   title: "Theo dõi các bước quy trình",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function TrackingPage() {
   const sessionRes = await (auth.api as any).getSession({
     headers: await headers()
