@@ -15,58 +15,56 @@ Use `seed:reset` only for local/dev environments where data loss is acceptable.
 
 Unsafe bypass (not recommended): `npm run db:migrate:reset:unsafe`
 
-## Database Architecture (Turso Embedded Replicas)
+## Database Architecture (PostgreSQL via Tailscale)
 
-This project uses **Turso (libSQL)** with **Embedded Replicas** for low-latency performance:
+This project uses **PostgreSQL** as the primary database. To ensure secure and high-performance access during development, we connect via **Tailscale**:
 
-- **Primary Database**: Hosted on Turso Cloud (AWS ap-northeast-1).
-- **Local Replica**: A local SQLite file (`./data/local-replica.db`) that automatically synchronizes with the primary.
-- **Workflow**: 
-  - **Reads**: Performed against the local replica (zero latency, offline-capable).
-  - **Writes**: Automatically forwarded to the Turso Cloud primary.
-  - **Sync**: The local replica syncs every 60 seconds (configurable via `TURSO_SYNC_PERIOD`).
+- **Primary Database**: Hosted on a dedicated server (accessible via Tailscale IP `100.68.79.40`).
+- **Secure Connection**: No public ports are exposed. Development machines must be connected to the team's Tailscale network to reach the database.
+- **Local Development Workflow**:
+  - Developers connect to a `mobi_dev` database instance on the target server.
+  - The `mobi_dev` database is effectively a dedicated development sandbox.
 
 ## Setup & Initialization
 
 If you are setting up the project for the first time or on a new machine:
 
-### 1. Configure Environment Variables
+### 1. Connect to Tailscale
+Ensure your machine is logged into Tailscale and has access to the database server (`100.68.79.40`).
 
-You must create a `.env` file to store your local credentials. GitHub intentionally safeguards Repository Secrets so that their raw values cannot be downloaded via the GitHub API or the `gh` CLI (which is officially supported on Windows, Mac, and Linux). 
+### 2. Configure Environment Variables
 
-Because of this security restriction, you must automatically create a local template, and then manually insert development values shared securely by your team:
-
-- **Mac/Linux**: `./scripts/setup-env.sh`
-- **Windows**: `.\scripts\setup-env.cmd`
-
-### 2. Generate Prisma Client
-Whenever the schema changes, you must regenerate the client:
+Create a `.env` file by copying `.env.example`:
 ```bash
-npx prisma generate
+cp .env.example .env
 ```
+Update the `DATABASE_URL` with your credentials:
+`DATABASE_URL="postgresql://postgres:your_password@100.68.79.40:5432/mobi_dev"`
 
-### 2. Initialize Local Replica
-If the `./data/local-replica.db` file is missing, you need to bootstrap it by syncing from the remote:
+### 3. Synchronize Development Data
+To get started with a fresh copy of the production schema and data in your development environment, run:
 ```bash
-# Loads variables from .env and performs initial sync
-npx tsx --env-file=.env scripts/init-replica.ts
+npm run db:sync
 ```
+*Note: This script drops your local `mobi_dev` database and recreates it from a snapshot of `mobi_prod`.*
 
-### 3. Run Development Server
+### 4. Run Development Server
 ```bash
 npm run dev
 ```
+*Note: `npm run dev` automatically triggers `db:sync` to ensure your local environment is up-to-date.*
 
 ## Database Management
 
 - **Pushing Schema Changes**: 
-  If you update `prisma/schema.prisma`, normally you would run `npx prisma db push`. However, if you encounter connection issues with the `libsql` protocol in the CLI, use the provided fix script:
+  Always coordinate schema changes with the team. Use Prisma as usual:
   ```bash
-  npx tsx --env-file=.env scripts/fix-remote-schema.ts
+  npx prisma db push
   ```
 - **Seeding**: 
   - `npm run seed`: Safe seeding (skips existing data).
   - `npm run seed:reset`: Destructive reset and re-seed (with mandatory backups).
+
 
 ## Multi-Server Deployment (Tailscale & GitHub Actions)
 
@@ -80,6 +78,7 @@ This project has a fully automated multi-instance CI/CD pipeline set up via GitH
 ## Learn More
 
 - [Next.js Documentation](https://nextjs.org/docs)
-- [Turso Documentation](https://docs.turso.tech)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [Better Auth](https://www.better-auth.com)
+
 

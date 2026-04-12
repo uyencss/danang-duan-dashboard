@@ -373,7 +373,7 @@ User click "Cập nhật" trên Project List
 | **Phase 3** | Project Master & Task Logs | Form tạo dự án (Search & Select), Project List, 1-Click Update modal, Detail page (Timeline + Comments), 15-day Smart Alert | ✅ Done |
 | **Phase 4** | Analytics & Dashboards | 5 Dashboard views với Recharts: Tổng quan, CRM, Nhân sự, KPI, Địa bàn | ✅ Done |
 | **Phase 5** | Real-time & Chat | Thông báo thời gian thực (SSE/Pusher), Chat channel per project với typing indicator & online presence | ✅ Done |
-| **Phase 6** | Self-Hosted sqld & Stateless HTTP | Chuyển đổi từ Turso Cloud sang self-hosted sqld (libSQL Server) trong Docker Compose. Kết nối qua Stateless HTTP. Prod: internal Docker, Dev: Cloudflare Tunnel. | ✅ Done |
+| **Phase 6** | Self-Hosted PostgreSQL 17 Migration | Chuyển đổi từ Turso Cloud sang self-hosted PostgreSQL 17 trong Docker Compose. Kết nối qua standard TCP driver. Prod: internal Docker, Dev: Cloudflare TCP Tunnel. | ✅ Done |
 | **Phase 7** | RBAC — Static Role System | 4-role RBAC (ADMIN, USER, AM, CV), proxy.ts + Server Action + API guards, UserContext, admin user management UI | ✅ Done (Task 28) |
 | **Phase 8** | RBAC — Dynamic Role & Menu Management | DB-driven role-menu config, admin `/admin/roles` page with permission matrix, MenuManager, global `useAlert`, `useModal` hooks | ✅ Done (Task 29, 32) |
 
@@ -417,16 +417,16 @@ User click "Cập nhật" trên Project List
 - [ ] Ràng buộc FK hoạt động đúng (xóa KH → không được xóa nếu còn dự án liên quan)
 - [ ] Auto-extract Tuần/Tháng/Quý/Năm chính xác từ ngày bắt đầu
 
-### Infrastructure — Self-Hosted sqld
+### Infrastructure — Self-Hosted PostgreSQL
 
-- [ ] sqld container chạy ổn định trong Docker Compose với healthcheck
-- [ ] Production (`web` container) kết nối thành công qua `http://sqld:8080` (internal Docker network)
-- [ ] Development (local laptop) kết nối thành công qua `https://turso.gpsdna.io.vn` (Cloudflare Tunnel)
-- [ ] JWT authentication bắt buộc trên mọi kết nối (không cho anonymous access)
-- [ ] Dev và Prod sử dụng tách biệt database namespaces (để tránh dev migration phá prod data)
-- [ ] Prisma CLI migrations chạy đúng với cả hai môi trường
-- [ ] Docker volume `sqld-data` lưu trữ dữ liệu bền vững qua restart
-- [ ] Backup và restore database hoạt động đúng
+- [x] postgres container chạy ổn định trong Docker Compose với healthcheck
+- [x] Production (`web` container) kết nối thành công qua `postgresql://...db:5432` (internal Docker network)
+- [x] Development (local laptop) kết nối thành công qua `db.gpsdna.io.vn` (Cloudflare TCP Tunnel)
+- [x] Username/Password authentication bắt buộc trên mọi kết nối
+- [x] Dev và Prod sử dụng tách biệt databases `mobi_prod` và `mobi_dev`
+- [x] Prisma CLI migrations chạy đúng với cả hai môi trường
+- [x] Docker volume `postgres-data` lưu trữ dữ liệu bền vững qua restart
+- [x] Backup và restore database hoạt động đúng (pg_dump/psql restore)
 
 ---
 

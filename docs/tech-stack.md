@@ -14,8 +14,8 @@
 | **UI Components** | shadcn/ui | CLI v4.x | Copy-paste component library (Radix UI) |
 | **Charts** | Recharts | 3.8.x | Data visualization cho dashboards |
 | **ORM** | Prisma | 7.6.x | Database access & migration |
-| **Database** | sqld (libSQL Server) | latest | Self-hosted libSQL database server (Docker container) |
-| **Database Access** | Prisma + @prisma/adapter-libsql | HTTP | Stateless HTTP connection to sqld (prod: internal Docker, dev: Cloudflare Tunnel) |
+| **Database** | PostgreSQL | 17 | Self-hosted PostgreSQL database server (Docker container) |
+| **Database Access** | Prisma Client (Native) | TCP | Standard TCP connection to Postgres (prod: internal Docker, dev: Cloudflare Tunnel) |
 | **Auth** | Better Auth | latest | Authentication & authorization (thay thế Auth.js/NextAuth) |
 | **Form Validation** | React Hook Form + Zod | RHF 7.72.x + Zod 3.23.x | Form management & schema validation |
 | **Bundler** | Turbopack | Integrated | Default bundler trong Next.js 16 |
@@ -384,8 +384,8 @@ type ProjectForm = z.infer<typeof projectSchema>;
 
 | Environment | Platform | Database |
 |------------|----------|----------|
-| **Development** | `localhost:3000` | sqld via Cloudflare Tunnel (`https://turso.gpsdna.io.vn`) — dev namespace |
-| **Production** | Docker :3000 (VPS) | sqld via Docker network (`http://sqld:8080`) — default namespace |
+| **Development** | `localhost:3000` | Postgres via Cloudflare Tunnel (`db.gpsdna.io.vn`) — `mobi_dev` database |
+| **Production** | Docker :3000 (VPS) | Postgres via Docker network (`db:5432`) — `mobi_prod` database |
 
 **Build & Deploy:**
 ```bash

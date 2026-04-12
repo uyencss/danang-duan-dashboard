@@ -178,7 +178,7 @@ danang-dashboard/
 ├── public/
 │   ├── logo.svg                   # MobiFone logo
 │   └── favicon.ico
-├── docker-compose.yml             # web + redis + sqld + cloudflared
+├── docker-compose.yml             # web + redis + db + cloudflared
 ├── .env.local                     # Environment variables
 ├── next.config.ts                 # Next.js 16 config
 ├── package.json

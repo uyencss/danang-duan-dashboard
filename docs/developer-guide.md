@@ -9,7 +9,7 @@ Welcome to the Danang Project Dashboard! This guide will help you get your local
 - Node.js (v18+)
 - pnpm (v10+)
 - Git
-- Docker (optional — only needed if you want to run the full stack locally including sqld)
+- Docker (optional — only needed if you want to run the full stack locally including Postgres)
 
 **Steps to run locally:**
 1. Clone the repository: `git clone <repo-url>`
@@ -19,9 +19,9 @@ Welcome to the Danang Project Dashboard! This guide will help you get your local
 5. Run the development server: `pnpm dev`
 6. Visit `http://localhost:3000`
 
-## 2. Database Connection (Self-Hosted sqld)
+## 2. Database Connection (Self-Hosted PostgreSQL)
 
-The project uses a **self-hosted sqld (libSQL Server)** running on the deployment server. For local development, you connect to the **dev database** namespace through a Cloudflare Tunnel.
+The project uses a **self-hosted PostgreSQL 17** running on the deployment server. For local development, you connect to the **dev database** through a Cloudflare TCP Tunnel.
 
 ### 2.1 How It Works
 
@@ -70,17 +70,15 @@ NEXT_PUBLIC_ABLY_KEY="<ably-public-key>"
 REDIS_URL="redis://localhost:6379"
 ```
 
-> ⚠️ **Important:** Both `DATABASE_URL` and `TURSO_DATABASE_URL` point to `https://turso.gpsdna.io.vn`. This is the Cloudflare Tunnel endpoint that routes to the sqld container's dev database. The `TURSO_AUTH_TOKEN` is a JWT signed with the Ed25519 private key — without it, connections will be rejected.
+> ⚠️ **Important:** `DATABASE_URL` points to `localhost:5433` which is bridged to the remote server via Cloudflare TCP Tunnel. Ensure you have the tunnel running before starting the dev server.
 
 ### 2.4 Production vs Development
 
 | Setting | Development | Production |
 |---------|-------------|------------|
-| `DATABASE_URL` | `https://turso.gpsdna.io.vn` | `http://sqld:8080` |
-| `TURSO_DATABASE_URL` | `https://turso.gpsdna.io.vn` | `http://sqld:8080` |
-| `TURSO_AUTH_TOKEN` | Dev JWT token | Prod JWT token |
+| `DATABASE_URL` | `postgresql://...localhost:5433/mobi_dev` | `postgresql://...db:5432/mobi_prod` |
 | `BETTER_AUTH_URL` | `http://localhost:3000` | `https://dashboard.gpsdna.io.vn` |
-| Database namespace | `dev` | `default` (production) |
+| Database | `mobi_dev` | `mobi_prod` |
 
 ## 3. Coding Conventions
 
@@ -93,7 +91,7 @@ REDIS_URL="redis://localhost:6379"
 
 ## 4. Database Migrations (Prisma ORM)
 
-We use **Prisma v7** with the `@prisma/adapter-libsql` adapter.
+We use **Prisma v7** with the standard PostgreSQL provider.
 
 ### 4.1 Development Migrations
 

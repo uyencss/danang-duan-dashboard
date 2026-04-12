@@ -17,7 +17,7 @@ The application runs as a multi-container Docker Compose stack. All services com
 | Service | Container Name | Image | Purpose |
 |---------|---------------|-------|---------|
 | `init-perms` | danang-dashboard-perms | alpine:latest | One-shot: set file/directory permissions |
-| `sqld` | danang-dashboard-db | ghcr.io/tursodatabase/libsql-server:latest | Self-hosted libSQL database server |
+| `db` | danang-dashboard-db | postgres:17-alpine | Self-hosted PostgreSQL database server |
 | `redis` | danang-dashboard-redis | redis:7-alpine | Cache & session store |
 | `web` | danang-dashboard-web | Custom Dockerfile | Next.js application |
 | `cloudflared` | danang-dashboard-tunnel | cloudflare/cloudflared:latest | Cloudflare Tunnel client |
@@ -25,7 +25,7 @@ The application runs as a multi-container Docker Compose stack. All services com
 ### 2.2 Startup Order
 
 ```
-init-perms (completed) → sqld (healthy) → redis (healthy) → web → cloudflared
+init-perms (completed) → db (healthy) → redis (healthy) → web → cloudflared
 ```
 
 ### 2.3 Network Architecture
@@ -38,37 +38,38 @@ Cloudflare Edge Network
     │
     ▼
 cloudflared (tunnel client)
-    ├── dashboard.gpsdna.io.vn → web:3000
-    └── turso.gpsdna.io.vn    → sqld:8080
+    ├── dashboard.gpsdna.io.vn  → web:3000
+    └── db.gpsdna.io.vn         → db:5432
     
 Internal Docker Network ("backend"):
     web:3000 ←→ redis:6379
-    web:3000 ←→ sqld:8080
+    web:3000 ←→ db:5432
+
 ```
 
-## 3. Database: Self-Hosted sqld (libSQL Server)
+## 3. Database: Self-Hosted PostgreSQL 17
 
 ### 3.1 Overview
 
-We use a **self-hosted `sqld`** (the open-source libSQL server by Turso) as our database engine. It runs as a Docker container within the same `docker-compose.yml` stack, replacing the previous Turso Cloud managed service.
+We use a **self-hosted `postgres:17-alpine`** as our database engine. It runs as a Docker container within the same `docker-compose.yml` stack, replacing the previous Turso Cloud managed service.
 
 ### 3.2 Connection Architecture
 
 | Environment | URL | Path | Latency |
 |-------------|-----|------|---------|
-| **Production** (`web` container) | `http://sqld:8080` | Internal Docker network | < 1ms |
-| **Development** (local laptop) | `https://turso.gpsdna.io.vn` | Cloudflare Tunnel → sqld:8080 | ~50-100ms |
+| **Production** (`web` container) | `postgresql://...db:5432` | Internal Docker network | < 1ms |
+| **Development** (local laptop) | `db.gpsdna.io.vn` | Cloudflare TCP Tunnel → db:5432 | ~50-100ms |
 
-### 3.3 Database Namespaces
+### 3.3 Database Separation
 
-sqld supports multiple database namespaces within a single instance:
+PostgreSQL allows multiple databases within a single instance:
 
 | Namespace | Purpose | Accessed By |
 |-----------|---------|-------------|
-| `default` | **Production** data | Docker `web` container |
-| `dev` | **Development** data | Developer laptop via Cloudflare Tunnel |
+| `mobi_prod` | **Production** data | Docker `web` container |
+| `mobi_dev` | **Development** data | Developer laptop via Cloudflare Tunnel |
 
-> ⚠️ **Critical:** Never run destructive Prisma commands (`prisma migrate reset`, `prisma db push --force-reset`) against the production namespace. Always verify your `DATABASE_URL` before running migrations.
+> ⚠️ **Critical:** Never run destructive Prisma commands (`prisma migrate reset`, `prisma db push --force-reset`) against the production database `mobi_prod`. Always verify your `DATABASE_URL` before running migrations.
 
 ### 3.4 Data Persistence
 

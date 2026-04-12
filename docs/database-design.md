@@ -1,6 +1,7 @@
 # Database Design — MobiFone Project Tracker
 **Version:** 1.4.0 | **Updated:** 2026-04-12  
-**ORM:** Prisma v7.6.x | **Database:** Self-hosted sqld (libSQL Server) via Docker
+**ORM:** Prisma v7.6.x | **Database:** Self-hosted PostgreSQL 17 via Docker
+
 
 ---
 

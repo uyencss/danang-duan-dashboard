@@ -22,15 +22,15 @@ Hiding a button in the UI is **not** security. Any user can theoretically forge 
 Certain roles (e.g., Specialists vs AMs) see different aggregates of data.
 - Ensure that Prisma queries dynamically inject `.where()` clauses restricting data fetch based on ownership or assigned department unless the user possesses an overarching 'Admin/Director' flag.
 
-## 5. Database Security — Self-Hosted sqld
+## 5. Database Security — Self-Hosted PostgreSQL
 
 ### 5.1 Overview
 
-The sqld (libSQL Server) container is the single source of truth for all application data. It is exposed both internally (Docker network) and externally (Cloudflare Tunnel), so robust authentication is mandatory.
+The PostgreSQL container is the single source of truth for all application data. It is exposed both internally (Docker network) and externally (Cloudflare TCP Tunnel), so robust authentication is mandatory.
 
-### 5.2 JWT Authentication (Ed25519)
+### 5.2 Authentication (Postgres Role)
 
-All connections to sqld require a valid **Ed25519-signed JWT token**. The sqld container verifies tokens against the mounted public key.
+All connections to PostgreSQL require a valid role and password.
 
 ```
 Connection Flow:
