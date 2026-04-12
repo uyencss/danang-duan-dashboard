@@ -353,12 +353,12 @@ User click "Cập nhật" trên Project List
 | NFR-01 | Performance | Page load < 2 giây cho tất cả trang chính |
 | NFR-02 | Responsiveness | Desktop/Laptop (primary), Tablet portrait (secondary) |
 | NFR-03 | Data Integrity | Ràng buộc FK nghiêm ngặt, không cho phép nhân đôi doanh tự |
-| NFR-04 | Security & Ops | Multi-layer RBAC (4 roles × 4 enforcement layers), mật khẩu mã hóa, Cloudflare Tunnels, JWT-authenticated sqld (in-project keys synced via GitHub Secrets), và hệ thống Structured Logging (Pino) với Auto-Redaction. |
-| NFR-05 | Scalability | Self-hosted sqld (libSQL Server) trong Docker Compose, hỗ trợ tách biệt dev/prod namespaces |
+| NFR-04 | Security & Ops | Multi-layer RBAC (4 roles × 4 enforcement layers), mật khẩu mã hóa, Cloudflare Tunnels (TCP), PostgreSQL 17, và hệ thống Structured Logging (Pino) với Auto-Redaction. |
+| NFR-05 | Scalability | Self-hosted PostgreSQL 17 trong Docker Compose, hỗ trợ tách biệt schema/database cho dev/prod |
 | NFR-06 | Availability | Có sẵn hệ thống backup DB (Docker volume + SQL dump script), quản lý cấu hình safe db-reset qua script quản trị |
-| NFR-07 | Stateless HTTP | Sử dụng Stateless HTTP kết nối đến sqld container (prod: internal Docker, dev: Cloudflare Tunnel) để tránh WebSocket/Hrana issues |
-| NFR-08 | Self-Hosted DB | Database tự host trên VPS, không phụ thuộc dịch vụ cloud bên ngoài (Turso). Chi phí $0 cho database. |
-| NFR-09 | Dev ↔ Prod Sync | Hỗ trợ đồng bộ dữ liệu giữa dev và prod database namespaces qua script (`pnpm db:sync:*`). Auto-backup trước khi sync prod. |
+| NFR-07 | Stability | Kết nối Postgres bằng TCP Client (Prisma Node driver) thay vì Stateless HTTP/WebSocket (Tránh triệt để 100% lỗi rớt mạng/mất kết nối của libSQL/Hrana) |
+| NFR-08 | Self-Hosted DB | Database tự host trên VPS, không phụ thuộc dịch vụ cloud bên ngoài. Chi phí $0 cho database. |
+| NFR-09 | Dev ↔ Prod Sync | Hỗ trợ đồng bộ dữ liệu giữa dev và prod databases qua script (`pnpm db:sync:*`). Auto-backup trước khi sync prod. |
 
 ---
 

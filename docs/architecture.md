@@ -1,5 +1,5 @@
 # System Architecture — MobiFone Project Tracker
-**Version:** 1.5.0 | **Updated:** 2026-04-12
+**Version:** 1.6.0 | **Updated:** 2026-04-12
 
 ---
 
@@ -28,38 +28,33 @@
 │                         │                                 │
 │  ┌──────────────────────▼─────────────────────────────┐   │
 │  │            Prisma Client v7 (ORM)                   │   │
-│  │         + @prisma/adapter-libsql                    │   │
+│  │         (Standard PostgreSQL Driver)                │   │
 │  └──────────────────────┬─────────────────────────────┘   │
 │                         │                                 │
 │  ┌──────────────────────▼─────────────────────────────┐   │
-│  │          libSQL Client (Stateless HTTP)             │   │
-│  │  ┌──────────────────────────────────────────────┐  │   │
-│  │  │   PROD: http://sqld:8080 (internal Docker)   │  │   │
-│  │  │   DEV:  https://turso.gpsdna.io.vn (Tunnel)  │  │   │
-│  │  └──────────────────────────────────────────────┘  │   │
+│  │   postgresql://postgres:pass@db:5432/mobi_prod     │   │
 │  └──────────────────────┬─────────────────────────────┘   │
 │                         │                                 │
 └─────────────────────────┼─────────────────────────────────┘
                           │
     ┌─────────────────────▼─────────────────────────────┐
-    │              sqld (libSQL Server)                   │
+    │              PostgreSQL 17                        │
     │        Docker Container: danang-dashboard-db        │
     │  ┌──────────────┐  ┌───────────────────────────┐   │
-    │  │ prod database │  │ dev database (namespace)  │   │
-    │  │  (default)    │  │ accessed via ?db=dev      │   │
+    │  │ mobi_prod    │  │ mobi_dev (namespace)       │   │
     │  └──────────────┘  └───────────────────────────┘   │
-    │         ▲                       ▲                   │
-    │         │                       │                   │
-    │    JWT Auth Required       JWT Auth Required         │
-    └─────────────────────────────────────────────────────┘
-                          ▲
-                          │ Cloudflare Tunnel
-                          │ turso.gpsdna.io.vn → sqld:8080
-                          │
-                   ┌──────┴──────────────┐
-                   │  Developer Laptop   │
-                   │  (local npm run dev)│
-                   └─────────────────────┘
+    └─────────────────────────────────▲───────────────────┘
+                                      │ Cloudflare Tunnel
+                                      │ db.gpsdna.io.vn → tcp://db:5432
+                                      │
+                   ┌──────────────────┴──────────────────┐
+                   │  Developer Laptop                   │
+                   │  1. Run: cloudflared access tcp     │
+                   │     --hostname db.gpsdna.io.vn      │
+                   │     --url localhost:5433            │
+                   │  2. env: DATABASE_URL=postgresql:// │
+                   │     ...localhost:5433/mobi_dev      │
+                   └─────────────────────────────────────┘
 ```
 
 ---
@@ -77,47 +72,46 @@ Hệ thống sử dụng **Layered Monolith** pattern trong Next.js 16 App Route
 | **Server Actions** | `src/app/(dashboard)/*/actions.ts` | Direct server mutations (with role guards) |
 | **Real-time** | `src/app/api/*/stream/` | SSE streams for chat & notifications |
 | **Service** | `src/lib/services/` | Business logic, validation |
-| **Data Access** | `src/lib/prisma.ts` | Prisma Client + libSQL HTTP connection to self-hosted sqld |
+| **Data Access** | `src/lib/prisma.ts` | Prisma Client (Direct connection to Postgres) |
 | **Observability** | `src/lib/logger/` | Centralized JSON logging and auto-rotation |
 | **Database** | `prisma/` | Schema, migrations, seed |
 
 ---
 
-## 3. Database Architecture: Self-Hosted sqld
+## 3. Database Architecture: Self-Hosted PostgreSQL
 
 ### 3.1 Overview
 
-The database is a **self-hosted `sqld` (libSQL Server)** running as a Docker container within the same `docker-compose.yml` network. This replaces the previous Turso Cloud managed service.
+The database is a **self-hosted `postgres:17-alpine`** running as a Docker container within the same `docker-compose.yml` network. This replaces the previous Turso Cloud / libSQL managed service entirely, offering superior stability, native ENUM support, and a flawless Prisma integration that solves historical connection drop issues.
 
 ### 3.2 Connection Topology
 
-| Environment | Connection Path | URL | Latency |
+| Environment | Connection Path | Format | Latency |
 |-------------|----------------|-----|---------|
-| **Production** (Docker `web` container) | Internal Docker network | `http://sqld:8080` | < 1ms |
-| **Development** (Local laptop) | Cloudflare Tunnel (HTTPS) | `https://turso.gpsdna.io.vn` | ~50-100ms |
+| **Production** (Docker `web` container) | Internal Docker network | `postgresql://...db:5432` | < 1ms |
+| **Development** (Local laptop) | Cloudflare Tunnel (TCP port forwarding) | `postgresql://...localhost:5433` | ~50-100ms |
 
 ### 3.3 Database Separation
 
-| Database | Namespace | Purpose |
-|----------|-----------|---------|
-| `default` | Production | Live application data, used by Docker `web` container |
-| `dev` | Development | Developer data, accessed via Cloudflare Tunnel |
+| Database Name | Purpose | Accessed By |
+|----------|---------|-------------|
+| `mobi_prod` | Production | Live application data, used by Docker `web` container |
+| `mobi_dev` | Development | Developer data, accessed via Cloudflare Tunnel TCP proxy |
 
-> ⚠️ **Critical:** Production and development use **separate database namespaces** within the same sqld instance. This prevents destructive dev migrations from affecting production data.
+> ⚠️ **Critical:** Production and development use **separate databases** within the same Postgres cluster. This prevents destructive dev migrations from affecting production data.
 
-### 3.4 Security — JWT Authentication
+### 3.4 Security — Standard Postgres Auth
 
-sqld is protected by **Ed25519 JWT authentication**. Every connection (including internal Docker and external Cloudflare Tunnel) must present a valid JWT token.
+Unlike libSQL, Postgres doesn't require a complex JWT authentication layer. It uses standard internal authentication.
 
-**Key Storage:** Keys live in `sqld-keys/` within the project root (gitignored via `*.pem`). The public key is synced to **GitHub Actions Secrets** as `SQLD_JWT_PUBLIC_KEY` and written to the server during deployment.
+**Key Storage:** The database password is stored in GitHub Actions Secrets as `POSTGRES_PASSWORD` and injected into the `.env` on deploy.
 
 ```
-Local Project                           GitHub Secrets              Server (on deploy)
- sqld-keys/                              SQLD_JWT_PUBLIC_KEY  ──▶  sqld-keys/sqld_jwt_public.pem
- ├── sqld_jwt_private.pem (gitignored)   TURSO_AUTH_TOKEN     ──▶  .env (TURSO_AUTH_TOKEN)
- ├── sqld_jwt_public.pem  (gitignored)
- └── README.md            (committed)
+GitHub Actions Secrets           Server (on deploy)
+POSTGRES_PASSWORD    ──▶      .env (POSTGRES_PASSWORD)
 ```
+
+Cloudflare Zero Trust policies on `db.gpsdna.io.vn` ensure that only authorized developers can even dial the database port, adding a zero-trust network layer on top of database credentials.
 
 ### 3.5 Database Sync (Dev ↔ Prod)
 
@@ -127,7 +121,7 @@ Dev and prod databases can be synced in either direction using built-in scripts:
 |-----------|---------|----------|
 | Prod → Dev | `pnpm db:sync:prod-to-dev` | Seed dev with real prod data |
 | Dev → Prod | `pnpm db:sync:dev-to-prod` | Promote tested changes to production |
-| Backup | `pnpm db:backup` | Point-in-time SQL dump of any namespace |
+| Backup | `pnpm db:backup` | Point-in-time SQL dump of any database |
 
 ---
 
@@ -146,13 +140,8 @@ danang-dashboard/
 │   ├── schema.prisma              # Database schema
 │   ├── seed.ts                    # Seed data
 │   └── migrations/                # Migration files
-├── sqld-keys/                     # JWT keys for sqld auth
-│   ├── README.md                  # ✅ Committed — key setup instructions
-│   ├── sqld_jwt_private.pem       # ❌ Gitignored — signs JWT tokens
-│   └── sqld_jwt_public.pem        # ❌ Gitignored — synced to GitHub Secrets
 ├── scripts/
-│   ├── sqld-keys/
-│   │   └── generate-token.ts      # JWT token generation from private key
+│   ├── postgres-init.sql          # Auto-creates mobi_dev db on startup
 │   └── db-sync/
 │       ├── sync-prod-to-dev.ts    # Prod → Dev data sync
 │       ├── sync-dev-to-prod.ts    # Dev → Prod data promotion
@@ -163,7 +152,7 @@ danang-dashboard/
 │   │   ├── layout.tsx             # Root layout (fonts, providers)
 │   │   ├── proxy.ts               # Auth + RBAC proxy gate (Next.js 16)
 │   ├── lib/
-│   │   ├── prisma.ts              # Prisma + libSQL singleton (HTTP to sqld)
+│   │   ├── prisma.ts              # Prisma Client singleton
 │   │   ├── auth.ts                # Better Auth config
 │   │   ├── auth-utils.ts          # requireAuth, requireRole, requireApiRole helpers
 │   │   ├── rbac.ts                # Centralized RBAC config (roles, route-permissions)
@@ -217,7 +206,7 @@ danang-dashboard/
 | **Chat UI** | Client Component (SSE) | ProjectChat, ChatInput |
 | **Typing/Presence** | Client Component (SSE) | TypingIndicator, OnlineUsers |
 
-### 5.2 Data Flow (Stateless HTTP to sqld)
+### 5.2 Data Flow (Standard Postgres)
 
 ```
 // READ & WRITE FLOW
@@ -228,11 +217,10 @@ Client Component (React 19)
     │
     └── Route Handler / Server Component / Server Action
             ──→ Service Layer
-                ──→ Prisma
-                    ──→ libSQL Client
-                        ──→ STATELESS HTTP REQUEST
-                            ──→ sqld Container (Docker network)
-                                ──→ SQLite database file
+                ──→ Prisma Client
+                    ──→ TCP CONNECTION (pg)
+                        ──→ PostgreSQL Container (Docker network)
+                            ──→ mobi_prod database
 ```
 
 ### 5.3 Caching Strategy (Next.js 16 `use cache`)
@@ -267,10 +255,10 @@ export async function ProjectList({ filters }) {
 ```
 docker-compose.yml
 ├── init-perms      # One-shot: set file permissions
-├── sqld            # libSQL Server (primary database)
+├── db              # Postgres 17 Server (primary database)
 ├── redis           # Cache & session store
 ├── web             # Next.js application
-└── cloudflared     # Cloudflare Tunnel (routes dashboard + DB)
+└── cloudflared     # Cloudflare Tunnel (routes dashboard + TCP DB)
 ```
 
 ### 7.2 Network Flow
@@ -285,14 +273,14 @@ docker-compose.yml
               │   (tunnel client)   │
               └────────┬────┬──────┘
                        │    │
-    dashboard.gpsdna.io.vn  turso.gpsdna.io.vn
+    dashboard.gpsdna.io.vn  db.gpsdna.io.vn (TCP route)
                        │    │
               ┌────────▼─┐ ┌▼──────────┐
-              │   web    │ │   sqld     │
-              │ :3000    │ │  :8080     │
+              │   web    │ │    db      │
+              │ :3000    │ │  :5432     │
               └────┬─────┘ └───────────┘
                    │              ▲
-                   │   http://sqld:8080
+                   │ tcp://db:5432│
                    └──────────────┘
                          │
               ┌──────────▼─────────┐

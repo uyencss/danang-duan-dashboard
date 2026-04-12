@@ -28,35 +28,34 @@ The project uses a **self-hosted sqld (libSQL Server)** running on the deploymen
 ```
 Your Laptop (npm run dev)
     │
-    │  HTTPS (DATABASE_URL)
+    │  TCP (DATABASE_URL)
     ▼
-https://turso.gpsdna.io.vn  ← Cloudflare Tunnel
+db.gpsdna.io.vn (Port 5432 via Cloudflare Access)
     │
     ▼
-sqld container (on VPS)
-    └── dev database namespace
+postgres container (on VPS)
+    └── mobi_dev database
 ```
 
 ### 2.2 Getting Access
 
-1. Ask the team lead for the `sqld-keys/` PEM files (`sqld_jwt_private.pem` + `sqld_jwt_public.pem`) — shared securely (e.g., via 1Password, encrypted message)
-2. Place them in your local `sqld-keys/` directory
-3. Generate a dev JWT token:
+To connect to the dev database locally:
+
+1. Install `cloudflared` on your machine (`brew install cloudflared`).
+2. Ask the team lead for the Postgres password.
+3. Start the TCP tunnel locally:
    ```bash
-   npx tsx scripts/sqld-keys/generate-token.ts --sub dev --exp 1y
+   cloudflared access tcp --hostname db.gpsdna.io.vn --url localhost:5433
    ```
-4. Copy the output token into your `.env` as `TURSO_AUTH_TOKEN`
-5. Ask for any other secrets (BETTER_AUTH_SECRET, Ably, SMTP, etc.)
+4. Ask for any other secrets (BETTER_AUTH_SECRET, Ably, SMTP, etc.)
 
 ### 2.3 Environment Variables
 
 Your `.env` should look like this for local development:
 
 ```env
-# Database — Self-Hosted sqld (via Cloudflare Tunnel)
-DATABASE_URL="https://turso.gpsdna.io.vn"
-TURSO_DATABASE_URL="https://turso.gpsdna.io.vn"
-TURSO_AUTH_TOKEN="<dev-jwt-token-from-team-lead>"
+# Database — Self-Hosted PostgreSQL (via Cloudflare TCP Tunnel)
+DATABASE_URL="postgresql://postgres:<password>@localhost:5433/mobi_dev"
 
 # Authentication (Better Auth)
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
@@ -101,7 +100,8 @@ We use **Prisma v7** with the `@prisma/adapter-libsql` adapter.
 When you modify `prisma/schema.prisma`:
 
 ```bash
-# Generate and apply migration to dev database (via Cloudflare Tunnel)
+```bash
+# Generate and apply migration to dev database (via local proxy)
 npx prisma migrate dev --name <migration-name>
 
 # Or push schema changes directly (no migration file)
@@ -127,7 +127,7 @@ npx prisma migrate deploy
 npx prisma studio
 ```
 
-> **Note:** When running `prisma studio` locally, it connects to the dev database via Cloudflare Tunnel. This is safe because dev and prod are separate namespaces.
+> **Note:** When running `prisma studio` locally, it connects to the `mobi_dev` database via the TCP Tunnel. This is safe because dev and prod are separate databases.
 
 ## 5. Database Sync Scripts
 
@@ -140,11 +140,8 @@ pnpm db:sync:prod-to-dev
 # Promote dev database to production (auto-backup first, double confirmation)
 pnpm db:sync:dev-to-prod
 
-# Create a manual backup of any namespace
+# Create a manual backup of any database
 pnpm db:backup
-
-# Generate a new JWT token (e.g., if your dev token expires)
-pnpm db:token:generate -- --sub dev --exp 1y
 ```
 
 > ⚠️ **Safety:** The prod-to-dev sync overwrites dev data. The dev-to-prod sync creates an automatic backup before proceeding and requires double confirmation.

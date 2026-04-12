@@ -232,41 +232,38 @@ npx prisma init --datasource-provider sqlite
 
 **Database strategy:**
 ```
-Production:   Self-hosted sqld (Docker container)
-              ├─ URL: http://sqld:8080 (internal Docker network, < 1ms)
-              ├─ Namespace: default (prod data)
-              └─ Auth: Ed25519 JWT token
+Production:   Self-hosted postgres:17-alpine (Docker container)
+              ├─ URL: postgresql://...db:5432/mobi_prod (internal Docker network, < 1ms)
+              ├─ Database: mobi_prod (prod data)
+              └─ Auth: Postgres Role/Password
 
-Development:  Same sqld via Cloudflare Tunnel
-              ├─ URL: https://turso.gpsdna.io.vn (Cloudflare Tunnel)
-              ├─ Namespace: dev (dev data — isolated from prod)
-              └─ Auth: Ed25519 JWT token (separate dev token)
+Development:  Same postgres cluster via Cloudflare TCP Tunnel
+              ├─ Route: db.gpsdna.io.vn -> tcp://db:5432
+              ├─ Local: cloudflared access tcp --hostname...
+              ├─ Database: mobi_dev (isolated from prod)
+              └─ Auth: Postgres Role/Password
 ```
 
-**sqld Connection Configuration:**
+**Postgres Connection Configuration:**
 ```typescript
-import { createClient } from "@libsql/client";
+import { PrismaClient } from "@prisma/client";
 
-// Works for both environments:
-// Prod: http://sqld:8080 (Docker internal)
-// Dev:  https://turso.gpsdna.io.vn (Cloudflare Tunnel)
-const client = createClient({
-  url: process.env.TURSO_DATABASE_URL!,
-  authToken: process.env.TURSO_AUTH_TOKEN!,
-});
+// Works for both environments automatically via process.env.DATABASE_URL
+// Prod: postgresql://postgres:pass@db:5432/mobi_prod
+// Dev:  postgresql://postgres:pass@localhost:5433/mobi_dev
+export const prisma = globalThis.prisma ?? new PrismaClient();
 ```
 
-**JWT Key Management:**
-- Keys stored in `sqld-keys/` (gitignored via `*.pem`)
-- Token generation: `npx tsx scripts/sqld-keys/generate-token.ts --sub prod|dev`
-- Public key synced to GitHub Secrets → written to server on deploy
-- See `sqld-keys/README.md` for setup instructions
+**Security Management:**
+- Password highly secured in GitHub Actions Secrets
+- Injected into server `.env` automatically
+- TCP connection locally protected by Cloudflare Access OTP
 
 **Database Sync (Dev ↔ Prod):**
 ```bash
 pnpm db:sync:prod-to-dev    # Copy prod data to dev
 pnpm db:sync:dev-to-prod    # Promote dev to prod (auto-backup)
-pnpm db:backup               # SQL dump of any namespace
+pnpm db:backup               # SQL dump of any database
 ```
 
 ---

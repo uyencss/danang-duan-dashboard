@@ -72,52 +72,19 @@ sqld supports multiple database namespaces within a single instance:
 
 ### 3.4 Data Persistence
 
-- Database files are stored in the Docker named volume `sqld-data`, mapped to `/var/lib/sqld` inside the container.
-- Volumes persist across container restarts and `docker-compose down` (unless `--volumes` flag is used).
+- Database files are stored in the Docker named volume `postgres-data`, mapped to `/var/lib/postgresql/data` inside the container.
+- Volumes persist across container restarts and `docker-compose down`.
 
 ### 3.5 Backup Strategy
 
 ```bash
-# Copy the sqld data volume to a backup location
-docker cp danang-dashboard-db:/var/lib/sqld ./backups/sqld-$(date +%Y%m%d)
-
-# Or use sqld's built-in dump endpoint
-curl -H "Authorization: Bearer ${TOKEN}" http://localhost:8080/v1/dump > backup.sql
+# Export a full SQL dump using pg_dump
+docker exec danang-dashboard-db pg_dump -U postgres mobi_prod > backup-$(date +%Y%m%d).sql
 ```
 
-### 3.6 JWT Authentication & Key Management
+### 3.6 PostgreSQL Authentication
 
-sqld is protected by Ed25519 JWT authentication. Keys are stored **in the project folder** (`sqld-keys/`) and synced to production via GitHub Actions Secrets.
-
-```yaml
-# docker-compose.yml — sqld service
-sqld:
-  environment:
-    - SQLD_AUTH_JWT_KEY_FILE=/etc/sqld/sqld_jwt_public.pem
-  volumes:
-    - ./sqld-keys/sqld_jwt_public.pem:/etc/sqld/sqld_jwt_public.pem:ro
-```
-
-**Key lifecycle:**
-
-```
-Developer generates keys locally:
-  sqld-keys/sqld_jwt_private.pem  → signs JWT tokens
-  sqld-keys/sqld_jwt_public.pem   → verifies JWT tokens
-                │
-                │ Copy contents to GitHub Secrets:
-                │   SQLD_JWT_PUBLIC_KEY = <public key file contents>
-                │   TURSO_AUTH_TOKEN   = <generated prod JWT token>
-                │
-                ▼
-deploy.yml (on push to master):
-  1. SSH into server
-  2. echo "$SQLD_JWT_PUBLIC_KEY" > sqld-keys/sqld_jwt_public.pem
-  3. Write .env from secrets
-  4. docker compose up -d
-```
-
-> **Note:** The `*.pem` rule in `.gitignore` prevents PEM files from ever being committed. The `sqld-keys/README.md` (which IS committed) explains the key setup process for new team members.
+Postgres uses standard role-based authentication. The password is automatically generated in GitHub Actions and injected into the `.env` file on the server. There are no PEM files or JWT keys to manage.
 
 ### 3.7 Database Sync (Dev ↔ Prod)
 
@@ -131,19 +98,19 @@ Built-in scripts enable controlled data flow between database namespaces:
 
 ## 4. Cloudflare Tunnel Configuration
 
-The `cloudflared` container establishes a persistent tunnel to Cloudflare's edge network. Two hostnames are routed through this tunnel:
+The `cloudflared` container establishes a persistent tunnel to Cloudflare's edge network. We route two endpoints:
 
-| Hostname | Target | Purpose |
-|----------|--------|---------|
-| `dashboard.gpsdna.io.vn` | `http://web:3000` | Web application |
-| `turso.gpsdna.io.vn` | `http://sqld:8080` | Database access (for local development) |
+| Hostname | Target (Internal) | Layer | Purpose |
+|----------|--------|-------|---------|
+| `dashboard.gpsdna.io.vn` | `http://web:3000` | HTTP | Web application |
+| `db.gpsdna.io.vn` | `tcp://db:5432` | TCP | Database access (for local development) |
 
-### 4.1 Configuring Tunnel Routes
+### 4.1 Configuring the TCP Tunnel Route
 
-Routes are configured via the Cloudflare Zero Trust Dashboard:
-1. Go to **Networks → Tunnels → Your Tunnel → Public Hostname**
-2. Add a hostname mapping: `turso.gpsdna.io.vn` → `http://sqld:8080`
-3. *(Optional)* Add a Cloudflare Access policy for additional security
+Because Postgres uses a raw TCP connection (not HTTP), Cloudflare requires a TCP route that developers must dial into using `cloudflared access tcp`:
+1. Trong Cloudflare Zero Trust: Add Public Hostname: `db.gpsdna.io.vn` → `tcp://db:5432`
+2. Tạo Access Policy yêu cầu đăng nhập email
+3. Lập trình viên chạy lệnh local: `cloudflared access tcp --hostname db.gpsdna.io.vn --url localhost:5433`
 
 ## 5. Server Logs & Monitoring
 We use **Pino** for robust file-system logging.
@@ -153,17 +120,11 @@ We use **Pino** for robust file-system logging.
   - `info`: For general system events (users logging in, data exported).
 - **Troubleshooting:** If the app returns a 500 status code, immediately SSH into the server and run `tail -f logs/error.log` to view the stack trace in real-time.
 
-### 5.1 sqld Health Check
+### 5.1 Postgres Health Check
 
 ```bash
-# Check if sqld is healthy
-curl http://localhost:8080/health
-
-# Check sqld logs
-docker logs danang-dashboard-db --tail 50
-
-# Inside Docker network
-docker exec danang-dashboard-web curl http://sqld:8080/health
+# Check if Postgres is accepting connections
+docker exec danang-dashboard-db pg_isready -U postgres -d mobi_prod
 ```
 
 ## 6. Rollback Procedure
@@ -176,31 +137,27 @@ If a bad commit takes down production:
 
 If a bad migration corrupts the database:
 1. Stop the web container: `docker-compose stop web`
-2. Restore from the latest backup: `docker cp ./backups/sqld-<date>/. danang-dashboard-db:/var/lib/sqld/`
+2. Restore from the latest `.sql` dump: `cat backup.sql | docker exec -i danang-dashboard-db psql -U postgres -d mobi_prod`
 3. Restart: `docker-compose up -d`
 
 ## 7. CI/CD — GitHub Actions Deploy Flow
 
-The `deploy.yml` workflow handles the full deployment including sqld key provisioning:
+The `deploy.yml` workflow handles the full deployment including Postgres password injection:
 
 ```yaml
 # Key steps in deploy.yml:
 1. Connect to server via Tailscale + SSH
 2. git pull / clone latest code
-3. mkdir -p sqld-keys
-4. echo "$SQLD_JWT_PUBLIC_KEY" > sqld-keys/sqld_jwt_public.pem  # Write key from secret
-5. Write .env from GitHub Secrets (DATABASE_URL, TURSO_AUTH_TOKEN, etc.)
-6. docker compose up -d --build
+3. Write .env from GitHub Secrets (POSTGRES_PASSWORD, DATABASE_URL, etc.)
+4. docker compose up -d --build
 ```
 
 ### GitHub Actions Secrets Required
 
 | Secret | Value | Description |
 |--------|-------|-------------|
-| `SQLD_JWT_PUBLIC_KEY` | Contents of `sqld_jwt_public.pem` | Written to server as PEM file |
-| `DATABASE_URL` | `http://sqld:8080` | Internal Docker network URL |
-| `TURSO_DATABASE_URL` | `http://sqld:8080` | Same as DATABASE_URL for prod |
-| `TURSO_AUTH_TOKEN` | `eyJ...` | Prod JWT token |
+| `POSTGRES_PASSWORD` | `<secure-random-password>` | Assigned to postgres user |
+| `DATABASE_URL` | `postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/mobi_prod` | Internal Docker network URL |
 | `BETTER_AUTH_SECRET` | `<random>` | Auth session secret |
 | `BETTER_AUTH_URL` | `https://dashboard.gpsdna.io.vn` | Public auth URL |
 | `CLOUDFLARE_TUNNEL_TOKEN` | `eyJ...` | Tunnel auth |
@@ -212,9 +169,8 @@ The `deploy.yml` workflow handles the full deployment including sqld key provisi
 
 | Variable | Example Value | Description |
 |----------|--------------|-------------|
-| `DATABASE_URL` | `http://sqld:8080` | Prisma-compatible DB URL (internal Docker) |
-| `TURSO_DATABASE_URL` | `http://sqld:8080` | libSQL client URL (internal Docker) |
-| `TURSO_AUTH_TOKEN` | `eyJ...` | JWT token for sqld authentication |
+| `POSTGRES_PASSWORD` | `<secure>` | Postgres admin password |
+| `DATABASE_URL` | `postgresql://postgres:pass@db:5432/mobi_prod` | Prisma-compatible DB URL (internal Docker) |
 | `BETTER_AUTH_SECRET` | `<random>` | Auth session encryption secret |
 | `BETTER_AUTH_URL` | `https://dashboard.gpsdna.io.vn` | Public-facing auth URL |
 | `ABLY_API_KEY` | `xxx.yyy:zzz` | Real-time messaging |
@@ -225,7 +181,5 @@ The `deploy.yml` workflow handles the full deployment including sqld key provisi
 
 | Variable | Example Value | Description |
 |----------|--------------|-------------|
-| `DATABASE_URL` | `https://turso.gpsdna.io.vn` | DB URL via Cloudflare Tunnel |
-| `TURSO_DATABASE_URL` | `https://turso.gpsdna.io.vn` | libSQL URL via Cloudflare Tunnel |
-| `TURSO_AUTH_TOKEN` | `eyJ...` | JWT token for dev database |
+| `DATABASE_URL` | `postgresql://postgres:pass@localhost:5433/mobi_dev` | Local TCP proxy connection via Cloudflare Access |
 | `BETTER_AUTH_URL` | `http://localhost:3000` | Local auth URL |

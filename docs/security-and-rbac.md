@@ -34,74 +34,41 @@ All connections to sqld require a valid **Ed25519-signed JWT token**. The sqld c
 
 ```
 Connection Flow:
-    Client (Prisma / libSQL)
+    Client (Prisma)
         │
-        ├── Authorization: Bearer <jwt-token>
-        │
-        ▼
-    sqld Container
-        │
-        ├── Verify JWT signature against SQLD_AUTH_JWT_KEY_FILE (public key)
-        ├── Check token expiry
-        │
-        ▼
-    ✅ Allow / ❌ Reject
+    │  TCP Connection (Prisma)
+    ▼
+PostgreSQL Container (Network `backend`)
+    │
+    ├── Authenticate via Postgres Role/Password
+    │
+    ▼
+✅ Allow / ❌ Reject
 ```
 
-### 5.3 Key Management — In-Project Keys + GitHub Secrets
+### 5.3 Key Management — GitHub Secrets
 
-JWT keys are stored **within the project folder** (`sqld-keys/`) and synced to production via GitHub Actions Secrets.
+PostgreSQL uses standard username and password authentication without complex JWT or PEM keys.
 
-```
-sqld-keys/                              GitHub Actions Secrets
-├── README.md           (committed)     
-├── sqld_jwt_private.pem (gitignored)   → Used locally to generate tokens
-└── sqld_jwt_public.pem  (gitignored)   → SQLD_JWT_PUBLIC_KEY secret
-                                        → Written to server on deploy
-```
-
-| Key | Location | Git Status | Purpose |
-|-----|----------|-----------|---------|
-| Ed25519 **Private Key** | `sqld-keys/sqld_jwt_private.pem` | ❌ Gitignored (`*.pem`) | Signs JWT tokens locally |
-| Ed25519 **Public Key** | `sqld-keys/sqld_jwt_public.pem` | ❌ Gitignored (`*.pem`) | Synced to GitHub Secrets as `SQLD_JWT_PUBLIC_KEY` |
-| **Prod JWT Token** | GitHub Secret `TURSO_AUTH_TOKEN` → server `.env` | ❌ Never committed | Authenticates production `web` container |
-| **Dev JWT Token** | Developer local `.env` (`TURSO_AUTH_TOKEN`) | ❌ Never committed | Authenticates developer connections |
-
-**Deployment Flow:**
-1. Developer generates keys locally with `openssl` (see `sqld-keys/README.md`)
-2. Developer generates tokens with `npx tsx scripts/sqld-keys/generate-token.ts`
-3. Public key contents → GitHub Secret `SQLD_JWT_PUBLIC_KEY`
-4. Prod token → GitHub Secret `TURSO_AUTH_TOKEN`
-5. `deploy.yml` writes public key to `sqld-keys/sqld_jwt_public.pem` on the server
-6. `docker-compose.yml` mounts the public key into sqld container
+1. A highly secure random password is generated and stored in **GitHub Actions Secrets** as `POSTGRES_PASSWORD`.
+2. During the `deploy.yml` workflow, this secret is injected into the server's `.env` file.
+3. The Docker Compose `db` service reads this password to instantiate the Postgres cluster.
+4. Developers do NOT need the production password. They only need access to the `mobi_dev` database locally.
 
 ### 5.4 Security Rules
 
-1. **No anonymous access** — sqld rejects all requests without a valid JWT
-2. **Ed25519 private key is gitignored** — `*.pem` in `.gitignore` covers all PEM files
-3. **Ed25519 private key is NEVER mounted into any container** — only the public key goes into sqld
-4. **Public key is synced via GitHub Secrets** — no manual server key management needed
-5. **Dev and prod use separate JWT tokens** — different `sub` claims for auditing
-6. **Production `web` container uses internal Docker URL** (`http://sqld:8080`) — database traffic never leaves the Docker network
-7. **External access via Cloudflare Tunnel only** — no ports are exposed on the VPS firewall for sqld
-
-### 5.5 Cloudflare Access (Optional Additional Layer)
-
-For defense-in-depth, a Cloudflare Access policy can be applied to `turso.gpsdna.io.vn` to restrict who can reach the sqld endpoint even before JWT validation:
-- Restrict by email domain
-- Require one-time PIN
 - Restrict by IP range / country
 
 ### 5.6 Data Isolation & Sync
 
-| Namespace | Purpose | Access |
+| Database | Purpose | Access |
 |-----------|---------|--------|
-| `default` | Production data | Only the Docker `web` container |
-| `dev` | Development data | Developer laptops via Cloudflare Tunnel |
+| `mobi_prod` | Production data | Only the Docker `web` container |
+| `mobi_dev` | Development data | Developer laptops via Cloudflare TCP Tunnel |
 
-**Database sync scripts** allow controlled data flow between namespaces:
-- `pnpm db:sync:prod-to-dev` — Copy prod data to dev (overwrites dev, with confirmation)
-- `pnpm db:sync:dev-to-prod` — Promote dev to prod (auto-backup before sync, double confirmation)
-- `pnpm db:backup` — Point-in-time SQL dump of any namespace
+**Database sync scripts** allow controlled data flow between databases:
+- `pnpm db:sync:prod-to-dev` — Copy prod data to dev (pg_dump -> dev)
+- `pnpm db:sync:dev-to-prod` — Promote dev to prod (auto-backup before sync)
+- `pnpm db:backup` — Point-in-time SQL dump of any database
 
-> ⚠️ **Critical:** Destructive operations (`DROP TABLE`, `prisma migrate reset`) on the dev namespace do NOT affect production data. However, if a developer accidentally uses the prod JWT token locally, they CAN destroy production data. Always verify your `.env` before running migrations.
+> ⚠️ **Critical:** Destructive operations (`prisma db push --force-reset`) on `mobi_dev` do NOT affect production data. Always verify your `DATABASE_URL` before running destructive commands.

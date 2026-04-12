@@ -332,103 +332,80 @@ export function isNeedsCare(lastCare: Date | null): boolean {
 
 ## 5. Migration Strategy
 
-### 5.1 Development (via Cloudflare Tunnel → sqld)
+### 5.1 Development (via Cloudflare TCP Tunnel → Postgres)
 ```bash
-# Local dev connects to self-hosted sqld through Cloudflare Tunnel
-# DATABASE_URL=https://turso.gpsdna.io.vn
+# Local dev connects to self-hosted PostgreSQL through Cloudflare TCP Tunnel
+# DATABASE_URL=postgresql://postgres:<pass>@localhost:5433/mobi_dev
 npx prisma migrate dev --name init
 npx prisma db push
 ```
 
-### 5.2 Production (Internal Docker Network → sqld)
+### 5.2 Production (Internal Docker Network → Postgres)
 ```bash
 # Production web container connects internally
-# DATABASE_URL=http://sqld:8080
+# DATABASE_URL=postgresql://postgres:<pass>@db:5432/mobi_prod
 npx prisma migrate deploy
 ```
 
-### 5.3 Self-Hosted sqld Architecture
+### 5.3 Self-Hosted PostgreSQL Architecture
 
-Cả production và development đều sử dụng **self-hosted sqld (libSQL Server)** chạy trong Docker Compose. sqld được bảo vệ bởi JWT authentication (Ed25519).
+Cả production và development đều sử dụng **self-hosted PostgreSQL 17** chạy trong Docker Compose. Không còn sử dụng libSQL/Turso.
 
 | Aspect | Detail |
 |--------|--------|
-| **Database Engine** | sqld (libSQL Server) — Docker container |
-| **Data Storage** | Docker named volume `sqld-data` → `/var/lib/sqld` |
-| **Prod Connection** | `http://sqld:8080` (internal Docker network, < 1ms) |
-| **Dev Connection** | `https://turso.gpsdna.io.vn` (Cloudflare Tunnel, ~50-100ms) |
-| **Authentication** | Ed25519 JWT tokens (mandatory for all connections) |
-| **Database Separation** | `default` namespace (prod) + `dev` namespace (dev) |
-| **Reads/Writes** | Direct HTTP to sqld container |
-| **Connection Protocol** | Stateless HTTP — no WebSocket/Hrana issues |
+| **Database Engine** | PostgreSQL 17 (`postgres:17-alpine`) |
+| **Data Storage** | Docker named volume `postgres-data` → `/var/lib/postgresql/data` |
+| **Prod Connection** | `postgresql://...db:5432` (internal Docker network, < 1ms) |
+| **Dev Connection** | `cloudflared access tcp` qua `db.gpsdna.io.vn` |
+| **Authentication** | Standard Username/Password (no JWTs) |
+| **Database Separation** | `mobi_prod` database (prod) + `mobi_dev` database (dev) |
+| **Reads/Writes** | Standard Postgres TCP connection via Prisma |
 | **Cost** | $0 (self-hosted on existing VPS) |
 
 **Environment Variables (Production — Docker `web` container):**
 ```env
-DATABASE_URL="http://sqld:8080"              # Internal Docker network
-TURSO_DATABASE_URL="http://sqld:8080"        # Internal Docker network
-TURSO_AUTH_TOKEN="<prod-jwt-token>"          # Ed25519 signed JWT
+POSTGRES_PASSWORD="<secure-password>"
+DATABASE_URL="postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/mobi_prod"
 ```
 
 **Environment Variables (Development — Local machine):**
 ```env
-DATABASE_URL="https://turso.gpsdna.io.vn"    # Cloudflare Tunnel → sqld
-TURSO_DATABASE_URL="https://turso.gpsdna.io.vn"  # Cloudflare Tunnel → sqld
-TURSO_AUTH_TOKEN="<dev-jwt-token>"           # Ed25519 signed JWT
+# Sau khi chạy: cloudflared access tcp --hostname db.gpsdna.io.vn --url localhost:5433
+DATABASE_URL="postgresql://postgres:<secure-password>@localhost:5433/mobi_dev"
 ```
 
 **Client Configuration:**
-```typescript
-import { createClient } from "@libsql/client";
+`src/lib/prisma.ts` được đơn giản hóa hoàn toàn, chỉ khởi tạo `PrismaClient` chuẩn không cần bất kỳ HTTP adapter nào:
 
-// Works for both prod (http://sqld:8080) and dev (https://turso.gpsdna.io.vn)
-const libsqlClient = createClient({
-  url: process.env.TURSO_DATABASE_URL!,
-  authToken: process.env.TURSO_AUTH_TOKEN!,
-});
+```typescript
+import { PrismaClient } from "@prisma/client";
+export const prisma = globalThis.prisma ?? new PrismaClient();
 ```
 
 **Consistency Model:**
 
 | Scenario | Behavior |
 |----------|----------|
-| Single-writer (prod web container) | Fully consistent (single sqld instance) |
-| Dev vs Prod | Separate database namespaces — no cross-contamination |
+| Truy xuất dữ liệu | Fully consistent (ACID compliant Postgres) |
+| Dev vs Prod | 2 database độc lập (`mobi_prod`, `mobi_dev`) trong cùng 1 cluster |
 | Chat messages | Real-time qua Ably — không phụ thuộc DB sync |
 | System Logs | File System (`logs/app.log`) bằng Pino — không lưu trong DB |
 
 ### 5.4 Database Sync (Dev ↔ Prod)
 
-Built-in scripts allow controlled data flow between dev and prod namespaces:
-
-```
-┌─────────────────┐                    ┌─────────────────┐
-│  PROD (default)  │ ── sync ────────▶ │  DEV             │
-│  namespace       │ ◀── promote ──── │  namespace       │
-└─────────────────┘                    └─────────────────┘
-```
+Để đảm bảo đồng nhất môi trường, dự án sử dụng các script đồng bộ giữa hai database `mobi_prod` và `mobi_dev`:
 
 | Command | Direction | Use Case |
 |---------|-----------|----------|
-| `pnpm db:sync:prod-to-dev` | Prod → Dev | Seed dev with real prod data for testing |
-| `pnpm db:sync:dev-to-prod` | Dev → Prod | Promote tested schema/data changes to production |
-| `pnpm db:backup` | Any namespace | Create point-in-time SQL dump |
+| `pnpm db:sync:prod-to-dev` | Prod → Dev | Seed dev bằng cách copy toàn bộ data từ `mobi_prod` sang `mobi_dev` (pg_dump) |
+| `pnpm db:sync:dev-to-prod` | Dev → Prod | Migrate data lên prod (có auto-backup) |
+| `pnpm db:backup` | Any database | Tạo file SQL dump |
 
-**Safety rules:**
-1. Prod → Dev always overwrites dev (with confirmation prompt)
-2. Dev → Prod always creates auto-backup first, requires double confirmation
-3. Schema-only mode (`--schema-only`) runs `prisma migrate deploy` without touching data
-4. Data-only mode (`--data-only`) copies rows without schema changes
+### 5.5 Security
 
-### 5.5 JWT Key Management
-
-Keys are stored in `sqld-keys/` within the project root (all `*.pem` files are gitignored). The public key is synced to GitHub Actions Secrets as `SQLD_JWT_PUBLIC_KEY` and written to the server during `deploy.yml` execution.
-
-```
-Developer Laptop                    GitHub Secrets             Server
-sqld-keys/*.pem (gitignored)   →   SQLD_JWT_PUBLIC_KEY   →   sqld-keys/sqld_jwt_public.pem
-generate-token.ts              →   TURSO_AUTH_TOKEN       →   .env (prod token)
-```
+Bảo mật truy cập database:
+1. **Prod:** Database container không export port 5432 ra ngoài host, chỉ truy cập được nội bộ trong mạng `backend` Docker. Mật khẩu được deploy qua GitHub Actions Secrets (`POSTGRES_PASSWORD`).
+2. **Dev:** Cloudflare Zero Trust bảo vệ DNS `db.gpsdna.io.vn`. Developer phải xác thực với Cloudflare Access (Email OTP/Azure AD) thì `cloudflared access tcp` mới được phép thiết lập đường ống (tunnel) tới port 5432.
 
 ---
 
