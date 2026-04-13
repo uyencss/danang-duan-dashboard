@@ -179,7 +179,7 @@ export function ProjectsTable({
     },
     {
       accessorKey: "chuyenVien",
-      header: "CV",
+      header: "Chủ trì",
       cell: ({ row }) => (
         <span className="text-xs">{(row.original as any).chuyenVien?.name || "—"}</span>
       ),
@@ -311,7 +311,7 @@ export function ProjectsTable({
         "Sản Phẩm": p.sanPham?.tenChiTiet || "",
         "AM": p.am?.name || "",
         "AM hỗ trợ": p.amHoTro?.name || "",
-        "Chuyên Viên": p.chuyenVien?.name || "",
+        "Chuyên viên chủ trì": p.chuyenVien?.name || "",
         "CV hỗ trợ 1": p.cvHoTro1?.name || "",
         "CV hỗ trợ 2": p.cvHoTro2?.name || "",
         "Trạng Thái": STATUS_STYLES[p.trangThaiHienTai]?.label || p.trangThaiHienTai,

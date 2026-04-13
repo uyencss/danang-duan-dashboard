@@ -675,7 +675,7 @@ export default function ProjectForm() {
                   name="chuyenVienId"
                   render={({ field }) => (
                     <FormItem>
-                      <FieldLabel>Chuyên Viên Phụ Trách</FieldLabel>
+                      <FieldLabel>Chuyên Viên Chủ Trì</FieldLabel>
                       <SearchableSelect
                         options={cvSearchOptions}
                         value={field.value ? String(field.value) : ""}

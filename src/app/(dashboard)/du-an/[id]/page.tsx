@@ -177,7 +177,7 @@ export default async function ProjectDetailPage({
             <UserCheck className="size-4" />
           </div>
           <div className="flex-1">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Chuyên viên hỗ trợ</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Chuyên viên chủ trì</p>
             {project.chuyenVien ? (
               <div className="flex items-center gap-2">
                 <p className="font-bold text-[#191c1e] text-sm">{project.chuyenVien.name}</p>
