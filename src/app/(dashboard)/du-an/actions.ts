@@ -635,8 +635,13 @@ export async function approveDeleteDuAn(id: number) {
     
     // Check dynamic permission for non-admin
     if (user.role !== "ADMIN") {
-      const hasPerm = await checkPermission(user.role, "du-an-da-xoa", "canDelete");
-      if (!hasPerm) return { error: "Bạn không có quyền xoá vĩnh viễn" };
+      // Try both the standard key and the actual path to be safe
+      const hasPermByKey = await checkPermission(user.role, "du-an-da-xoa", "canDelete");
+      const hasPermByPath = await checkPermission(user.role, "/admin/du-an-da-xoa", "canDelete");
+      
+      if (!hasPermByKey && !hasPermByPath) {
+        return { error: "Bạn không có quyền xoá vĩnh viễn (Phân quyền: Dự án đã xóa - Xóa)" };
+      }
     }
 
     await prisma.duAn.delete({ where: { id }});
@@ -657,8 +662,12 @@ export async function restoreDuAn(id: number) {
     
     // Check dynamic permission for non-admin (restore usually requires Edit permission)
     if (user.role !== "ADMIN") {
-      const hasPerm = await checkPermission(user.role, "du-an-da-xoa", "canEdit");
-      if (!hasPerm) return { error: "Bạn không có quyền khôi phục dự án" };
+      const hasPermByKey = await checkPermission(user.role, "du-an-da-xoa", "canEdit");
+      const hasPermByPath = await checkPermission(user.role, "/admin/du-an-da-xoa", "canEdit");
+      
+      if (!hasPermByKey && !hasPermByPath) {
+        return { error: "Bạn không có quyền khôi phục dự án (Phân quyền: Dự án đã xóa - Sửa)" };
+      }
     }
 
     await prisma.duAn.update({

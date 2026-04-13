@@ -144,6 +144,19 @@ export async function checkPermission(
 
     log(`Checking permission: role=${role}, key=${menuKey}, action=${permission}`);
 
+    // 0. Special case: If menuKey starts with /, try searching by href directly first
+    if (menuKey.startsWith("/")) {
+      const menuByHref = await prisma.menuItem.findFirst({
+        where: { href: { equals: menuKey, mode: 'insensitive' } }
+      });
+      if (menuByHref) {
+        const p = await prisma.menuPermission.findUnique({
+          where: { menuKey_role: { menuKey: menuByHref.key, role: role as any } }
+        });
+        if (p) return p[permission] === true;
+      }
+    }
+
     // 1. Try finding by menuKey first (most efficient)
     let perm = await prisma.menuPermission.findUnique({
       where: {
@@ -157,12 +170,17 @@ export async function checkPermission(
     // 2. Fallback: Search by Href/Label if menuKey doesn't match
     if (!perm) {
       log(`Key "${menuKey}" not found, searching fallback...`);
+      // Use mode: 'insensitive' for Postgres support and handle common variations
       const menu = await prisma.menuItem.findFirst({
         where: {
           OR: [
-            { href: { contains: "du-an-da-xoa" } },
-            { label: { contains: "Dự án đã xoá" } },
-            { href: { contains: "DU-AN-DA-XOA" } }
+            { key: { contains: menuKey, mode: 'insensitive' } },
+            { href: { contains: menuKey, mode: 'insensitive' } },
+            { href: { contains: menuKey.toUpperCase(), mode: 'insensitive' } },
+            { label: { contains: "Dự án đã xoá", mode: 'insensitive' } },
+            { label: { contains: "Dự án đã xóa", mode: 'insensitive' } },
+            { label: { contains: menuKey.replace(/-/g, ' '), mode: 'insensitive' } },
+            { href: { contains: "du-an-da-xoa", mode: 'insensitive' } }
           ]
         }
       });
