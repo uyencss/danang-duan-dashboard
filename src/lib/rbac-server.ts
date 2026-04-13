@@ -134,15 +134,7 @@ export async function checkPermission(
   if (role === "ADMIN") return true;
 
   try {
-    const fs = require('fs');
-    const logPath = 'rbac-debug.log';
-    const log = (msg: string) => {
-        const timestamp = new Date().toISOString();
-        fs.appendFileSync(logPath, `[${timestamp}] ${msg}\n`);
-        console.log(msg);
-    };
-
-    log(`Checking permission: role=${role}, key=${menuKey}, action=${permission}`);
+    console.log(`Checking permission: role=${role}, key=${menuKey}, action=${permission}`);
 
     // 0. Special case: If menuKey starts with /, try searching by href directly first
     if (menuKey.startsWith("/")) {
@@ -169,7 +161,7 @@ export async function checkPermission(
 
     // 2. Fallback: Search by Href/Label if menuKey doesn't match
     if (!perm) {
-      log(`Key "${menuKey}" not found, searching fallback...`);
+      console.log(`Key "${menuKey}" not found, searching fallback...`);
       // Use mode: 'insensitive' for Postgres support and handle common variations
       const menu = await prisma.menuItem.findFirst({
         where: {
@@ -186,7 +178,7 @@ export async function checkPermission(
       });
 
       if (menu) {
-        log(`Found fallback menu: key=${menu.key}, label=${menu.label}, href=${menu.href}`);
+        console.log(`Found fallback menu: key=${menu.key}, label=${menu.label}, href=${menu.href}`);
         perm = await prisma.menuPermission.findUnique({
           where: {
             menuKey_role: {
@@ -199,15 +191,16 @@ export async function checkPermission(
     }
 
     if (!perm) {
-      log(`FAILED: No permission record found for ${role} on ${menuKey}`);
+      console.log(`FAILED: No permission record found for ${role} on ${menuKey}`);
       return false;
     }
     
     const result = perm[permission] === true;
-    log(`RESULT: ${role} on ${perm.menuKey} ${permission} => ${result}`);
+    console.log(`RESULT: ${role} on ${perm.menuKey} ${permission} => ${result}`);
     return result;
   } catch (error: any) {
     console.error(`Permission check error:`, error);
     return false;
   }
 }
+

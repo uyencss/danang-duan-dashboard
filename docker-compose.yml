@@ -77,6 +77,8 @@ services:
       - ABLY_API_KEY=${ABLY_API_KEY}
       - NEXT_PUBLIC_ABLY_KEY=${NEXT_PUBLIC_ABLY_KEY}
       - REDIS_URL=redis://redis:6379
+      - BUILD_ID=${BUILD_ID}
+
     volumes:
       - ./logs:/app/logs
       - ./uploads:/app/uploads
