@@ -84,7 +84,7 @@ export async function updatePermissionsForRole(role: AppRole, permissions: Permi
     }
   });
 
-  await invalidateRbacCache();
+  invalidateRbacCache();
   revalidatePath("/admin/roles");
   revalidatePath("/", "layout");
   
@@ -114,7 +114,7 @@ export async function updateRoleConfig(
     },
   });
 
-  await invalidateRbacCache();
+  invalidateRbacCache();
   revalidatePath("/admin/roles");
   
   return { success: true };
@@ -145,7 +145,7 @@ export async function updateMenuItems(items: {
     }
   });
 
-  await invalidateRbacCache();
+  invalidateRbacCache();
   revalidatePath("/admin/roles");
   revalidatePath("/", "layout");
 

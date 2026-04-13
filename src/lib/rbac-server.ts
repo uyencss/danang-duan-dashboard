@@ -111,13 +111,6 @@ export async function getMenuItemsForRole(role: AppRole) {
       where: { role, canView: true, menu: { isActive: true } },
       include: { menu: true },
     });
-
-    const fs = require('fs');
-    const logPath = 'rbac-debug.log';
-    const timestamp = new Date().toISOString();
-    const menuNames = records.map(r => r.menu.label).join(', ');
-    fs.appendFileSync(logPath, `[${timestamp}] getMenuItemsForRole: role=${role}, items=[${menuNames}]\n`);
-
     return records
       .map(r => r.menu)
       .filter((menu): menu is NonNullable<typeof menu> => !!menu)
@@ -214,10 +207,6 @@ export async function checkPermission(
     log(`RESULT: ${role} on ${perm.menuKey} ${permission} => ${result}`);
     return result;
   } catch (error: any) {
-    const fs = require('fs');
-    const logPath = 'rbac-debug.log';
-    const timestamp = new Date().toISOString();
-    fs.appendFileSync(logPath, `[${timestamp}] ERROR in checkPermission: ${error?.message || String(error)}\n`);
     console.error(`Permission check error:`, error);
     return false;
   }

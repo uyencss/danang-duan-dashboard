@@ -169,7 +169,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
     .map((u) => ({ value: u.id, label: u.name || "Không rõ" }));
 
   const cvOptions = userOptions
-    .filter((u) => u.role === "CV" || u.role === "USER" || u.role === "ADMIN")
+    .filter((u) => u.role === "CV" || u.role === "USER")
     .map((u) => ({ value: u.id, label: u.name || "Không rõ" }));
 
   const amSearchOptions = [{ value: "", label: "--- Trống ---" }, ...amOptions];

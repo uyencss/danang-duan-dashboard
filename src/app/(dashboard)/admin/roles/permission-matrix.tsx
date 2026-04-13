@@ -79,9 +79,6 @@ export function PermissionMatrix({
         type: "success",
         showCancel: false,
       });
-      setTimeout(() => {
-        window.location.reload(); // Hard reload is safest for RBAC changes affecting layouts
-      }, 500);
     } catch (e: any) {
       showAlert({
         title: "Lỗi",
