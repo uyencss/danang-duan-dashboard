@@ -14,6 +14,7 @@ import { existsSync, mkdirSync } from "fs";
 import { syncReplica } from "@/lib/utils/sync";
 import { ablyServerClient } from "@/lib/realtime";
 import { getCurrentUser, requireRole } from "@/lib/auth-utils";
+import { checkPermission } from "@/lib/rbac-server";
 import { withCache, cacheInvalidate } from "@/lib/cache";
 
 // ── Schema for the NEW creation flow ────────────────────────────────
@@ -630,8 +631,13 @@ export async function requestDeleteDuAn(id: number) {
 
 export async function approveDeleteDuAn(id: number) {
   try {
-    const user = await requireRole("ADMIN");
-    if (user.role !== "ADMIN") return { error: "Chỉ Admin mới có quyền duyệt xoá" };
+    const user = await requireRole("ADMIN", "USER");
+    
+    // Check dynamic permission for non-admin
+    if (user.role !== "ADMIN") {
+      const hasPerm = await checkPermission(user.role, "du-an-da-xoa", "canDelete");
+      if (!hasPerm) return { error: "Bạn không có quyền xoá vĩnh viễn" };
+    }
 
     await prisma.duAn.delete({ where: { id }});
     await cacheInvalidate("dashboard:overview");
@@ -640,14 +646,20 @@ export async function approveDeleteDuAn(id: number) {
     await syncReplica();
     return { success: true };
   } catch (error) {
+    console.error("Permanent Delete Error:", error);
     return { error: "Xoá vĩnh viễn thất bại" };
   }
 }
 
 export async function restoreDuAn(id: number) {
   try {
-    const user = await requireRole("ADMIN");
-    if (user.role !== "ADMIN") return { error: "Chỉ Admin mới có quyền khôi phục" };
+    const user = await requireRole("ADMIN", "USER");
+    
+    // Check dynamic permission for non-admin (restore usually requires Edit permission)
+    if (user.role !== "ADMIN") {
+      const hasPerm = await checkPermission(user.role, "du-an-da-xoa", "canEdit");
+      if (!hasPerm) return { error: "Bạn không có quyền khôi phục dự án" };
+    }
 
     await prisma.duAn.update({
       where: { id },

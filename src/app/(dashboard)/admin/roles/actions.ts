@@ -57,9 +57,9 @@ export async function updatePermissionsForRole(role: AppRole, permissions: Permi
     throw new Error("Invalid permissions format");
   }
 
-  await prisma.$transaction(
-    permissions.map((p) =>
-      prisma.menuPermission.upsert({
+  await prisma.$transaction(async (tx) => {
+    for (const p of permissions) {
+      await tx.menuPermission.upsert({
         where: {
           menuKey_role: {
             menuKey: p.menuKey,
@@ -80,9 +80,9 @@ export async function updatePermissionsForRole(role: AppRole, permissions: Permi
           canEdit: p.canEdit,
           canDelete: p.canDelete,
         },
-      })
-    )
-  );
+      });
+    }
+  });
 
   invalidateRbacCache();
   revalidatePath("/admin/roles");
@@ -130,9 +130,9 @@ export async function updateMenuItems(items: {
 }[]) {
   const session = await requireAdmin();
 
-  await prisma.$transaction(
-    items.map(item => 
-      prisma.menuItem.update({
+  await prisma.$transaction(async (tx) => {
+    for (const item of items) {
+      await tx.menuItem.update({
         where: { id: item.id },
         data: {
           label: item.label,
@@ -141,9 +141,9 @@ export async function updateMenuItems(items: {
           isActive: item.isActive,
           icon: item.icon,
         }
-      })
-    )
-  );
+      });
+    }
+  });
 
   invalidateRbacCache();
   revalidatePath("/admin/roles");
