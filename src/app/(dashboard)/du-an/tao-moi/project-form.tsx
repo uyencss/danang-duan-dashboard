@@ -199,7 +199,7 @@ export default function ProjectForm() {
     () => [
       { value: "", label: "--- Trống ---" },
       ...userOptions
-        .filter((u) => u.role === "CV" || u.role === "ADMIN")
+        .filter((u) => u.role === "CV" || u.role === "USER" || u.role === "ADMIN")
         .map((u) => ({ value: u.id, label: u.name })),
     ],
     [userOptions]

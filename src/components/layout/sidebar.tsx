@@ -21,6 +21,12 @@ import {
   ClipboardList,
   Shield,
   Settings,
+  Users,
+  Box,
+  GitMerge,
+  BarChart2,
+  Briefcase,
+  UserCircle,
 } from "lucide-react";
 
 import type { AppRole } from "@/lib/rbac";
@@ -40,6 +46,12 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Trash2,
   Shield,
   Settings,
+  Users,
+  Box,
+  GitMerge,
+  BarChart2,
+  Briefcase,
+  UserCircle,
 };
 
 interface SidebarItem {
