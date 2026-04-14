@@ -78,11 +78,14 @@ export function useProjectChat(projectId: number, currentUserId?: string) {
 
     return () => {
       try {
-        channel.unsubscribe();
-        if (client.connection.state !== "closed") {
-          const result = client.close() as any;
-          if (result && typeof result.catch === 'function') {
-            result.catch(() => {});
+        if (channel) channel.unsubscribe();
+        if (client) {
+          const state = client.connection.state;
+          if (state !== "closed" && state !== "closing") {
+             const result = client.close() as any;
+             if (result && typeof result.catch === 'function') {
+                result.catch(() => {});
+             }
           }
         }
       } catch (e) {

@@ -106,11 +106,16 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     });
 
     return () => {
-      channel.unsubscribe();
+      if (channel) channel.unsubscribe();
       try {
-        const result = client.close() as any;
-        if (result && typeof result.catch === 'function') {
-          result.catch(() => {});
+        if (client) {
+          const state = client.connection.state;
+          if (state !== "closed" && state !== "closing") {
+             const result = client.close() as any;
+             if (result && typeof result.catch === 'function') {
+                result.catch(() => {});
+             }
+          }
         }
       } catch (e) {
         // Silently fail on unmount

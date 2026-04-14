@@ -156,23 +156,6 @@ export default async function ProjectDetailPage({
         </div>
 
         <div className="p-5 flex items-start gap-3 hover:bg-slate-50 transition-colors">
-          <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
-            <UserCircle className="size-4" />
-          </div>
-          <div className="flex-1">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">AM Phụ trách</p>
-            {project.am ? (
-              <div className="flex items-center gap-2">
-                <p className="font-bold text-[#191c1e] text-sm">{project.am.name}</p>
-              </div>
-            ) : (
-              <span className="text-[11px] text-slate-400 italic font-medium">Chưa phân công</span>
-            )}
-            <p className="text-[10px] text-slate-400 mt-0.5 font-medium">Quản lý trực tiếp</p>
-          </div>
-        </div>
-
-        <div className="p-5 flex items-start gap-3 hover:bg-slate-50 transition-colors">
           <div className="p-2 bg-teal-50 text-teal-600 rounded-xl">
             <UserCheck className="size-4" />
           </div>
@@ -186,6 +169,23 @@ export default async function ProjectDetailPage({
               <span className="text-[11px] text-slate-400 italic font-medium">Chưa phân công</span>
             )}
             <p className="text-[10px] text-slate-400 mt-0.5 font-medium">Hỗ trợ kỹ thuật</p>
+          </div>
+        </div>
+
+        <div className="p-5 flex items-start gap-3 hover:bg-slate-50 transition-colors">
+          <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
+            <UserCircle className="size-4" />
+          </div>
+          <div className="flex-1">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">AM Phụ trách</p>
+            {project.am ? (
+              <div className="flex items-center gap-2">
+                <p className="font-bold text-[#191c1e] text-sm">{project.am.name}</p>
+              </div>
+            ) : (
+              <span className="text-[11px] text-slate-400 italic font-medium">Chưa phân công</span>
+            )}
+            <p className="text-[10px] text-slate-400 mt-0.5 font-medium">Quản lý trực tiếp</p>
           </div>
         </div>
 

@@ -1,0 +1,9 @@
+[2026-04-13T10:02:21.636Z] getMenuItemsForRole: role=USER, items=[Dashboard Tổng quan, CRM & DS Dự án, Khách hàng, Phân tích & KPI, Top Địa bàn, Quản lý AM, Quản lý Chuyên viên, Sản phẩm, Quản lý User, Giao KPI, Theo dõi các bước, Dự án đã xoá, Phân quyền, Khởi tạo Dự án CĐS]
+[2026-04-13T10:02:22.299Z] getMenuItemsForRole: role=USER, items=[Dashboard Tổng quan, CRM & DS Dự án, Khách hàng, Phân tích & KPI, Top Địa bàn, Quản lý AM, Quản lý Chuyên viên, Sản phẩm, Quản lý User, Giao KPI, Theo dõi các bước, Dự án đã xoá, Phân quyền, Khởi tạo Dự án CĐS]
+[2026-04-13T10:02:22.338Z] getMenuItemsForRole: role=USER, items=[Dashboard Tổng quan, CRM & DS Dự án, Khách hàng, Phân tích & KPI, Top Địa bàn, Quản lý AM, Quản lý Chuyên viên, Sản phẩm, Quản lý User, Giao KPI, Theo dõi các bước, Dự án đã xoá, Phân quyền, Khởi tạo Dự án CĐS]
+[2026-04-13T10:02:29.550Z] Checking permission: role=USER, key=du-an-da-xoa, action=canDelete
+[2026-04-13T10:02:29.647Z] RESULT: USER on du-an-da-xoa canDelete => true
+[2026-04-13T10:02:29.652Z] Checking permission: role=USER, key=/admin/du-an-da-xoa, action=canDelete
+[2026-04-13T10:02:30.418Z] getMenuItemsForRole: role=USER, items=[Dashboard Tổng quan, CRM & DS Dự án, Khách hàng, Phân tích & KPI, Top Địa bàn, Quản lý AM, Quản lý Chuyên viên, Sản phẩm, Quản lý User, Giao KPI, Theo dõi các bước, Dự án đã xoá, Phân quyền, Khởi tạo Dự án CĐS]
+[2026-04-13T10:03:29.117Z] getMenuItemsForRole: role=USER, items=[Dashboard Tổng quan, CRM & DS Dự án, Khách hàng, Phân tích & KPI, Top Địa bàn, Quản lý AM, Quản lý Chuyên viên, Sản phẩm, Quản lý User, Giao KPI, Theo dõi các bước, Dự án đã xoá, Phân quyền, Khởi tạo Dự án CĐS]
+[2026-04-13T10:03:42.024Z] getMenuItemsForRole: role=USER, items=[Dashboard Tổng quan, CRM & DS Dự án, Khách hàng, Phân tích & KPI, Top Địa bàn, Quản lý AM, Quản lý Chuyên viên, Sản phẩm, Quản lý User, Giao KPI, Theo dõi các bước, Dự án đã xoá, Phân quyền, Khởi tạo Dự án CĐS]

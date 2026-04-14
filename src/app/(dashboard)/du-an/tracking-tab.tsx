@@ -40,9 +40,16 @@ export function TrackingTab({ initialData }: { initialData: any[] }) {
 
     return () => {
       try {
-        channel.unsubscribe();
-        if (client.connection.state !== "closed") {
-          client.close();
+        if (channel) channel.unsubscribe();
+        if (client) {
+           const state = client.connection.state;
+           if (state !== "closed" && state !== "closing") {
+              // Be defensive about close() possibly returning a promise or throwing
+              const result = client.close() as any;
+              if (result && typeof result.catch === 'function') {
+                result.catch(() => {});
+              }
+           }
         }
       } catch (e) {
         // Silently fail on unmount

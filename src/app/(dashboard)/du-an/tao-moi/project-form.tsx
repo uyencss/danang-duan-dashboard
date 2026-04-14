@@ -542,7 +542,7 @@ export default function ProjectForm() {
             {/* ═══════ SECTION 4: TÀI CHÍNH & THỜI GIAN ═══════ */}
             <div>
               <SectionHeader icon={<Banknote className="size-4" />} title="Tài chính & Thời gian" />
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-x-8 gap-y-5 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-x-8 gap-y-5 mt-4">
                 <FormField
                   control={form.control as any}
                   name="tongDoanhThuDuKien"
@@ -655,23 +655,6 @@ export default function ProjectForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-5 mt-4">
                 <FormField
                   control={form.control as any}
-                  name="amId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FieldLabel>AM Phụ Trách</FieldLabel>
-                      <SearchableSelect
-                        options={amSearchOptions}
-                        value={field.value ? String(field.value) : ""}
-                        onValueChange={field.onChange}
-                        placeholder="Chọn AM..."
-                        searchPlaceholder="Tìm AM..."
-                      />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control as any}
                   name="chuyenVienId"
                   render={({ field }) => (
                     <FormItem>
@@ -682,23 +665,6 @@ export default function ProjectForm() {
                         onValueChange={field.onChange}
                         placeholder="Chọn CV..."
                         searchPlaceholder="Tìm chuyên viên..."
-                      />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control as any}
-                  name="amHoTroId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FieldLabel>AM Hỗ Trợ 1</FieldLabel>
-                      <SearchableSelect
-                        options={amSearchOptions}
-                        value={field.value ? String(field.value) : ""}
-                        onValueChange={field.onChange}
-                        placeholder="Chọn AM hỗ trợ..."
-                        searchPlaceholder="Tìm AM hỗ trợ..."
                       />
                     </FormItem>
                   )}
@@ -733,6 +699,40 @@ export default function ProjectForm() {
                         onValueChange={field.onChange}
                         placeholder="Chọn CV hỗ trợ..."
                         searchPlaceholder="Tìm CV hỗ trợ..."
+                      />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control as any}
+                  name="amId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel>AM Phụ Trách</FieldLabel>
+                      <SearchableSelect
+                        options={amSearchOptions}
+                        value={field.value ? String(field.value) : ""}
+                        onValueChange={field.onChange}
+                        placeholder="Chọn AM..."
+                        searchPlaceholder="Tìm AM..."
+                      />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control as any}
+                  name="amHoTroId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel>AM Hỗ Trợ 1</FieldLabel>
+                      <SearchableSelect
+                        options={amSearchOptions}
+                        value={field.value ? String(field.value) : ""}
+                        onValueChange={field.onChange}
+                        placeholder="Chọn AM hỗ trợ..."
+                        searchPlaceholder="Tìm AM hỗ trợ..."
                       />
                     </FormItem>
                   )}

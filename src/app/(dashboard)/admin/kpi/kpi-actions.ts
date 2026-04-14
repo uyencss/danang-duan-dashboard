@@ -18,7 +18,7 @@ export async function getKpiTargets(year: number) {
     }
 }
 
-export async function updateKpiTarget(year: number, month: number, data: { anNinhMang: number, giaiPhapCntt: number, duAnCds: number, cnsAnNinh: number }) {
+export async function updateKpiTarget(year: number, month: number, data: { cloudDc: number, anNinhMang: number, giaiPhapCntt: number, duAnCds: number, cnsAnNinh: number }) {
     try {
         await requireRole("ADMIN", "USER", "AM", "CV");
         await prisma.chiTieuKpi.upsert({

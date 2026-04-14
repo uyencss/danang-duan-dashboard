@@ -389,10 +389,67 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
 
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-6 pt-6 border-t border-slate-100">
-                 <h4 className="col-span-1 md:col-span-5 text-[10px] font-black uppercase text-[#0058bc]">Nhân sự phụ trách</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-100">
+                 <h4 className="col-span-1 md:col-span-3 text-[10px] font-black uppercase text-[#0058bc]">Nhân sự phụ trách</h4>
                  
                   <FormField
+                  control={form.control}
+                  name="chuyenVienId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Chuyên viên chủ trì</FormLabel>
+                      <FormControl>
+                        <SearchableSelect
+                          options={cvSearchOptions}
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                          placeholder="Chọn CV..."
+                          searchPlaceholder="Tìm CV..."
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                 />
+
+                 <FormField
+                  control={form.control}
+                  name="cvHoTro1Id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Chuyên viên hỗ trợ 1</FormLabel>
+                      <FormControl>
+                        <SearchableSelect
+                          options={cvSearchOptions}
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                          placeholder="Chọn CV..."
+                          searchPlaceholder="Tìm CV..."
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                 />
+
+                 <FormField
+                  control={form.control}
+                  name="cvHoTro2Id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Chuyên viên hỗ trợ 2</FormLabel>
+                      <FormControl>
+                        <SearchableSelect
+                          options={cvSearchOptions}
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                          placeholder="Chọn CV..."
+                          searchPlaceholder="Tìm CV..."
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                 />
+
+                 <FormField
                   control={form.control}
                   name="amId"
                   render={({ field }) => (
@@ -416,7 +473,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                   name="amHoTroId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">AM Hỗ trợ</FormLabel>
+                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">AM hỗ trợ 1</FormLabel>
                       <FormControl>
                         <SearchableSelect
                           options={amSearchOptions}
@@ -424,63 +481,6 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                           onValueChange={field.onChange}
                           placeholder="Chọn AM..."
                           searchPlaceholder="Tìm AM..."
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                 />
-
-                 <FormField
-                  control={form.control}
-                  name="chuyenVienId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">CV Chủ trì</FormLabel>
-                      <FormControl>
-                        <SearchableSelect
-                          options={cvSearchOptions}
-                          value={field.value || ""}
-                          onValueChange={field.onChange}
-                          placeholder="Chọn CV..."
-                          searchPlaceholder="Tìm CV..."
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                 />
-
-                 <FormField
-                  control={form.control}
-                  name="cvHoTro1Id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">CV Hỗ trợ 1</FormLabel>
-                      <FormControl>
-                        <SearchableSelect
-                          options={cvSearchOptions}
-                          value={field.value || ""}
-                          onValueChange={field.onChange}
-                          placeholder="Chọn CV..."
-                          searchPlaceholder="Tìm CV..."
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                 />
-
-                 <FormField
-                  control={form.control}
-                  name="cvHoTro2Id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">CV Hỗ trợ 2</FormLabel>
-                      <FormControl>
-                        <SearchableSelect
-                          options={cvSearchOptions}
-                          value={field.value || ""}
-                          onValueChange={field.onChange}
-                          placeholder="Chọn CV..."
-                          searchPlaceholder="Tìm CV..."
                         />
                       </FormControl>
                     </FormItem>

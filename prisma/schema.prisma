@@ -302,6 +302,7 @@ model ChiTieuKpi {
   id           Int      @id @default(autoincrement())
   nam          Int
   thang        Int
+  cloudDc      Float    @default(0)
   anNinhMang   Float    @default(0)
   giaiPhapCntt Float    @default(0)
   duAnCds      Float    @default(0)

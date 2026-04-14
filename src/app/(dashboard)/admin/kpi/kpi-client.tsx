@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 interface KpiData {
     nam: number;
     thang: number;
+    cloudDc: number;
     anNinhMang: number;
     giaiPhapCntt: number;
     duAnCds: number;
@@ -28,7 +29,18 @@ export function KpiDashboardClient({ initialData }: { initialData: KpiData[] }) 
         const grid = [];
         for (let m = 1; m <= 12; m++) {
             const existing = initialData.find(d => d.thang === m);
-            grid.push(existing || { nam: 2026, thang: m, anNinhMang: 0, giaiPhapCntt: 0, duAnCds: 0, cnsAnNinh: 0 });
+            if (existing) {
+                grid.push({
+                    ...existing,
+                    cloudDc: existing.cloudDc ?? 0,
+                    anNinhMang: existing.anNinhMang ?? 0,
+                    giaiPhapCntt: existing.giaiPhapCntt ?? 0,
+                    duAnCds: existing.duAnCds ?? 0,
+                    cnsAnNinh: existing.cnsAnNinh ?? 0
+                });
+            } else {
+                grid.push({ nam: 2026, thang: m, cloudDc: 0, anNinhMang: 0, giaiPhapCntt: 0, duAnCds: 0, cnsAnNinh: 0 });
+            }
         }
         return grid;
     });
@@ -51,6 +63,7 @@ export function KpiDashboardClient({ initialData }: { initialData: KpiData[] }) 
             // Since there are 12 rows, we can just Promise.all them safely
             await Promise.all(gridData.map(async (row) => {
                 const res = await updateKpiTarget(year, row.thang, {
+                    cloudDc: row.cloudDc,
                     anNinhMang: row.anNinhMang,
                     giaiPhapCntt: row.giaiPhapCntt,
                     duAnCds: row.duAnCds,
@@ -73,7 +86,7 @@ export function KpiDashboardClient({ initialData }: { initialData: KpiData[] }) 
     // Derived values for Quarters
     const getQuarterSum = (quarterStartMonth: number) => {
         const rows = gridData.filter(r => r.thang >= quarterStartMonth && r.thang <= quarterStartMonth + 2);
-        const sum = rows.reduce((acc, row) => acc + row.anNinhMang + row.giaiPhapCntt + row.duAnCds + row.cnsAnNinh, 0);
+        const sum = rows.reduce((acc, row) => acc + row.cloudDc + row.anNinhMang + row.giaiPhapCntt + row.duAnCds + row.cnsAnNinh, 0);
         return sum;
     }
 
@@ -111,12 +124,13 @@ export function KpiDashboardClient({ initialData }: { initialData: KpiData[] }) 
                     <TableHeader className="bg-[#f0f4f8]">
                         <TableRow className="hover:bg-transparent">
                             <TableHead rowSpan={2} className="w-24 text-center font-black text-[#0D1F3C] border-r border-gray-200 uppercase text-[10px] tracking-wider">Thời Gian</TableHead>
-                            <TableHead colSpan={3} className="text-center font-black text-[#0D1F3C] border-b border-r border-gray-200 uppercase text-[10px] tracking-wider bg-blue-50/50">DỊCH VỤ GIẢI PHÁP SỐ</TableHead>
+                            <TableHead colSpan={4} className="text-center font-black text-[#0D1F3C] border-b border-r border-gray-200 uppercase text-[10px] tracking-wider bg-blue-50/50">GIẢI PHÁP SỐ B2B/B2G</TableHead>
                             <TableHead rowSpan={2} className="w-40 text-center font-black text-[#0D1F3C] border-r border-gray-200 uppercase text-[10px] tracking-wider bg-orange-50/50">CNS TRONG LĨNH VỰC AN NINH</TableHead>
                             <TableHead rowSpan={2} className="w-40 text-center font-black text-[#0D1F3C] border-r border-gray-200 uppercase text-[10px] tracking-wider bg-emerald-50/50 text-emerald-700">TỔNG KPI THÁNG</TableHead>
                             <TableHead rowSpan={2} className="w-48 text-center font-black text-[#0D1F3C] uppercase text-[10px] tracking-wider bg-indigo-50/50">TỔNG CỘNG THEO QUÝ</TableHead>
                         </TableRow>
                         <TableRow className="hover:bg-transparent">
+                            <TableHead className="text-center font-bold text-gray-600 bg-blue-50/30 border-r border-gray-200 text-xs">Cloud DC</TableHead>
                             <TableHead className="text-center font-bold text-gray-600 bg-blue-50/30 border-r border-gray-200 text-xs">An ninh mạng</TableHead>
                             <TableHead className="text-center font-bold text-gray-600 bg-blue-50/30 border-r border-gray-200 text-xs">Giải pháp CNTT</TableHead>
                             <TableHead className="text-center font-bold text-gray-600 bg-blue-50/30 border-r border-gray-200 text-xs">Dự án CĐS KHCP, KHDN lớn</TableHead>
@@ -129,7 +143,16 @@ export function KpiDashboardClient({ initialData }: { initialData: KpiData[] }) 
                                 <TableCell className="border-r border-gray-100 p-0">
                                     <Input 
                                         type="number" 
-                                        value={row.anNinhMang.toString() || ""} 
+                                        value={row.cloudDc?.toString() ?? "0"} 
+                                        onChange={(e) => handleInputChange(row.thang, 'cloudDc', e.target.value)}
+                                        className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-none h-12 text-center font-medium bg-transparent"
+                                        placeholder="0"
+                                    />
+                                </TableCell>
+                                <TableCell className="border-r border-gray-100 p-0">
+                                    <Input 
+                                        type="number" 
+                                        value={row.anNinhMang?.toString() ?? "0"} 
                                         onChange={(e) => handleInputChange(row.thang, 'anNinhMang', e.target.value)}
                                         className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-none h-12 text-center font-medium bg-transparent"
                                         placeholder="0"
@@ -138,7 +161,7 @@ export function KpiDashboardClient({ initialData }: { initialData: KpiData[] }) 
                                 <TableCell className="border-r border-gray-100 p-0">
                                     <Input 
                                         type="number" 
-                                        value={row.giaiPhapCntt.toString() || ""} 
+                                        value={row.giaiPhapCntt?.toString() ?? "0"} 
                                         onChange={(e) => handleInputChange(row.thang, 'giaiPhapCntt', e.target.value)}
                                         className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-none h-12 text-center font-medium bg-transparent"
                                         placeholder="0"
@@ -147,7 +170,7 @@ export function KpiDashboardClient({ initialData }: { initialData: KpiData[] }) 
                                 <TableCell className="border-r border-gray-100 p-0">
                                     <Input 
                                         type="number" 
-                                        value={row.duAnCds.toString() || ""} 
+                                        value={row.duAnCds?.toString() ?? "0"} 
                                         onChange={(e) => handleInputChange(row.thang, 'duAnCds', e.target.value)}
                                         className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-none h-12 text-center font-medium bg-transparent"
                                         placeholder="0"
@@ -156,14 +179,14 @@ export function KpiDashboardClient({ initialData }: { initialData: KpiData[] }) 
                                 <TableCell className="border-r border-gray-100 p-0 bg-orange-50/10">
                                     <Input 
                                         type="number" 
-                                        value={row.cnsAnNinh.toString() || ""} 
+                                        value={row.cnsAnNinh?.toString() ?? "0"} 
                                         onChange={(e) => handleInputChange(row.thang, 'cnsAnNinh', e.target.value)}
                                         className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-orange-500 rounded-none h-12 text-center font-medium bg-transparent"
                                         placeholder="0"
                                     />
                                 </TableCell>
                                 <TableCell className="text-center font-black text-emerald-700 bg-emerald-50/20 border-r border-gray-100 align-middle text-sm">
-                                    {(row.anNinhMang + row.giaiPhapCntt + row.duAnCds + row.cnsAnNinh).toLocaleString()}
+                                    {(row.cloudDc + row.anNinhMang + row.giaiPhapCntt + row.duAnCds + row.cnsAnNinh).toLocaleString()}
                                 </TableCell>
                                 
                                 {/* Compute the Quarter Total only on Months 3, 6, 9, 12 */}
