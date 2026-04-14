@@ -196,7 +196,9 @@ function MetricCard({ title, value, description, icon: Icon, accentColor }: any)
         <div>
           <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">{title}</p>
           <p className="text-2xl font-black text-slate-900">{value}</p>
-          {description && <p className="text-[10px] font-medium text-slate-400 mt-1 italic">{description}</p>}
+          <p className="text-[10px] font-medium text-slate-400 mt-1 italic min-h-[15px]">
+            {description || ""}
+          </p>
         </div>
       </div>
       <div className={cn("absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-br opacity-[0.03] rounded-full translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700", accentColor)} />
