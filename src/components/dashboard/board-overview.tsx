@@ -61,7 +61,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                     <span className="text-[10px] font-bold text-slate-500 uppercase">% Hoàn thành</span>
                     <span className="text-sm font-black text-green-600">{revenueMetrics.dtThangDaKyPerc.toFixed(1)}%</span>
                   </div>
-                  <Progress value={revenueMetrics.dtThangDaKyPerc} className="h-2 bg-slate-100" />
+                  <Progress value={revenueMetrics.dtThangDaKyPerc} className="h-2 bg-slate-100" indicatorClassName="bg-gradient-to-r from-[#003B75] to-[#00AEEF]" />
                </div>
             </div>
             <div className="absolute top-0 right-0 w-32 h-32 bg-green-50/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:scale-125 transition-transform duration-500" />
@@ -85,7 +85,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                     <span className="text-[10px] font-bold text-slate-500 uppercase">% Hoàn thành</span>
                     <span className="text-sm font-black text-[#0058bc]">{revenueMetrics.dtDuKienThangPerc.toFixed(1)}%</span>
                   </div>
-                  <Progress value={revenueMetrics.dtDuKienThangPerc} className="h-2 bg-slate-100" />
+                  <Progress value={revenueMetrics.dtDuKienThangPerc} className="h-2 bg-slate-100" indicatorClassName="bg-gradient-to-r from-[#003B75] to-[#00AEEF]" />
                </div>
             </div>
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:scale-125 transition-transform duration-500" />
