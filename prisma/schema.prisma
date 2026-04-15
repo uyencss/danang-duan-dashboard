@@ -389,3 +389,31 @@ model MenuPermission {
   @@unique([menuKey, role])
   @@index([role])
 }
+
+model PoliceSurvey {
+  id                 Int      @id @default(autoincrement())
+  tenDonVi           String   @unique
+  nguoiKhaoSat       String
+  chucVu             String
+  
+  daCoCamera         String
+  nhuCauCamera       Boolean
+  mucDichCamera      String
+  khuVucCamera       String
+  
+  daCoKiosk          String
+  nhuCauKiosk        Boolean
+  mucDichKiosk       String
+  
+  daCoTruyenThanh    String
+  nhuCauTruyenThanh  Boolean
+  mucDichTruyenThanh String
+  khuVucTruyenThanh  String
+  
+  deXuatKhac         String?
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  @@index([tenDonVi])
+}
