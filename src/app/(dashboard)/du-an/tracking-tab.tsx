@@ -9,24 +9,19 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { approveStep, rejectStep } from "./actions";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { getAblyBrowserClient } from "@/lib/realtime";
 
 export function TrackingTab({ initialData }: { initialData: any[] }) {
   const [data, setData] = useState(initialData);
   const [loadingId, setLoadingId] = useState<number | null>(null);
-  const ablyRef = useRef<Ably.Realtime | null>(null);
 
   useEffect(() => {
-    // Chỉ kích hoạt Ably trên client
-    const key = process.env.NEXT_PUBLIC_ABLY_KEY;
-    if (!key || key === "test_key") return;
-
-    const client = new Ably.Realtime({ key, autoConnect: true });
-    ablyRef.current = client;
+    const client = getAblyBrowserClient();
+    if (!client) return;
 
     const channel = client.channels.get("tracking");
     
-    channel.subscribe("step-deleted", (msg) => {
+    const onStepDeleted = (msg: any) => {
       const { logId } = msg.data;
       setData(prev => {
         const itemToDelete = prev.find(item => item.id === logId);
@@ -36,23 +31,19 @@ export function TrackingTab({ initialData }: { initialData: any[] }) {
         }
         return prev;
       });
-    });
+    };
+
+    channel.subscribe("step-deleted", onStepDeleted);
 
     return () => {
       try {
-        if (channel) channel.unsubscribe();
-        if (client) {
-           const state = client.connection.state;
-           if (state !== "closed" && state !== "closing") {
-              // Be defensive about close() possibly returning a promise or throwing
-              const result = client.close() as any;
-              if (result && typeof result.catch === 'function') {
-                result.catch(() => {});
-              }
-           }
+        if (channel) {
+          channel.unsubscribe("step-deleted", onStepDeleted);
+          // With a singleton, we do NOT close the client here.
+          // The singleton stays active for other parts of the app.
         }
       } catch (e) {
-        // Silently fail on unmount
+        // Silently catch errors
       }
     };
   }, []);

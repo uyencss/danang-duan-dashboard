@@ -11,6 +11,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   Search,
   Eye,
@@ -266,13 +267,19 @@ export function ProjectsTable({
     },
   ];
 
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const currentPage = parseInt(searchParams.get("page") || "1");
+  const pageSize = 50;
+
   const table = useReactTable({
     data,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onGlobalFilterChange: setGlobalFilter,
@@ -289,9 +296,19 @@ export function ProjectsTable({
         false
       );
     },
-    state: { sorting, columnFilters, globalFilter },
-    initialState: { pagination: { pageSize: 10 } },
+    state: { sorting, columnFilters, globalFilter, pagination: { pageIndex: currentPage - 1, pageSize } },
+    manualPagination: true,
+    pageCount: totalCount ? Math.ceil(totalCount / pageSize) : 1,
   });
+
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", newPage.toString());
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const hasNextPage = totalCount ? currentPage * pageSize < totalCount : false;
+  const hasPrevPage = currentPage > 1;
 
   const handleExport = () => {
     const exportData = table.getFilteredRowModel().rows.map(row => {
@@ -354,7 +371,7 @@ export function ProjectsTable({
 
       <div className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-x-auto shadow-2xl shadow-blue-900/5 border border-blue-100/50">
         <table className="w-full text-left border-collapse table-auto text-xs md:text-sm">
-          <thead className="bg-gradient-to-r from-[#0058bc] via-blue-600 to-cyan-500 text-white">
+          <thead className="bg-slate-50/80 border-y border-slate-100">
             <tr>
               {table.getHeaderGroups().map((hg) =>
                 hg.headers.map((header) => {
@@ -364,7 +381,7 @@ export function ProjectsTable({
                   return (
                     <th
                       key={header.id}
-                      className="py-3 px-2 md:px-3 font-bold text-[9px] md:text-[10px] uppercase tracking-wider whitespace-nowrap group border-b border-white/20 align-middle"
+                      className="py-4 px-2 md:px-3 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-slate-500 group align-middle"
                     >
                       <div className="flex items-center gap-2">
                         {header.isPlaceholder
@@ -375,8 +392,8 @@ export function ProjectsTable({
                           <Popover>
                             <PopoverTrigger>
                               <div className={cn(
-                                "p-1 rounded hover:bg-white/20 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer text-white/70 hover:text-white",
-                                (filterValue as any) && "opacity-100 bg-white/20 text-white"
+                                "p-1 rounded hover:bg-slate-200 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer text-slate-400 hover:text-slate-600",
+                                (filterValue as any) && "opacity-100 bg-slate-100 text-[#0058bc]"
                               )}>
                                 <Filter className="size-3" />
                               </div>
@@ -476,40 +493,30 @@ export function ProjectsTable({
           </tbody>
         </table>
 
-        {/* Pagination */}
+        {/* Server-side Pagination matched with "Khách hàng" tab logic */}
         <div className="p-6 bg-slate-50/50 flex justify-between items-center border-t border-slate-100/50">
           <p className="text-xs text-[#44474d] font-medium">
-            Hiển thị {table.getRowModel().rows.length} trên tổng số {totalCount ?? data.length} dự án
+            Hiển thị {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, totalCount ?? data.length)} của {totalCount ?? data.length} dự án
           </p>
-          <div className="flex gap-1">
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 hover:text-[#0058bc] transition-all disabled:opacity-40"
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={!hasPrevPage}
+              className="h-9 px-4 font-bold border-slate-200 text-slate-600 hover:bg-white hover:text-[#0058bc] shadow-sm transition-all"
             >
-              <ChevronLeft className="size-4" />
-            </button>
-            {Array.from({ length: table.getPageCount() }, (_, i) => i).map((pg) => (
-              <button
-                key={pg}
-                onClick={() => table.setPageIndex(pg)}
-                className={cn(
-                  "w-8 h-8 rounded-lg text-xs font-bold transition-all",
-                  table.getState().pagination.pageIndex === pg
-                    ? "bg-[#0058bc] text-white"
-                    : "bg-white text-slate-500 hover:bg-slate-100"
-                )}
-              >
-                {pg + 1}
-              </button>
-            ))}
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 hover:text-[#0058bc] transition-all disabled:opacity-40"
+              Trước
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={!hasNextPage}
+              className="h-9 px-4 font-bold border-slate-200 text-slate-600 hover:bg-white hover:text-[#0058bc] shadow-sm transition-all"
             >
-              <ChevronRight className="size-4" />
-            </button>
+              Sau
+            </Button>
           </div>
         </div>
       </div>

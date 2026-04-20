@@ -2,48 +2,41 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { broadcastTyping } from "@/app/(dashboard)/du-an/[id]/chat-actions";
-import * as Ably from "ably";
+import { getAblyBrowserClient } from "@/lib/realtime";
 
 export function useTypingIndicator(projectId: number, currentUserId?: string) {
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
-  const ablyRef = useRef<Ably.Realtime | null>(null);
 
   useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_ABLY_KEY;
-    if (!key || key === "test_key") return;
-
-    const client = new Ably.Realtime({ key });
-    ablyRef.current = client;
+    const client = getAblyBrowserClient();
+    if (!client) return;
 
     const channel = client.channels.get(`project-chat-${projectId}`);
 
-    channel.subscribe("typing-start", (msg) => {
+    const onTypingStart = (msg: any) => {
       const { userId, userName } = msg.data;
       if (userId === currentUserId) return;
       setTypingUsers((prev) => {
         if (prev.includes(userName)) return prev;
         return [...prev, userName];
       });
-    });
+    };
 
-    channel.subscribe("typing-stop", (msg) => {
+    const onTypingStop = (msg: any) => {
       const { userName } = msg.data;
       setTypingUsers((prev) => prev.filter((u) => u !== userName));
-    });
+    };
+
+    channel.subscribe("typing-start", onTypingStart);
+    channel.subscribe("typing-stop", onTypingStop);
 
     return () => {
       try {
-        if (channel) channel.unsubscribe();
-        if (client) {
-          const state = client.connection.state;
-          if (state !== "closed" && state !== "closing") {
-             const result = client.close() as any;
-             if (result && typeof result.catch === 'function') {
-                result.catch(() => {});
-             }
-          }
+        if (channel) {
+          channel.unsubscribe("typing-start", onTypingStart);
+          channel.unsubscribe("typing-stop", onTypingStop);
         }
       } catch (e) {
         // Silently fail on unmount

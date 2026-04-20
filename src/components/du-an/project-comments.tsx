@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import * as Ably from "ably";
+import { getAblyBrowserClient } from "@/lib/realtime";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
@@ -444,13 +445,12 @@ export function ProjectComments({
 
   // Ably subscription for real-time updates
   useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_ABLY_KEY;
-    if (!key || !key.includes(":")) return;
+    const client = getAblyBrowserClient();
+    if (!client) return;
 
-    const client = new Ably.Realtime({ key });
     const channel = client.channels.get(`project-${projectId}`);
 
-    channel.subscribe("new_comment", (message) => {
+    const onNewComment = (message: any) => {
       const data = message.data;
       if (currentUser && data.userName !== currentUser.name) {
         toast.info(
@@ -459,16 +459,14 @@ export function ProjectComments({
         );
         router.refresh();
       }
-    });
+    };
+
+    channel.subscribe("new_comment", onNewComment);
 
     return () => {
       try {
-        channel.unsubscribe();
-        if (client.connection.state !== "closed") {
-          const result = client.close() as any;
-          if (result && typeof result.catch === 'function') {
-            result.catch(() => {});
-          }
+        if (channel) {
+          channel.unsubscribe("new_comment", onNewComment);
         }
       } catch (e) {
         // Silently fail on unmount

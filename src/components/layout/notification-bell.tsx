@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import * as Ably from "ably";
+import { getAblyBrowserClient } from "@/lib/realtime";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -60,16 +61,12 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   }, [userId]);
 
   useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_ABLY_KEY;
-    if (!key || key === "test_key") return;
+    const client = getAblyBrowserClient();
+    if (!client) return;
 
-    const client = new Ably.Realtime({ key });
-    // Subscribe to all project channels for comment notifications
-    // We use a wildcard-style by listening to namespace
-    // For simplicity, we listen for the notification channel per user
     const channel = client.channels.get(`notifications`);
 
-    channel.subscribe("mention", (msg) => {
+    const onMention = (msg: any) => {
       const data = msg.data;
       if (data.mentionedUserId !== userId) return; // only for me
       
@@ -82,9 +79,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
       };
       setNotifications((prev) => [notif, ...prev].slice(0, 20));
       toast.info(`${data.userName} đã nhắc đến bạn!`, { icon: <Bell className="size-4" /> });
-    });
+    };
 
-    channel.subscribe("new-message", (msg) => {
+    const onNewMessage = (msg: any) => {
       const data = msg.data;
       if (data.userId === userId) return;
       const notif: Notification = {
@@ -94,28 +91,27 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         read: false,
       };
       setNotifications((prev) => [notif, ...prev].slice(0, 20));
-    });
+    };
 
-    channel.subscribe("mark-read-related", (msg) => {
+    const onMarkRead = (msg: any) => {
       const { relatedId } = msg.data;
       if (!relatedId) return;
       
       setNotifications(prev => prev.map(n => 
         n.relatedId === String(relatedId) ? { ...n, read: true } : n
       ));
-    });
+    };
+
+    channel.subscribe("mention", onMention);
+    channel.subscribe("new-message", onNewMessage);
+    channel.subscribe("mark-read-related", onMarkRead);
 
     return () => {
-      if (channel) channel.unsubscribe();
       try {
-        if (client) {
-          const state = client.connection.state;
-          if (state !== "closed" && state !== "closing") {
-             const result = client.close() as any;
-             if (result && typeof result.catch === 'function') {
-                result.catch(() => {});
-             }
-          }
+        if (channel) {
+          channel.unsubscribe("mention", onMention);
+          channel.unsubscribe("new-message", onNewMessage);
+          channel.unsubscribe("mark-read-related", onMarkRead);
         }
       } catch (e) {
         // Silently fail on unmount

@@ -1,10 +1,11 @@
-import { getDuAnList, getPendingStepLogs } from "./actions";
+import { getDuAnList, getPendingStepLogs, getUserOptions } from "./actions";
 import { ProjectsTable } from "./projects-table";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { TrangThaiDuAn } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth-utils";
+import { ExcelUploadButton } from "./excel-upload-button";
 
 export const metadata = {
   title: "CRM & Danh sách Dự án",
@@ -19,6 +20,9 @@ export default async function DuAnPage({
 }) {
   const params = await searchParams;
 
+  const page = typeof params.page === "string" ? parseInt(params.page) : 1;
+  const pageSize = 50; // Tải 50 bản ghi mỗi trang để đảm bảo tốc độ và không bị timeout
+
   const filters = {
     search: typeof params.search === "string" ? params.search : undefined,
     phanLoaiKH: typeof params.phanLoaiKH === "string" ? params.phanLoaiKH : undefined,
@@ -26,20 +30,23 @@ export default async function DuAnPage({
     trangThai: typeof params.trangThai === "string" ? params.trangThai : undefined,
     linhVuc: typeof params.linhVuc === "string" ? params.linhVuc : undefined,
     amId: typeof params.amId === "string" ? params.amId : undefined,
-    pageSize: 200,
+    page,
+    pageSize,
   };
 
   const user = await getCurrentUser();
   const isQuảnTrịViên = user?.role === "ADMIN" || user?.role === "USER";
 
-  const [result, pendingLogsRes] = await Promise.all([
+  const [result, pendingLogsRes, userOptionsRes] = await Promise.all([
     getDuAnList(filters),
-    isQuảnTrịViên ? getPendingStepLogs() : Promise.resolve({ data: [] })
+    isQuảnTrịViên ? getPendingStepLogs() : Promise.resolve({ data: [] }),
+    getUserOptions()
   ]);
 
   const data = result?.data ?? [];
   const total = (result as any)?.total ?? data.length;
   const error = result?.error;
+  const users = userOptionsRes?.data ?? [];
 
   // Auto Sort logic
   const sortedData = [...data].sort((a: any, b: any) => {
@@ -75,7 +82,7 @@ export default async function DuAnPage({
       <Breadcrumb items={[{ label: "CRM & DS Dự án" }]} />
 
       {/* Page Header */}
-      <div className="flex justify-between items-end">
+      <div className="flex justify-between items-end flex-wrap gap-4">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-[#191c1e]">
             CRM &amp; Danh sách Dự án
@@ -84,13 +91,20 @@ export default async function DuAnPage({
             Quản lý lộ trình triển khai và chăm sóc khách hàng doanh nghiệp
           </p>
         </div>
-        <Link
-          href="/du-an/tao-moi"
-          className="bg-gradient-to-r from-[#0058bc] to-blue-500 hover:from-blue-600 hover:to-cyan-500 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/30 active:scale-95 transition-all text-sm"
-        >
-          <PlusCircle className="size-4" />
-          + Tạo dự án mới
-        </Link>
+        
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Nhóm button Tính năng Import Excel */}
+          <ExcelUploadButton users={users} />
+
+          {/* Tạo dự án đơn lẻ */}
+          <Link
+            href="/du-an/tao-moi"
+            className="bg-gradient-to-r from-[#0058bc] to-blue-500 hover:from-blue-600 hover:to-cyan-500 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/30 active:scale-95 transition-all text-sm h-10"
+          >
+            <PlusCircle className="size-4" />
+            + Tạo dự án
+          </Link>
+        </div>
       </div>
 
       {/* Table */}

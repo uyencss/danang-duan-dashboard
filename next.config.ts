@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
       "react-hook-form",
       "zod",
     ],
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
   },
 };
 

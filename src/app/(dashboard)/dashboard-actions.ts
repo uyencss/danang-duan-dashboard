@@ -528,10 +528,40 @@ export async function getBoardOverview() {
         const yearStart = new Date(Date.UTC(currentYear, 0, 1));
         const yearEnd = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59));
 
-        const projects = await prisma.duAn.findMany({
+        // Optimize Status Counts with GroupBy
+        const statusGroups = await prisma.duAn.groupBy({
+            by: ['trangThaiHienTai'],
+            _count: { id: true }
+        });
+
+        const getCountFor = (s: TrangThaiDuAn) => statusGroups.find(g => g.trangThaiHienTai === s)?._count.id || 0;
+
+        const hienTrangThang = [
+            { label: "Mới", count: getCountFor(TrangThaiDuAn.MOI) },
+            { label: "Đang làm việc", count: getCountFor(TrangThaiDuAn.DANG_LAM_VIEC) },
+            { label: "Đã demo", count: getCountFor(TrangThaiDuAn.DA_DEMO) },
+            { label: "Đã gửi báo giá", count: getCountFor(TrangThaiDuAn.DA_GUI_BAO_GIA) },
+            { label: "Đã ký hợp đồng", count: getCountFor(TrangThaiDuAn.DA_KY_HOP_DONG) },
+            { label: "Thất bại", count: getCountFor(TrangThaiDuAn.THAT_BAI) }
+        ];
+
+        // Optimized revenue calculations still need some objects but limited
+        const projectsFull = await prisma.duAn.findMany({
             where: excludeFailed,
-            include: {
-              am: { select: { diaBan: true } }
+            select: {
+               id: true,
+               nam: true,
+               tongDoanhThuDuKien: true,
+               trangThaiHienTai: true,
+               isKyVong: true,
+               ngayBatDau: true,
+               ngayKetThuc: true,
+               doanhThuTheoThang: true,
+               hienTaiBuoc: true,
+               ngayChamsocCuoiCung: true,
+               createdAt: true,
+               isTrongDiem: true,
+               am: { select: { diaBan: true } }
             }
         });
 
@@ -540,16 +570,16 @@ export async function getBoardOverview() {
         });
         const kpiThang = kpi ? (kpi.anNinhMang + kpi.giaiPhapCntt + kpi.duAnCds + kpi.cnsAnNinh) : 0;
 
-        const dtTongDuAn = projects.reduce((sum, p) => p.nam === currentYear ? sum + p.tongDoanhThuDuKien : sum, 0);
+        const dtTongDuAn = projectsFull.reduce((sum, p) => p.nam === currentYear ? sum + p.tongDoanhThuDuKien : sum, 0);
 
-        const signedProjects = projects.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG);
+        const signedProjects = projectsFull.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG);
         const dtThangDaKy = signedProjects.reduce((sum, p) => {
             const active = getActiveMonths_Utility(p.ngayBatDau, p.ngayKetThuc, monthStart, monthEnd);
             return active > 0 ? sum + (p.doanhThuTheoThang || 0) : sum;
         }, 0);
         const percMetric2 = kpiThang > 0 ? (dtThangDaKy / kpiThang) * 100 : 0;
 
-        const expectedProjects = projects.filter(p => p.isKyVong === true && p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG);
+        const expectedProjects = projectsFull.filter(p => p.isKyVong === true && p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG);
         const dtDuKienThang = dtThangDaKy + expectedProjects.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
         const percMetric3 = kpiThang > 0 ? (dtDuKienThang / kpiThang) * 100 : 0;
 
@@ -563,25 +593,15 @@ export async function getBoardOverview() {
             return sum + ((p.doanhThuTheoThang || 0) * activeInY);
         }, 0);
 
-        const allProjectsForStatus = await prisma.duAn.findMany({ select: { trangThaiHienTai: true } });
-        const hienTrangThang = [
-            { label: "Mới", count: allProjectsForStatus.filter(p => p.trangThaiHienTai === TrangThaiDuAn.MOI).length },
-            { label: "Đang làm việc", count: allProjectsForStatus.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DANG_LAM_VIEC).length },
-            { label: "Đã demo", count: allProjectsForStatus.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_DEMO).length },
-            { label: "Đã gửi báo giá", count: allProjectsForStatus.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_GUI_BAO_GIA).length },
-            { label: "Đã ký hợp đồng", count: allProjectsForStatus.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG).length },
-            { label: "Thất bại", count: allProjectsForStatus.filter(p => p.trangThaiHienTai === TrangThaiDuAn.THAT_BAI).length }
-        ];
-
         const stepCounts: Record<string, number> = {};
-        projects.forEach(p => {
+        projectsFull.forEach(p => {
             const step = p.hienTaiBuoc || "Chưa cập nhật";
             stepCounts[step] = (stepCounts[step] || 0) + 1;
         });
 
         const fifteenDaysAgo = new Date(now.getTime() - (15 * 24 * 60 * 60 * 1000));
         const alertTo: Record<string, number> = { "Tổ 1": 0, "Tổ 2": 0, "Tổ 3": 0, "Tổ dự án": 0 };
-        projects.forEach(p => {
+        projectsFull.forEach(p => {
             const lastUpdate = p.ngayChamsocCuoiCung ? new Date(p.ngayChamsocCuoiCung) : new Date(p.createdAt);
             if (lastUpdate < fifteenDaysAgo) {
                 const diaBan = p.am?.diaBan || "";
@@ -600,8 +620,8 @@ export async function getBoardOverview() {
                 dtTheoNam
             },
             projectMetrics: {
-                tongSoDuAn: projects.length,
-                duAnTrongDiem: projects.filter(p => p.isTrongDiem).length,
+                tongSoDuAn: projectsFull.length,
+                duAnTrongDiem: projectsFull.filter(p => p.isTrongDiem).length,
                 hienTrangThang,
                 thongKeTheoBuoc: Object.entries(stepCounts).map(([label, count]) => ({ label, count })),
                 canhBaoTheoTo: Object.entries(alertTo).map(([label, count]) => ({ label, count }))

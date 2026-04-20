@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import * as Ably from "ably";
+import { getAblyBrowserClient } from "@/lib/realtime";
 import { getMessages, sendMessage, editMessage, deleteMessage, broadcastTyping } from "@/app/(dashboard)/du-an/[id]/chat-actions";
 import { toast } from "sonner";
 
@@ -41,12 +42,10 @@ export function useProjectChat(projectId: number, currentUserId?: string) {
 
   // Ably subscription
   useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_ABLY_KEY;
-    if (!key || key === "test_key") return;
+    const client = getAblyBrowserClient();
+    if (!client) return;
 
-    const client = new Ably.Realtime({ key, autoConnect: true });
-    ablyRef.current = client;
-
+    if (client.connection.state === "connected") setIsConnected(true);
     client.connection.on("connected", () => setIsConnected(true));
     client.connection.on("disconnected", () => setIsConnected(false));
     client.connection.on("failed", () => setIsConnected(false));
@@ -54,45 +53,47 @@ export function useProjectChat(projectId: number, currentUserId?: string) {
     const channel = client.channels.get(`project-chat-${projectId}`);
     channelRef.current = channel;
 
-    channel.subscribe("new-message", (msg) => {
+    const onNewMessage = (msg: any) => {
       const newMsg: ChatMessage = msg.data;
       setMessages((prev) => {
         if (prev.find((m) => m.id === newMsg.id)) return prev;
         return [...prev, newMsg];
       });
-    });
+    };
 
-    channel.subscribe("edit-message", (msg) => {
+    const onEditMessage = (msg: any) => {
       const updated: ChatMessage = msg.data;
       setMessages((prev) =>
         prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m))
       );
-    });
+    };
 
-    channel.subscribe("delete-message", (msg) => {
+    const onDeleteMessage = (msg: any) => {
       const { messageId } = msg.data;
       setMessages((prev) =>
         prev.map((m) => (m.id === messageId ? { ...m, isDeleted: true } : m))
       );
-    });
+    };
+
+    channel.subscribe("new-message", onNewMessage);
+    channel.subscribe("edit-message", onEditMessage);
+    channel.subscribe("delete-message", onDeleteMessage);
 
     return () => {
       try {
-        if (channel) channel.unsubscribe();
-        if (client) {
-          const state = client.connection.state;
-          if (state !== "closed" && state !== "closing") {
-             const result = client.close() as any;
-             if (result && typeof result.catch === 'function') {
-                result.catch(() => {});
-             }
-          }
+        client.connection.off("connected");
+        client.connection.off("disconnected");
+        client.connection.off("failed");
+        if (channel) {
+          channel.unsubscribe("new-message", onNewMessage);
+          channel.unsubscribe("edit-message", onEditMessage);
+          channel.unsubscribe("delete-message", onDeleteMessage);
         }
       } catch (e) {
         // Silently fail on unmount
       }
     };
-  }, [projectId]);
+  }, [projectId, currentUserId]);
 
   // Polling fallback when Ably is offline
   useEffect(() => {
