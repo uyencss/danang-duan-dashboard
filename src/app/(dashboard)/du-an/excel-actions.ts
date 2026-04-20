@@ -196,7 +196,7 @@ export async function importExcelProjects(rows: any[]) {
     console.log(`Hoàn thành Import ${successCount} dự án trong ${duration}s.`);
 
     await cacheInvalidate("dashboard:overview", "options:khachhang", "options:sanpham", "options:sanpham-groups");
-    revalidateTag("dashboard-overview");
+    (revalidateTag as any)("dashboard-overview");
     revalidatePath("/du-an");
     await syncReplica();
 
