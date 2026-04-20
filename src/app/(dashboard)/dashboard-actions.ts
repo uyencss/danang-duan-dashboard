@@ -567,6 +567,8 @@ export async function getBoardOverview() {
             select: {
                id: true,
                nam: true,
+               thang: true,
+               quy: true,
                tongDoanhThuDuKien: true,
                trangThaiHienTai: true,
                isKyVong: true,
