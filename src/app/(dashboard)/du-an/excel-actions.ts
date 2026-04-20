@@ -263,7 +263,7 @@ export async function recallMostRecentExcelProjects() {
     }
 
     await cacheInvalidate("dashboard:overview");
-    revalidateTag("dashboard-overview");
+    (revalidateTag as any)("dashboard-overview");
     revalidatePath("/");
     revalidatePath("/du-an");
     await syncReplica();
