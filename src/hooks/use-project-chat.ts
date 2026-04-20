@@ -45,10 +45,13 @@ export function useProjectChat(projectId: number, currentUserId?: string) {
     const client = getAblyBrowserClient();
     if (!client) return;
 
+    const handleConnected = () => setIsConnected(true);
+    const handleDisconnected = () => setIsConnected(false);
+
     if (client.connection.state === "connected") setIsConnected(true);
-    client.connection.on("connected", () => setIsConnected(true));
-    client.connection.on("disconnected", () => setIsConnected(false));
-    client.connection.on("failed", () => setIsConnected(false));
+    client.connection.on("connected", handleConnected);
+    client.connection.on("disconnected", handleDisconnected);
+    client.connection.on("failed", handleDisconnected);
 
     const channel = client.channels.get(`project-chat-${projectId}`);
     channelRef.current = channel;
@@ -81,9 +84,9 @@ export function useProjectChat(projectId: number, currentUserId?: string) {
 
     return () => {
       try {
-        client.connection.off("connected");
-        client.connection.off("disconnected");
-        client.connection.off("failed");
+        client.connection.off("connected", handleConnected);
+        client.connection.off("disconnected", handleDisconnected);
+        client.connection.off("failed", handleDisconnected);
         if (channel) {
           channel.unsubscribe("new-message", onNewMessage);
           channel.unsubscribe("edit-message", onEditMessage);
