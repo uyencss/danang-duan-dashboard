@@ -89,7 +89,7 @@ export async function importExcelProjects(rows: any[]) {
         const phanLoaiMap: any = {
            "Chính phủ/Sở ban ngành": PhanLoaiKH.CHINH_PHU,
            "Doanh nghiệp": PhanLoaiKH.DOANH_NGHIEP,
-           "Công an (B2A)": PhanLoaiKH.CONG_AN,
+           "Công an": PhanLoaiKH.CONG_AN,
         };
         const pl = phanLoaiMap[sampleRow?.phanLoaiKH] || PhanLoaiKH.DOANH_NGHIEP;
         const newKH = await prisma.khachHang.create({

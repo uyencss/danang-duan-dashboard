@@ -213,7 +213,7 @@ function AMRankCard({ am, rank, isTop, maxVal, valKey }: { am: any, rank: number
         </div>
         <div className="text-right">
           <p className={cn("text-base font-black", isTop ? "text-blue-600" : "text-red-600")}>
-            {value.toLocaleString('vi-VN')}
+            {Math.round(value).toLocaleString('vi-VN')}
           </p>
           <p className="text-[9px] font-black uppercase text-slate-300">Tr.đ / Tháng</p>
         </div>

@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 
 // Define option constants for validation
 const TIEU_CHI_YES_NO = ["Có", "Không"];
-const PHAN_LOAI_KH = ["Chính phủ/Sở ban ngành", "Doanh nghiệp", "Công an (B2A)"];
+const PHAN_LOAI_KH = ["Chính phủ/Sở ban ngành", "Doanh nghiệp", "Công an"];
 const NHOM_SP = ["Dự án", "Hóa đơn điện tử", "Chữ ký số", "IOC", "Camera AI", "Cloud", "Khác"];
 const TRANG_THAI = ["Mới", "Đang làm việc", "Đã demo", "Đã gửi báo giá", "Đã ký hợp đồng", "Thất bại"];
 
@@ -51,7 +51,7 @@ export function ExcelUploadButton({ users }: { users: UserOption[] }) {
     // Notes
     wsData.push([]);
     wsData.push(["* LƯU Ý KHI ĐIỀN DỮ LIỆU:"]);
-    wsData.push(["- Phân loại khách hàng: Chọn 1 trong số: [Chính phủ/Sở ban ngành, Doanh nghiệp, Công an (B2A)]"]);
+    wsData.push(["- Phân loại khách hàng: Chọn 1 trong số: [Chính phủ/Sở ban ngành, Doanh nghiệp, Công an]"]);
     wsData.push(["- Nhóm sản phẩm: Chọn 1 trong số: [Dự án, Hóa đơn điện tử, Chữ ký số, IOC, Camera AI, Cloud, Khác]"]);
     wsData.push(["- Trạng thái khởi tạo: Chọn 1 trong số: [Mới, Đang làm việc, Đã demo, Đã gửi báo giá, Đã ký hợp đồng, Thất bại]"]);
     wsData.push(["- Trọng điểm / Kỳ vọng: Điền [Có] hoặc [Không]"]);

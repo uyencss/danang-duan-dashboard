@@ -32,7 +32,7 @@ import { CreatableSelect } from "@/components/ui/creatable-select";
 const PHAN_LOAI_KH_LABELS: Record<string, string> = {
   CHINH_PHU: "Chính phủ / Sở ban ngành",
   DOANH_NGHIEP: "Doanh nghiệp",
-  CONG_AN: "Công an (B2A)",
+  CONG_AN: "Công an",
 };
 
 const TRANG_THAI_LABELS: Record<string, string> = {

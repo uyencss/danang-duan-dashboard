@@ -22,7 +22,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
   const { revenueMetrics, projectMetrics } = data;
 
   const formatCurrency = (val: number) => {
-    return val.toLocaleString('vi-VN');
+    return Math.round(val).toLocaleString('vi-VN');
   };
 
   return (
