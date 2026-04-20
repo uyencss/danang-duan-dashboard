@@ -127,7 +127,7 @@ function KpiDashboardContent({ initialData }: { initialData: KpiData[] }) {
                     <CardDescription className="text-slate-500 font-medium mt-1">Cấu hình chỉ tiêu KPI hằng tháng cho mục tiêu doanh thu</CardDescription>
                 </div>
                 <div className="flex items-center gap-4">
-                    <Select value={year.toString()} onValueChange={handleYearChange}>
+                    <Select value={year.toString()} onValueChange={(val) => handleYearChange(val)}>
                         <SelectTrigger className="w-32 bg-white font-bold border-gray-200">
                             <SelectValue placeholder="Chọn Năm" />
                         </SelectTrigger>
