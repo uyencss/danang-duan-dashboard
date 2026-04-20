@@ -392,7 +392,7 @@ model MenuPermission {
 
 model PoliceSurvey {
   id                 Int      @id @default(autoincrement())
-  tenDonVi           String   @unique
+  tenDonVi           String
   nguoiKhaoSat       String
   chucVu             String
   

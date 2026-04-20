@@ -529,7 +529,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Tổng doanh thu (Tr.đ)</FormLabel>
                         <FormControl>
-                          <Input type="number" className="rounded-xl h-10 border-slate-200" {...field} />
+                          <Input type="number" step="any" className="rounded-xl h-10 border-slate-200" {...field} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -542,7 +542,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Thu theo tháng (Tr.đ)</FormLabel>
                         <FormControl>
-                          <Input type="number" className="rounded-xl h-10 border-slate-200" {...field} />
+                          <Input type="number" step="any" className="rounded-xl h-10 border-slate-200" {...field} />
                         </FormControl>
                       </FormItem>
                     )}

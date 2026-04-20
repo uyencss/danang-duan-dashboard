@@ -72,79 +72,105 @@ export function ExcelUploadButton({ users }: { users: UserOption[] }) {
     const amUsers = users.filter(u => u.role === "AM" || u.role === "ADMIN");
 
     data.forEach((row, index) => {
+      // Find keys using flexible matching
+      const keys = Object.keys(row);
+      const findVal = (keywords: string[]) => {
+        const key = keys.find(k => {
+          const lowerK = k.toLowerCase().trim();
+          return keywords.some(kw => lowerK.includes(kw.toLowerCase().trim()));
+        });
+        return key ? row[key] : undefined;
+      };
+
+      const tenDuAn = findVal(["Tên dự án"]);
       // Bỏ qua dòng trống, header, và phần lưu ý
-      if (!row || Object.keys(row).length === 0) return;
-      if (row["Tên dự án*"] === "Tên dự án*" || row["Tên dự án*"]?.includes("LƯU Ý")) return;
-      if (!row["Tên dự án*"]) return; 
+      if (!row || keys.length === 0) return;
+      if (tenDuAn === "Tên dự án" || tenDuAn?.toString().includes("LƯU Ý")) return;
+      if (!tenDuAn) return; 
 
       const rowErr: string[] = [];
-      const rowNum = index + 1; // row index in excell
+      const rowNum = index + 1;
+
+      // Extract values with flexible keys
+      const khachHang = findVal(["Khách hàng"]);
+      const phanLoaiKH = findVal(["Phân loại khách hàng", "Phân loại KH"]);
+      const diaChi = findVal(["Địa chỉ"]);
+      const tenSP = findVal(["Tên sản phẩm chi tiết", "Sản phẩm chi tiết"]);
+      const nhomSP = findVal(["Nhóm sản phẩm", "Nhóm SP"]);
+      const moTaSP = findVal(["Mô tả sản phẩm", "Mô tả SP"]);
+      const tongDT = findVal(["Tổng doanh thu", "DT dự kiến"]);
+      const dtThang = findVal(["DT theo tháng", "DT tháng", "Doanh thu tháng", "Thu theo tháng"]);
+      const maHD = findVal(["Mã hợp đồng", "Số hợp đồng"]);
+      const ngayBD = findVal(["Ngày bắt đầu"]);
+      const ngayKT = findVal(["Ngày kết thúc"]);
+      const cvTri = findVal(["Chuyên viên chủ trì", "Chuyên viên (chủ trì)"]);
+      const cvHT1 = findVal(["Chuyên viên hỗ trợ 1", "CV hỗ trợ 1"]);
+      const cvHT2 = findVal(["Chuyên viên hỗ trợ 2", "CV hỗ trợ 2"]);
+      const amTri = findVal(["AM phụ trách", "AM (phụ trách)"]);
+      const amHT1 = findVal(["AM hỗ trợ 1"]);
+      const trangThaiKhoiTao = findVal(["Trạng thái khởi tạo", "Trạng thái"]);
 
       // Yêu cầu bắt buộc
-      if (!row["Khách hàng*"]) rowErr.push("Cột Khách hàng trống.");
-      if (!row["Phân loại khách hàng*"]) rowErr.push("Cột Phân loại KH trống.");
-      if (!row["Tên sản phẩm chi tiết*"]) rowErr.push("Cột Tên sản phẩm chi tiết trống.");
-      if (!row["Nhóm sản phẩm*"]) rowErr.push("Cột Nhóm sản phẩm trống.");
-      if (!row["Ngày bắt đầu* (MM/DD/YYYY)"]) rowErr.push("Cột Ngày bắt đầu trống.");
-      if (!row["Trạng thái khởi tạo*"]) rowErr.push("Cột Trạng thái khởi tạo trống.");
+      if (!khachHang) rowErr.push("Cột Khách hàng trống.");
+      if (!phanLoaiKH) rowErr.push("Cột Phân loại KH trống.");
+      if (!tenSP) rowErr.push("Cột Tên sản phẩm chi tiết trống.");
+      if (!nhomSP) rowErr.push("Cột Nhóm sản phẩm trống.");
+      if (!ngayBD) rowErr.push("Cột Ngày bắt đầu trống.");
+      if (!trangThaiKhoiTao) rowErr.push("Cột Trạng thái trống.");
 
       // Kiểm tra giá trị Option
-      const plKh = row["Phân loại khách hàng*"]?.trim();
-      if (plKh && !PHAN_LOAI_KH.includes(plKh)) rowErr.push(`Phân loại KH '${plKh}' không hợp lệ.`);
+      const plKhTrim = phanLoaiKH?.toString().trim();
+      if (plKhTrim && !PHAN_LOAI_KH.includes(plKhTrim)) rowErr.push(`Phân loại KH '${plKhTrim}' không hợp lệ.`);
 
-      const nhomSp = row["Nhóm sản phẩm*"]?.trim();
-      if (nhomSp && !NHOM_SP.includes(nhomSp)) rowErr.push(`Nhóm SP '${nhomSp}' không hợp lệ.`);
+      const nhomSpTrim = nhomSP?.toString().trim();
+      if (nhomSpTrim && !NHOM_SP.includes(nhomSpTrim)) rowErr.push(`Nhóm SP '${nhomSpTrim}' không hợp lệ.`);
 
-      const trangThai = row["Trạng thái khởi tạo*"]?.trim();
-      if (trangThai && !TRANG_THAI.includes(trangThai)) rowErr.push(`Trạng thái '${trangThai}' không hợp lệ.`);
+      const trangThaiTrim = trangThaiKhoiTao?.toString().trim();
+      if (trangThaiTrim && !TRANG_THAI.includes(trangThaiTrim)) rowErr.push(`Trạng thái '${trangThaiTrim}' không hợp lệ.`);
 
-      // Kiểm tra Yes/No
-      const isTrong = row["Trọng điểm"]?.trim();
-      if (isTrong && !TIEU_CHI_YES_NO.includes(isTrong)) rowErr.push(`Trọng điểm vui lòng nhập Có/Không.`);
-
-      const isKy = row["Kỳ vọng"]?.trim();
-      if (isKy && !TIEU_CHI_YES_NO.includes(isKy)) rowErr.push(`Kỳ vọng vui lòng nhập Có/Không.`);
+      // Kiểm tra Yes/No cho Trọng điểm / Kỳ vọng
+      const isTrongRaw = findVal(["Trọng điểm"])?.toString().trim();
+      const isKyRaw = findVal(["Kỳ vọng"])?.toString().trim();
 
       // Kiểm tra Map User
-      const findUserId = (name: string, checkUsers: UserOption[], field: string) => {
+      const findUserId = (nameVal: any, checkUsers: UserOption[], field: string) => {
+        const name = nameVal?.toString().trim();
         if (!name) return null;
         const u = checkUsers.find(x => x.name.toLowerCase() === name.toLowerCase());
         if (!u) rowErr.push(`Không tìm thấy ${field} có tên là '${name}'.`);
         return u?.id || null;
       };
 
-      const cvId = findUserId(row["Chuyên viên chủ trì"]?.trim(), cvUsers, "Chuyên viên");
-      const cvHoTro1Id = findUserId(row["Chuyên viên hỗ trợ 1"]?.trim(), cvUsers, "Chuyên viên (HT1)");
-      const cvHoTro2Id = findUserId(row["Chuyên viên hỗ trợ 2"]?.trim(), cvUsers, "Chuyên viên (HT2)");
-      
-      const amId = findUserId(row["AM phụ trách"]?.trim(), amUsers, "AM");
-      const amHoTro1Id = findUserId(row["AM hỗ trợ 1"]?.trim(), amUsers, "AM (HT1)");
+      const cvId = findUserId(cvTri, cvUsers, "Chuyên viên");
+      const cvHoTro1Id = findUserId(cvHT1, cvUsers, "Chuyên viên (HT1)");
+      const cvHoTro2Id = findUserId(cvHT2, cvUsers, "Chuyên viên (HT2)");
+      const amId = findUserId(amTri, amUsers, "AM");
+      const amHoTro1Id = findUserId(amHT1, amUsers, "AM (HT1)");
 
       if (rowErr.length > 0) {
         errors.push(`Dòng ${rowNum}: ${rowErr.join(" | ")}`);
       } else {
-        // Prepare valid data for backend processing
         validRows.push({
-          tenDuAn: row["Tên dự án*"].toString(),
-          isTrongDiem: row["Trọng điểm"] || "Không",
-          isKyVong: row["Kỳ vọng"] || "Không",
-          khachHangName: row["Khách hàng*"].toString(),
-          phanLoaiKH: plKh,
-          diaChi: row["Địa chỉ"]?.toString() || "",
-          tenSanPham: row["Tên sản phẩm chi tiết*"].toString(),
-          nhomSanPham: nhomSp,
-          moTaSanPham: row["Mô tả sản phẩm"]?.toString() || "",
-          tongDoanhThu: row["Tổng doanh thu*"]?.toString() || "0",
-          dtTheoThang: row["DT theo tháng"]?.toString() || "0",
-          maHopDong: row["Mã hợp đồng"]?.toString() || "",
-          ngayBatDau: row["Ngày bắt đầu* (MM/DD/YYYY)"]?.toString(),
-          ngayKetThuc: row["Ngày kết thúc (MM/DD/YYYY)"]?.toString(),
+          tenDuAn: tenDuAn.toString(),
+          isTrongDiem: isTrongRaw || "Không",
+          isKyVong: isKyRaw || "Không",
+          khachHangName: khachHang.toString(),
+          phanLoaiKH: plKhTrim,
+          diaChi: diaChi?.toString() || "",
+          tenSanPham: tenSP.toString(),
+          nhomSanPham: nhomSpTrim,
+          moTaSanPham: moTaSP?.toString() || "",
+          tongDoanhThu: tongDT?.toString() || "0",
+          dtTheoThang: dtThang?.toString() || "0",
+          maHopDong: maHD?.toString() || "",
+          ngayBatDau: ngayBD?.toString(),
+          ngayKetThuc: ngayKT?.toString(),
           cvId,
           cvHoTro1Id,
           cvHoTro2Id,
           amId,
           amHoTro1Id,
-          trangThaiKhoiTao: trangThai
+          trangThaiKhoiTao: trangThaiTrim
         });
       }
     });

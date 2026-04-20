@@ -10,7 +10,9 @@ import { unstable_cache } from "next/cache";
 // Cache TTL: 5 minutes. Keyed by user id+role so ADMIN and non-ADMIN get separate caches.
 async function _getDashboardOverview(userId: string, userRole: string) {
     try {
-        const whereClause: any = {};
+        const whereClause: any = {
+            isPendingDelete: { not: true }
+        };
         // All authenticated users see all project data (no role-based filtering)
 
         const totalProjects = await prisma.duAn.count({ where: whereClause });
@@ -87,7 +89,7 @@ async function _getDashboardOverview(userId: string, userRole: string) {
 const _cachedDashboardOverview = unstable_cache(
     _getDashboardOverview,
     ['dashboard-overview'],
-    { revalidate: 300 }
+    { revalidate: 300, tags: ['dashboard-overview'] }
 );
 
 // Public export: resolves session outside cache, then calls module-level cached fn
@@ -95,7 +97,8 @@ export async function getDashboardOverview() {
     const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
     const user = sessionRes?.user;
     if (!user) return { error: "Yêu cầu đăng nhập" };
-    return _cachedDashboardOverview(user.id, user.role);
+    // Bỏ qua cache để cập nhật tức thì khi đang xử lý dữ liệu lỗi
+    return _getDashboardOverview(user.id, user.role);
 }
 
 export async function getAMPerformance() {
@@ -181,7 +184,10 @@ export async function getAMPerformance() {
 
 async function _getKPITimeSeries(userId: string, userRole: string, granularity: 'thang' | 'quy' | 'nam' = 'thang') {
     try {
-        let whereClause: any = {};
+        let whereClause: any = {
+            trangThaiHienTai: { not: TrangThaiDuAn.THAT_BAI },
+            isPendingDelete: { not: true }
+        };
         // All authenticated users see all KPI data (no role-based filtering)
 
         let byFields: ('nam' | 'quy' | 'thang')[] = ['nam'];
@@ -283,7 +289,10 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
             select: { id: true, name: true, diaBan: true }
         });
 
-        let projectFilter: any = {};
+        let projectFilter: any = {
+            trangThaiHienTai: { not: TrangThaiDuAn.THAT_BAI },
+            isPendingDelete: { not: true }
+        };
         const now = new Date();
         const currentYear = 2026;
         let contextMonth = now.getFullYear() === currentYear ? now.getMonth() + 1 : 12;
@@ -329,40 +338,19 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
             const hasMonthly = project.doanhThuTheoThang && project.doanhThuTheoThang > 0;
 
             let projRevValue = 0;
-            let monthsPassed = 1;
-            const pThang = project.thang || 1;
-            const pNam = project.nam || currentYear;
-            const ngayKetThuc = project.ngayKetThuc ? new Date(project.ngayKetThuc) : null;
-
-            if (pNam === currentYear) {
-                monthsPassed = contextMonth - pThang + 1;
-            } else if (pNam < currentYear) {
-                monthsPassed = (12 - pThang + 1) + contextMonth;
-            }
-            if (monthsPassed < 1) monthsPassed = 1;
-
-            if (ngayKetThuc) {
-                const endY = ngayKetThuc.getFullYear();
-                const endM = ngayKetThuc.getMonth() + 1;
-                let maxMonths = monthsPassed;
-                if (endY < currentYear) {
-                   maxMonths = 0; 
-                } else if (endY === currentYear) {
-                   if (pNam === currentYear) {
-                       maxMonths = endM - pThang + 1;
-                   } else {
-                       maxMonths = (12 - pThang + 1) + endM;
-                   }
-                }
-                if (monthsPassed > maxMonths) monthsPassed = Math.max(0, maxMonths);
-            }
+            const pStart = new Date(project.ngayBatDau);
+            const pEnd = project.ngayKetThuc ? new Date(project.ngayKetThuc) : null;
+            
+            // Calculate total active months from project start up to the context month
+            const contextEnd = new Date(Date.UTC(currentYear, contextMonth, 0, 23, 59, 59));
+            const monthsPassed = getActiveMonths_Utility(pStart, pEnd, pStart, contextEnd);
 
             if (monthsPassed > 0) {
-                if (hasTotal && hasMonthly) {
+                if (hasMonthly) {
+                    // Recurring or one-off using the monthly field
                     projRevValue = monthsPassed * (project.doanhThuTheoThang || 0);
-                } else if (hasMonthly && !hasTotal) {
-                    projRevValue = monthsPassed * (project.doanhThuTheoThang || 0);
-                } else if (hasTotal && !hasMonthly) {
+                } else if (hasTotal) {
+                    // Total revenue only (fallback)
                     projRevValue = project.tongDoanhThuDuKien;
                 }
             }
@@ -499,12 +487,36 @@ export async function getHoanThanhKeHoachData() {
     }
 }
 
+/**
+ * Utility to calculate months between two dates within a period.
+ * IMPORTANT: Following the "đến tháng X thì không ghi nhận nữa" rule, 
+ * if the project end date falls within a month, that month is NOT counted.
+ * Essentially months are calculated as [start, end).
+ */
 function getActiveMonths_Utility(start: Date, end: Date | null, periodStart: Date, periodEnd: Date): number {
-  const s = start > periodStart ? start : periodStart;
-  const e = !end || end > periodEnd ? periodEnd : end;
-  if (s > e) return 0;
-  const months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth()) + 1;
-  return Math.max(0, months);
+    const startMY = start.getFullYear() * 12 + (start.getMonth() + 1);
+    const periodStartMY = periodStart.getFullYear() * 12 + (periodStart.getMonth() + 1);
+    const periodEndMY = periodEnd.getFullYear() * 12 + (periodEnd.getMonth() + 1);
+
+    if (end) {
+        const endMY = end.getFullYear() * 12 + (end.getMonth() + 1);
+        
+        // TRƯỜNG HỢP ĐẶC BIỆT: Dự án bán đứt (Bắt đầu và kết thúc trong cùng 1 tháng)
+        if (startMY === endMY) {
+            // Chỉ ghi nhận nếu tháng đang xét trùng với tháng đó
+            return (periodStartMY <= startMY && startMY <= periodEndMY) ? 1 : 0;
+        }
+
+        // TRƯỜNG HỢP DỰ ÁN KÉO DÀI: Đến tháng kết thúc thì KHÔNG ghi nhận nữa
+        if (endMY <= periodStartMY) return 0;
+    }
+
+    const s = start > periodStart ? start : periodStart;
+    const e = !end || end > periodEnd ? periodEnd : end;
+    if (s > e) return 0;
+
+    const months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth()) + 1;
+    return Math.max(0, months);
 }
 
 export async function getBoardOverview() {
@@ -514,8 +526,11 @@ export async function getBoardOverview() {
         const currentMonth = now.getUTCMonth() + 1;
         const currentQuarter = Math.ceil(currentMonth / 3);
 
-        const excludeFailed = {
-            NOT: { trangThaiHienTai: TrangThaiDuAn.THAT_BAI }
+        const excludeActive = {
+            AND: [
+                { NOT: { trangThaiHienTai: TrangThaiDuAn.THAT_BAI } },
+                { isPendingDelete: { not: true } }
+            ]
         };
 
         const monthStart = new Date(Date.UTC(currentYear, currentMonth - 1, 1));
@@ -531,6 +546,7 @@ export async function getBoardOverview() {
         // Optimize Status Counts with GroupBy
         const statusGroups = await prisma.duAn.groupBy({
             by: ['trangThaiHienTai'],
+            where: { isPendingDelete: { not: true } },
             _count: { id: true }
         });
 
@@ -547,7 +563,7 @@ export async function getBoardOverview() {
 
         // Optimized revenue calculations still need some objects but limited
         const projectsFull = await prisma.duAn.findMany({
-            where: excludeFailed,
+            where: excludeActive,
             select: {
                id: true,
                nam: true,
@@ -570,28 +586,40 @@ export async function getBoardOverview() {
         });
         const kpiThang = kpi ? (kpi.anNinhMang + kpi.giaiPhapCntt + kpi.duAnCds + kpi.cnsAnNinh) : 0;
 
-        const dtTongDuAn = projectsFull.reduce((sum, p) => p.nam === currentYear ? sum + p.tongDoanhThuDuKien : sum, 0);
+        // 1. DT Tổng dự án: sum of Total Revenue of all projects (excluding failed ones via excludeActive)
+        const dtTongDuAn = projectsFull.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
 
+        // 2. DT Tháng đã ký: sum of Monthly Revenue of signed projects active in current month
         const signedProjects = projectsFull.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG);
-        const dtThangDaKy = signedProjects.reduce((sum, p) => {
-            const active = getActiveMonths_Utility(p.ngayBatDau, p.ngayKetThuc, monthStart, monthEnd);
-            return active > 0 ? sum + (p.doanhThuTheoThang || 0) : sum;
-        }, 0);
+
+        // Helper to calculate project contribution for a period
+        const calculateProjectRevenue = (p: typeof projectsFull[0], start: Date, end: Date) => {
+            const active = getActiveMonths_Utility(p.ngayBatDau, p.ngayKetThuc, start, end);
+            if (active <= 0) return 0;
+            
+            // Công thức: Sum All (Doanh thu theo tháng)
+            const monthlyVal = p.doanhThuTheoThang || 0;
+            
+            // Doanh thu theo tháng x Số tháng có hiệu lực (active)
+            const totalInPeriod = monthlyVal * active;
+            return Math.min(totalInPeriod, p.tongDoanhThuDuKien || Infinity);
+        };
+
+        const dtThangDaKy = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, monthStart, monthEnd), 0);
+        const dtTheoQuy = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, quarterStart, quarterEnd), 0);
+        const dtTheoNam = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, yearStart, yearEnd), 0);
+
+        // 3. DT Dự kiến tháng: DT Tháng đã ký + sum(Total Revenue of Expected Projects for this month)
+        const expectedProjectsInMonth = projectsFull.filter(p => 
+            p.isKyVong === true && 
+            p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG &&
+            p.nam === currentYear &&
+            p.thang === currentMonth
+        );
+
         const percMetric2 = kpiThang > 0 ? (dtThangDaKy / kpiThang) * 100 : 0;
-
-        const expectedProjects = projectsFull.filter(p => p.isKyVong === true && p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG);
-        const dtDuKienThang = dtThangDaKy + expectedProjects.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
+        const dtDuKienThang = dtThangDaKy + expectedProjectsInMonth.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
         const percMetric3 = kpiThang > 0 ? (dtDuKienThang / kpiThang) * 100 : 0;
-
-        const dtTheoQuy = signedProjects.reduce((sum, p) => {
-            const activeInQ = getActiveMonths_Utility(p.ngayBatDau, p.ngayKetThuc, quarterStart, quarterEnd);
-            return sum + ((p.doanhThuTheoThang || 0) * activeInQ);
-        }, 0);
-
-        const dtTheoNam = signedProjects.reduce((sum, p) => {
-            const activeInY = getActiveMonths_Utility(p.ngayBatDau, p.ngayKetThuc, yearStart, yearEnd);
-            return sum + ((p.doanhThuTheoThang || 0) * activeInY);
-        }, 0);
 
         const stepCounts: Record<string, number> = {};
         projectsFull.forEach(p => {

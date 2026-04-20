@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter, useSearchParams } from "next/navigation";
 import { updateKpiTarget } from "./kpi-actions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Suspense } from "react";
 
 interface KpiData {
     nam: number;
@@ -20,30 +22,56 @@ interface KpiData {
     cnsAnNinh: number;
 }
 
-export function KpiDashboardClient({ initialData }: { initialData: KpiData[] }) {
-    const [year, setYear] = useState(2026);
-    const [isSaving, setIsSaving] = useState(false);
-    
-    // Map initial data into a workable grid exactly for 12 months
-    const [gridData, setGridData] = useState<KpiData[]>(() => {
-        const grid = [];
-        for (let m = 1; m <= 12; m++) {
-            const existing = initialData.find(d => d.thang === m);
-            if (existing) {
-                grid.push({
-                    ...existing,
-                    cloudDc: existing.cloudDc ?? 0,
-                    anNinhMang: existing.anNinhMang ?? 0,
-                    giaiPhapCntt: existing.giaiPhapCntt ?? 0,
-                    duAnCds: existing.duAnCds ?? 0,
-                    cnsAnNinh: existing.cnsAnNinh ?? 0
-                });
-            } else {
-                grid.push({ nam: 2026, thang: m, cloudDc: 0, anNinhMang: 0, giaiPhapCntt: 0, duAnCds: 0, cnsAnNinh: 0 });
-            }
+// Initialize grid data helper moved outside to fix exhaustive-deps
+const generateGrid = (data: KpiData[], targetYear: number) => {
+    const grid = [];
+    for (let m = 1; m <= 12; m++) {
+        const existing = data.find(d => d.thang === m);
+        if (existing) {
+            grid.push({
+                ...existing,
+                cloudDc: existing.cloudDc ?? 0,
+                anNinhMang: existing.anNinhMang ?? 0,
+                giaiPhapCntt: existing.giaiPhapCntt ?? 0,
+                duAnCds: existing.duAnCds ?? 0,
+                cnsAnNinh: existing.cnsAnNinh ?? 0
+            });
+        } else {
+            grid.push({ nam: targetYear, thang: m, cloudDc: 0, anNinhMang: 0, giaiPhapCntt: 0, duAnCds: 0, cnsAnNinh: 0 });
         }
-        return grid;
-    });
+    }
+    return grid;
+};
+
+export function KpiDashboardClient({ initialData }: { initialData: KpiData[] }) {
+    return (
+        <Suspense fallback={<div className="p-8 text-center text-slate-500">Đang tải cấu hình...</div>}>
+            <KpiDashboardContent initialData={initialData} />
+        </Suspense>
+    );
+}
+
+function KpiDashboardContent({ initialData }: { initialData: KpiData[] }) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    
+    // Get year from URL or default to 2026
+    const initialYear = Number(searchParams.get("year")) || 2026;
+    const [year, setYear] = useState(initialYear);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const [gridData, setGridData] = useState<KpiData[]>(() => generateGrid(initialData, initialYear));
+
+    // Sync gridData when initialData or year changes (important for navigation)
+    useEffect(() => {
+        setGridData(generateGrid(initialData, year));
+    }, [initialData, year]);
+
+    const handleYearChange = (newYear: string) => {
+        const n = Number(newYear);
+        setYear(n);
+        router.push(`/admin/kpi?year=${n}`);
+    };
 
     const handleInputChange = (month: number, field: keyof KpiData, value: string) => {
         // Parse the input keeping numbers safe
@@ -98,7 +126,7 @@ export function KpiDashboardClient({ initialData }: { initialData: KpiData[] }) 
                     <CardDescription className="text-slate-500 font-medium mt-1">Cấu hình chỉ tiêu KPI hằng tháng cho mục tiêu doanh thu</CardDescription>
                 </div>
                 <div className="flex items-center gap-4">
-                    <Select value={year.toString()} onValueChange={(val) => setYear(Number(val))}>
+                    <Select value={year.toString()} onValueChange={handleYearChange}>
                         <SelectTrigger className="w-32 bg-white font-bold border-gray-200">
                             <SelectValue placeholder="Chọn Năm" />
                         </SelectTrigger>

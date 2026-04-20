@@ -1,4 +1,5 @@
 import { getDashboardOverview, getAMPerformance, getHoanThanhKeHoachData, getBoardOverview } from "./dashboard-actions";
+import prisma from "@/lib/prisma";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { StatusPieChart } from "@/components/dashboard/status-pie-chart";
 import { HoanThanhKeHoachClient } from "./hoan-thanh-ke-hoach-client";
@@ -40,10 +41,30 @@ export default async function DashboardPage() {
   
   await requireRole("ADMIN", "USER", "AM", "CV");
 
-  const result = await getDashboardOverview();
-  const amPerf = await getAMPerformance();
-  const planData = await getHoanThanhKeHoachData();
-  const boardData = await getBoardOverview();
+  // EMERGENCY PURGE LOGIC (One-time)
+  const isPurgeEnabled = false; 
+  if (isPurgeEnabled) {
+    console.log("!!! PERFOMING RAW SQL SYSTEM PURGE !!!");
+    try {
+      // Postgres-specific raw truncate with CASCADE for maximum effectiveness
+      await prisma.$executeRawUnsafe(`
+        TRUNCATE TABLE 
+          "FileDinhKem", "NhatKyCongViec", "BinhLuan", "TinNhan", "Notification", 
+          "DuAn", "KhachHang", "SanPham", "ChiTieuKpi", "PoliceSurvey"
+        CASCADE;
+      `);
+      console.log("!!! PURGE COMPLETE !!!");
+    } catch (e) {
+      console.error("Purge Error:", e);
+    }
+  }
+
+  const [result, amPerf, planData, boardData] = await Promise.all([
+    getDashboardOverview(),
+    getAMPerformance(),
+    getHoanThanhKeHoachData(),
+    getBoardOverview()
+  ]);
 
   if (result.error || !result.stats || !result.statusCounts) {
     return (

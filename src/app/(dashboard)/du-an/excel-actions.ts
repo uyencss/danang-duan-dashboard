@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { getCurrentUser, requireRole } from "@/lib/auth-utils";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { TrangThaiDuAn, PhanLoaiKH, LinhVuc } from "@prisma/client";
 import { extractTimeFields } from "@/lib/utils/time-extract";
 import { cacheInvalidate } from "@/lib/cache";
@@ -34,6 +34,19 @@ function parseExcelDate(val: any): Date {
   }
   
   return new Date();
+}
+
+/**
+ * Helper to safely parse numbers from Excel strings.
+ * Handles both dot (.) and comma (,) decimal separators.
+ */
+function safeParseFloat(val: any): number {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  // Replace comma with dot to handle VN format correctly (e.g. 0,062 -> 0.062)
+  const str = val.toString().replace(/,/g, '.').trim();
+  const parsed = parseFloat(str);
+  return isNaN(parsed) ? 0 : parsed;
 }
 
 export async function importExcelProjects(rows: any[]) {
@@ -131,8 +144,8 @@ export async function importExcelProjects(rows: any[]) {
             linhVuc: khInfo.linhVuc as unknown as LinhVuc,
             customerId: khInfo.id,
             productId: spId,
-            tongDoanhThuDuKien: parseFloat(row.tongDoanhThu) || 0,
-            doanhThuTheoThang: parseFloat(row.dtTheoThang) || 0,
+            tongDoanhThuDuKien: safeParseFloat(row.tongDoanhThu),
+            doanhThuTheoThang: safeParseFloat(row.dtTheoThang),
             maHopDong: row.maHopDong || null,
             ngayBatDau,
             ngayKetThuc,
@@ -183,6 +196,7 @@ export async function importExcelProjects(rows: any[]) {
     console.log(`Hoàn thành Import ${successCount} dự án trong ${duration}s.`);
 
     await cacheInvalidate("dashboard:overview", "options:khachhang", "options:sanpham", "options:sanpham-groups");
+    revalidateTag("dashboard-overview");
     revalidatePath("/du-an");
     await syncReplica();
 
@@ -202,10 +216,12 @@ export async function recallMostRecentExcelProjects() {
     const user = await requireRole("ADMIN", "USER", "AM", "CV");
     if (!user) return { error: "Yêu cầu đăng nhập" };
 
-    // 1. Tìm nhật ký import excel gần nhất của user này
+    // 1. Tìm nhật ký import excel gần nhất (Admin có quyền thu hồi của bất kỳ ai)
+    const isAdmin = user.role === "ADMIN";
+
     const latestBatchLog = await prisma.nhatKyCongViec.findFirst({
       where: {
-        userId: user.id,
+        ...(isAdmin ? {} : { userId: user.id }),
         noiDungChiTiet: { startsWith: "Khởi tạo dự án hàng loạt từ Excel [" }
       },
       orderBy: { createdAt: 'desc' }
@@ -237,13 +253,18 @@ export async function recallMostRecentExcelProjects() {
       return { error: "Danh sách này đã bị xoá hoặc không tồn tại." };
     }
 
-    // 3. Xoá dự án (Hoặc đưa vào isPendingDelete = true, ở đây xoá thật để dọn dẹp import sai)
-    // Do dự án liên kết Cascade nhiều chỗ, delete dự án sẽ tự động xoá nhật ký.
-    await prisma.duAn.deleteMany({
-      where: { id: { in: projectIds } }
-    });
+    // 3. Xoá dự án theo Chunks để tránh Timeout (ví dụ 100 cái một lần)
+    const delChunkSize = 100;
+    for (let i = 0; i < projectIds.length; i += delChunkSize) {
+        const chunk = projectIds.slice(i, i + delChunkSize);
+        await prisma.duAn.deleteMany({
+            where: { id: { in: chunk } }
+        });
+    }
 
     await cacheInvalidate("dashboard:overview");
+    revalidateTag("dashboard-overview");
+    revalidatePath("/");
     revalidatePath("/du-an");
     await syncReplica();
 

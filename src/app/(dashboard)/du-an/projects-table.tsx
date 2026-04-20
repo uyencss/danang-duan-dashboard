@@ -212,6 +212,15 @@ export function ProjectsTable({
       ),
     },
     {
+      accessorKey: "doanhThuTheoThang",
+      header: "DT tháng",
+      cell: ({ row }) => (
+        <span className="text-xs font-bold text-[#0058bc]">
+          {(row.getValue("doanhThuTheoThang") as number || 0).toLocaleString()}
+        </span>
+      ),
+    },
+    {
       accessorKey: "hienTaiBuoc",
       header: "Tiến độ",
       cell: ({ row }) => {

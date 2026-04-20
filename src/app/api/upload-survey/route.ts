@@ -39,25 +39,8 @@ export async function POST(req: Request) {
       
       const deXuatKhac = row[15] ? String(row[15]) : "";
 
-      return prisma.policeSurvey.upsert({
-        where: { tenDonVi },
-        update: {
-          nguoiKhaoSat,
-          chucVu,
-          daCoCamera,
-          nhuCauCamera,
-          mucDichCamera,
-          khuVucCamera,
-          daCoKiosk,
-          nhuCauKiosk,
-          mucDichKiosk,
-          daCoTruyenThanh,
-          nhuCauTruyenThanh,
-          mucDichTruyenThanh,
-          khuVucTruyenThanh,
-          deXuatKhac,
-        },
-        create: {
+      return prisma.policeSurvey.create({
+        data: {
           tenDonVi,
           nguoiKhaoSat,
           chucVu,

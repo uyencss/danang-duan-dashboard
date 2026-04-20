@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "db:sync": "tsx scripts/db-sync/sync-prod-to-dev.ts",
-    "dev": "npm run db:sync && next dev",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

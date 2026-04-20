@@ -557,6 +557,7 @@ export default function ProjectForm() {
                       <FormControl>
                         <input
                           type="number"
+                          step="any"
                           {...field}
                           className="w-full bg-[#f8fbfe] border-none rounded-2xl h-[44px] px-4 text-[#0058bc] font-black text-base focus:ring-2 focus:ring-[#0058bc]/30 outline-none text-right"
                         />
@@ -579,6 +580,7 @@ export default function ProjectForm() {
                       <FormControl>
                         <input
                           type="number"
+                          step="any"
                           {...field}
                           placeholder="0"
                           className="w-full bg-[#f8fbfe] border-none rounded-2xl h-[44px] px-4 text-[#0D1F3C] font-black text-base text-right"
