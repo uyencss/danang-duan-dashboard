@@ -67,7 +67,8 @@ function KpiDashboardContent({ initialData }: { initialData: KpiData[] }) {
         setGridData(generateGrid(initialData, year));
     }, [initialData, year]);
 
-    const handleYearChange = (newYear: string) => {
+    const handleYearChange = (newYear: string | null) => {
+        if (!newYear) return;
         const n = Number(newYear);
         setYear(n);
         router.push(`/admin/kpi?year=${n}`);
