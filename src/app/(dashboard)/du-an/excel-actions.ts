@@ -16,15 +16,18 @@ function parseExcelDate(val: any): Date {
   
   // 1. Trường hợp định dạng số của Excel (số ngày tính từ 1900)
   if (/^\d+(\.\d+)?$/.test(str)) {
-    const excelEpoch = new Date(1899, 11, 30);
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
     const days = parseFloat(str);
     return new Date(excelEpoch.getTime() + days * 24 * 60 * 60 * 1000);
   }
 
-  // 2. ƯU TIÊN parse DD/MM/YYYY hoặc DD-MM-YYYY (Tránh lỗi đảo ngược Ngày/Tháng của Date gốc)
+  // 2. ƯU TIÊN parse DD/MM/YYYY hoặc DD-MM-YYYY (Sử dụng UTC để tránh lệch múi giờ)
   const parts = str.split(/[\/\-]/);
   if (parts.length === 3) {
-    const d2 = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+    const year = parseInt(parts[2]);
+    const month = parseInt(parts[1]) - 1;
+    const day = parseInt(parts[0]);
+    const d2 = new Date(Date.UTC(year, month, day));
     if (!isNaN(d2.getTime())) return d2;
   }
 
