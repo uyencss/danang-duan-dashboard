@@ -494,29 +494,37 @@ export async function getHoanThanhKeHoachData() {
  * Essentially months are calculated as [start, end).
  */
 function getActiveMonths_Utility(start: Date, end: Date | null, periodStart: Date, periodEnd: Date): number {
-    const startMY = start.getFullYear() * 12 + (start.getMonth() + 1);
-    const periodStartMY = periodStart.getFullYear() * 12 + (periodStart.getMonth() + 1);
-    const periodEndMY = periodEnd.getFullYear() * 12 + (periodEnd.getMonth() + 1);
+    const sMY = start.getUTCFullYear() * 12 + start.getUTCMonth();
+    const psMY = periodStart.getUTCFullYear() * 12 + periodStart.getUTCMonth();
+    const peMY = periodEnd.getUTCFullYear() * 12 + periodEnd.getUTCMonth();
 
     if (end) {
-        const endMY = end.getFullYear() * 12 + (end.getMonth() + 1);
+        const eMY = end.getUTCFullYear() * 12 + end.getUTCMonth();
         
         // TRƯỜNG HỢP ĐẶC BIỆT: Dự án bán đứt (Bắt đầu và kết thúc trong cùng 1 tháng)
-        if (startMY === endMY) {
-            // Chỉ ghi nhận nếu tháng đang xét trùng với tháng đó
-            return (periodStartMY <= startMY && startMY <= periodEndMY) ? 1 : 0;
+        if (sMY === eMY) {
+            // Chỉ ghi nhận nếu tháng đang xét nằm trong khoảng period
+            return (psMY <= sMY && sMY <= peMY) ? 1 : 0;
         }
 
         // TRƯỜNG HỢP DỰ ÁN KÉO DÀI: Đến tháng kết thúc thì KHÔNG ghi nhận nữa
-        if (endMY <= periodStartMY) return 0;
+        // Tức là tháng active cuối cùng là eMY - 1
+        const lastActiveMY = eMY - 1;
+
+        // Xác định khoảng giao nhau giữa [sMY, lastActiveMY] và [psMY, peMY]
+        const rangeStart = Math.max(sMY, psMY);
+        const rangeEnd = Math.min(lastActiveMY, peMY);
+
+        if (rangeStart > rangeEnd) return 0;
+        return rangeEnd - rangeStart + 1;
     }
 
-    const s = start > periodStart ? start : periodStart;
-    const e = !end || end > periodEnd ? periodEnd : end;
-    if (s > e) return 0;
+    // Dự án không có ngày kết thúc (active mãi mãi)
+    const rangeStart = Math.max(sMY, psMY);
+    const rangeEnd = peMY;
 
-    const months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth()) + 1;
-    return Math.max(0, months);
+    if (rangeStart > rangeEnd) return 0;
+    return rangeEnd - rangeStart + 1;
 }
 
 export async function getBoardOverview() {
@@ -608,6 +616,7 @@ export async function getBoardOverview() {
         };
 
         const dtThangDaKy = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, monthStart, monthEnd), 0);
+        
         const dtTheoQuy = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, quarterStart, quarterEnd), 0);
         const dtTheoNam = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, yearStart, yearEnd), 0);
 
@@ -639,6 +648,7 @@ export async function getBoardOverview() {
             }
         });
 
+
         return {
             revenueMetrics: {
                 dtTongDuAn,
@@ -647,7 +657,7 @@ export async function getBoardOverview() {
                 dtDuKienThangValue: dtDuKienThang,
                 dtDuKienThangPerc: percMetric3,
                 dtTheoQuy,
-                dtTheoNam
+                dtTheoNam,
             },
             projectMetrics: {
                 tongSoDuAn: projectsFull.length,

@@ -1,6 +1,3 @@
-// This is your Prisma schema file (Updated for approval)
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,83 +6,34 @@ datasource db {
   provider = "postgresql"
 }
 
-// ============================================
-// ENUMS
-// ============================================
-
-enum UserRole {
-  ADMIN // Quản trị viên
-  AM // Account Manager
-  CV // Chuyên viên
-  USER // Nhân viên (Legacy)
-}
-
-enum LogStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-enum PhanLoaiKH {
-  CHINH_PHU // Sở, Ban, Ngành
-  DOANH_NGHIEP // Doanh nghiệp tư nhân
-  CONG_AN // Công an (B2A)
-}
-
-enum TrangThaiDuAn {
-  MOI // Mới
-  DANG_LAM_VIEC // Đang làm việc
-  DA_DEMO // Đã demo
-  DA_GUI_BAO_GIA // Đã gửi báo giá
-  DA_KY_HOP_DONG // Đã ký hợp đồng
-  THAT_BAI // Thất bại
-}
-
-enum LinhVuc {
-  CHINH_PHU // Chính phủ/ Sở ban ngành
-  DOANH_NGHIEP // Doanh nghiệp
-  CONG_AN // Công an
-}
-
-enum LoaiTinNhan {
-  TEXT
-  SYSTEM
-}
-
-// ============================================
-// MODELS
-// ============================================
-
 model User {
-  id             String    @id @default(cuid())
+  id             String           @id @default(cuid())
   name           String
-  email          String    @unique
-  emailVerified  Boolean   @default(false)
+  email          String           @unique
+  emailVerified  Boolean          @default(false)
   image          String?
   hashedPassword String?
-  role           UserRole  @default(USER)
-  diaBan         String?   @default("Chưa phân công")
+  role           UserRole         @default(USER)
+  diaBan         String?          @default("Chưa phân công")
   avatarUrl      String?
-  isActive       Boolean   @default(true)
+  isActive       Boolean          @default(true)
   lastLoginAt    DateTime?
-  banned         Boolean   @default(false)
+  banned         Boolean          @default(false)
   banReason      String?
   banExpires     DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  // Relations
-  duAnAM        DuAn[]           @relation("AMRelation")
-  duAnAMHoTro   DuAn[]           @relation("AMHoTroRelation")
-  duAnCV        DuAn[]           @relation("CVRelation")
-  duAnCVHoTro1  DuAn[]           @relation("CVHoTro1Relation")
-  duAnCVHoTro2  DuAn[]           @relation("CVHoTro2Relation")
-  nhatKy        NhatKyCongViec[]
-  binhLuan      BinhLuan[]
-  tinNhan       TinNhan[]
-  sessions      Session[]
-  accounts      Account[]
-  notifications Notification[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  accounts       Account[]
+  binhLuan       BinhLuan[]
+  duAnAMHoTro    DuAn[]           @relation("AMHoTroRelation")
+  duAnAM         DuAn[]           @relation("AMRelation")
+  duAnCV         DuAn[]           @relation("CVRelation")
+  duAnCVHoTro1   DuAn[]           @relation("CVHoTro1Relation")
+  duAnCVHoTro2   DuAn[]           @relation("CVHoTro2Relation")
+  nhatKy         NhatKyCongViec[]
+  notifications  Notification[]
+  sessions       Session[]
+  tinNhan        TinNhan[]
 
   @@index([email])
   @@index([role])
@@ -102,8 +50,7 @@ model Session {
   userAgent String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -119,8 +66,7 @@ model Account {
   password     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -137,31 +83,25 @@ model Verification {
 }
 
 model KhachHang {
-  id          Int        @id @default(autoincrement())
-  ten         String
-  phanLoai    PhanLoaiKH
-  diaChi      String?
-  soDienThoai String?
-  email       String?
-
-  // Thông tin liên hệ & Đầu mối
-  dauMoiTiepCan      String? // Đầu mối tiếp cận
-  soDienThoaiDauMoi  String? // Số điện thoại đầu mối
-  ngaySinhDauMoi     DateTime? // Ngày sinh nhật đầu mối
-  lanhDaoDonVi       String? // Lãnh đạo đơn vị
-  soDienThoaiLanhDao String? // Số điện thoại Lãnh đạo
-  ngaySinhLanhDao    DateTime? // Ngày sinh nhật Lãnh đạo
-
-  // Ngày kỷ niệm
-  ngayThanhLap DateTime? // Ngày thành lập
-  ngayKyNiem   DateTime? // Ngày kỷ niệm
-  ghiChu       String? // Ghi chú thêm
-
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  duAns DuAn[]
+  id                 Int        @id @default(autoincrement())
+  ten                String
+  phanLoai           PhanLoaiKH
+  diaChi             String?
+  soDienThoai        String?
+  email              String?
+  dauMoiTiepCan      String?
+  soDienThoaiDauMoi  String?
+  ngaySinhDauMoi     DateTime?
+  lanhDaoDonVi       String?
+  soDienThoaiLanhDao String?
+  ngaySinhLanhDao    DateTime?
+  ngayThanhLap       DateTime?
+  ngayKyNiem         DateTime?
+  ghiChu             String?
+  isActive           Boolean    @default(true)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  duAns              DuAn[]
 
   @@index([phanLoai])
   @@index([ten])
@@ -176,15 +116,14 @@ model SanPham {
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  duAns DuAn[]
+  duAns      DuAn[]
 
   @@index([nhom])
   @@index([nhom, tenChiTiet])
 }
 
 model DuAn {
-  id                  Int           @id @default(autoincrement())
+  id                  Int              @id @default(autoincrement())
   customerId          Int
   productId           Int
   amId                String?
@@ -193,39 +132,36 @@ model DuAn {
   cvHoTro1Id          String?
   cvHoTro2Id          String?
   tenDuAn             String
-  linhVuc             LinhVuc       @default(CHINH_PHU)
-  tongDoanhThuDuKien  Float         @default(0)
-  doanhThuTheoThang   Float?        @default(0)
+  linhVuc             LinhVuc          @default(CHINH_PHU)
+  tongDoanhThuDuKien  Float            @default(0)
+  doanhThuTheoThang   Float?           @default(0)
   maHopDong           String?
   ngayBatDau          DateTime
   ngayKetThuc         DateTime?
-  isTrongDiem         Boolean       @default(false)
-  isKyVong            Boolean       @default(false)
-  hienTaiBuoc         String? // Bước hiện tại của dự án
-  isPendingDelete     Boolean       @default(false)
+  isTrongDiem         Boolean          @default(false)
+  isKyVong            Boolean          @default(false)
+  hienTaiBuoc         String?
+  isPendingDelete     Boolean          @default(false)
   deleteRequestedAt   DateTime?
   tuan                Int
   thang               Int
   quy                 Int
   nam                 Int
   ngayChamsocCuoiCung DateTime?
-  trangThaiHienTai    TrangThaiDuAn @default(MOI)
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
-
-  // Relations
-  khachHang  KhachHang @relation(fields: [customerId], references: [id])
-  sanPham    SanPham   @relation(fields: [productId], references: [id])
-  am         User?     @relation("AMRelation", fields: [amId], references: [id], onDelete: SetNull)
-  amHoTro    User?     @relation("AMHoTroRelation", fields: [amHoTroId], references: [id], onDelete: SetNull)
-  chuyenVien User?     @relation("CVRelation", fields: [chuyenVienId], references: [id], onDelete: SetNull)
-  cvHoTro1   User?     @relation("CVHoTro1Relation", fields: [cvHoTro1Id], references: [id], onDelete: SetNull)
-  cvHoTro2   User?     @relation("CVHoTro2Relation", fields: [cvHoTro2Id], references: [id], onDelete: SetNull)
-
-  nhatKy        NhatKyCongViec[]
-  binhLuan      BinhLuan[]
-  tinNhan       TinNhan[]
-  notifications Notification[]
+  trangThaiHienTai    TrangThaiDuAn    @default(MOI)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  binhLuan            BinhLuan[]
+  amHoTro             User?            @relation("AMHoTroRelation", fields: [amHoTroId], references: [id])
+  am                  User?            @relation("AMRelation", fields: [amId], references: [id])
+  chuyenVien          User?            @relation("CVRelation", fields: [chuyenVienId], references: [id])
+  khachHang           KhachHang        @relation(fields: [customerId], references: [id])
+  cvHoTro1            User?            @relation("CVHoTro1Relation", fields: [cvHoTro1Id], references: [id])
+  cvHoTro2            User?            @relation("CVHoTro2Relation", fields: [cvHoTro2Id], references: [id])
+  sanPham             SanPham          @relation(fields: [productId], references: [id])
+  nhatKy              NhatKyCongViec[]
+  notifications       Notification[]
+  tinNhan             TinNhan[]
 
   @@index([customerId])
   @@index([productId])
@@ -247,37 +183,35 @@ model NhatKyCongViec {
   ngayGio        DateTime      @default(now())
   trangThaiMoi   TrangThaiDuAn
   noiDungChiTiet String
-  buoc           String? // Bước quy trình (nếu có)
+  buoc           String?
   status         LogStatus     @default(APPROVED)
   createdAt      DateTime      @default(now())
-
-  duAn DuAn @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  files FileDinhKem[]
+  files          FileDinhKem[]
+  duAn           DuAn          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([userId])
-  @@index([projectId, ngayGio]) // Tối ưu cho nhatKy: { orderBy: { ngayGio: 'desc' } }
+  @@index([projectId, ngayGio])
 }
 
 model BinhLuan {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   projectId Int
   userId    String
   content   String
   parentId  Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  duAn    DuAn       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent  BinhLuan?  @relation("CommentThread", fields: [parentId], references: [id])
-  replies BinhLuan[] @relation("CommentThread")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  parent    BinhLuan?  @relation("CommentThread", fields: [parentId], references: [id])
+  replies   BinhLuan[] @relation("CommentThread")
+  duAn      DuAn       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([userId])
   @@index([parentId])
-  @@index([projectId, createdAt]) // Tối ưu cho binhLuan: { orderBy: { createdAt: 'desc' } }
+  @@index([projectId, createdAt])
 }
 
 model TinNhan {
@@ -290,9 +224,8 @@ model TinNhan {
   isDeleted Boolean     @default(false)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
-
-  duAn DuAn @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  duAn      DuAn        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([projectId, createdAt])
   @@index([userId])
@@ -302,13 +235,13 @@ model ChiTieuKpi {
   id           Int      @id @default(autoincrement())
   nam          Int
   thang        Int
-  cloudDc      Float    @default(0)
   anNinhMang   Float    @default(0)
   giaiPhapCntt Float    @default(0)
   duAnCds      Float    @default(0)
   cnsAnNinh    Float    @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  cloudDc      Float    @default(0)
 
   @@unique([nam, thang])
   @@index([nam])
@@ -320,28 +253,27 @@ model Notification {
   title     String
   content   String
   isRead    Boolean  @default(false)
-  type      String // "APPROVAL_REQUEST", "APPROVAL_RESULT"
-  relatedId String? // Nhật ký ID (có thể dùng thay/cùng projectId)
+  type      String
+  relatedId String?
   projectId Int?
   createdAt DateTime @default(now())
-
-  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project DuAn? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   DuAn?    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([projectId])
 }
+
 model FileDinhKem {
-  id        Int      @id @default(autoincrement())
+  id        Int            @id @default(autoincrement())
   logId     Int
   name      String
   url       String
   type      String
   size      Int
-  createdAt DateTime @default(now())
-
+  createdAt DateTime       @default(now())
   log       NhatKyCongViec @relation(fields: [logId], references: [id], onDelete: Cascade)
-  
+
   @@index([logId])
 }
 
@@ -357,17 +289,16 @@ model RoleConfig {
 }
 
 model MenuItem {
-  id        Int      @id @default(autoincrement())
-  key       String   @unique
-  label     String
-  href      String
-  icon      String?
-  section   String   @default("main")
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id          Int              @id @default(autoincrement())
+  key         String           @unique
+  label       String
+  href        String
+  icon        String?
+  section     String           @default("main")
+  sortOrder   Int              @default(0)
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
   permissions MenuPermission[]
 
   @@index([section, sortOrder])
@@ -383,8 +314,7 @@ model MenuPermission {
   canDelete Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  menu MenuItem @relation(fields: [menuKey], references: [key], onDelete: Cascade)
+  menu      MenuItem @relation(fields: [menuKey], references: [key], onDelete: Cascade)
 
   @@unique([menuKey, role])
   @@index([role])
@@ -395,25 +325,59 @@ model PoliceSurvey {
   tenDonVi           String
   nguoiKhaoSat       String
   chucVu             String
-  
   daCoCamera         String
   nhuCauCamera       Boolean
   mucDichCamera      String
   khuVucCamera       String
-  
   daCoKiosk          String
   nhuCauKiosk        Boolean
   mucDichKiosk       String
-  
   daCoTruyenThanh    String
   nhuCauTruyenThanh  Boolean
   mucDichTruyenThanh String
   khuVucTruyenThanh  String
-  
   deXuatKhac         String?
-  
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
-  
+
   @@index([tenDonVi])
+}
+
+enum UserRole {
+  ADMIN
+  AM
+  CV
+  USER
+}
+
+enum LogStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PhanLoaiKH {
+  CHINH_PHU
+  DOANH_NGHIEP
+  CONG_AN
+}
+
+enum TrangThaiDuAn {
+  MOI
+  DANG_LAM_VIEC
+  DA_DEMO
+  DA_GUI_BAO_GIA
+  DA_KY_HOP_DONG
+  THAT_BAI
+}
+
+enum LinhVuc {
+  CHINH_PHU
+  DOANH_NGHIEP
+  CONG_AN
+}
+
+enum LoaiTinNhan {
+  TEXT
+  SYSTEM
 }

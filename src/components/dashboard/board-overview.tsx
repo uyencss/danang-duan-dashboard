@@ -128,6 +128,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
           />
 
           {/* Metric 7: Dự án trọng điểm */}
+
           <MetricCard 
              title="Dự Án Trọng Điểm" 
              value={projectMetrics.duAnTrongDiem}

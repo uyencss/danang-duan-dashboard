@@ -14,24 +14,23 @@ function parseExcelDate(val: any): Date {
   
   const str = val.toString().trim();
   
-  // Trường hợp định dạng số của Excel (số ngày tính từ 1900)
+  // 1. Trường hợp định dạng số của Excel (số ngày tính từ 1900)
   if (/^\d+(\.\d+)?$/.test(str)) {
     const excelEpoch = new Date(1899, 11, 30);
     const days = parseFloat(str);
     return new Date(excelEpoch.getTime() + days * 24 * 60 * 60 * 1000);
   }
 
-  // Thử parse mặc định
-  const d = new Date(str);
-  if (!isNaN(d.getTime())) return d;
-  
-  // Thử parse DD/MM/YYYY hoặc DD-MM-YYYY
+  // 2. ƯU TIÊN parse DD/MM/YYYY hoặc DD-MM-YYYY (Tránh lỗi đảo ngược Ngày/Tháng của Date gốc)
   const parts = str.split(/[\/\-]/);
   if (parts.length === 3) {
-    // Giả định DD/MM/YYYY
     const d2 = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
     if (!isNaN(d2.getTime())) return d2;
   }
+
+  // 3. Thử parse mặc định nếu không khớp định dạng chuẩn
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) return d;
   
   return new Date();
 }
@@ -211,49 +210,63 @@ export async function importExcelProjects(rows: any[]) {
   }
 }
 
-export async function recallMostRecentExcelProjects() {
+export async function recallExcelProjects(mode: 'latest' | 'today' = 'latest') {
   try {
     const user = await requireRole("ADMIN", "USER", "AM", "CV");
     if (!user) return { error: "Yêu cầu đăng nhập" };
 
-    // 1. Tìm nhật ký import excel gần nhất (Admin có quyền thu hồi của bất kỳ ai)
     const isAdmin = user.role === "ADMIN";
-
-    const latestBatchLog = await prisma.nhatKyCongViec.findFirst({
-      where: {
-        ...(isAdmin ? {} : { userId: user.id }),
-        noiDungChiTiet: { startsWith: "Khởi tạo dự án hàng loạt từ Excel [" }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    if (!latestBatchLog) {
-      return { error: "Không tìm thấy danh sách dự án nào được tạo hàng loạt gần đây." };
-    }
-
-    // Lấy batchId từ noiDungChiTiet (vd: Khởi tạo... [BATCH_EXCEL_12345])
-    const match = latestBatchLog.noiDungChiTiet.match(/\[(BATCH_EXCEL_.*?)\]/);
-    if (!match) {
-      return { error: "Dữ liệu nhật ký không hợp lệ." };
-    }
-
-    const batchId = match[1];
-
-    // 2. Tìm tất cả các dự án có nhật ký trùng batchId
-    const batchLogs = await prisma.nhatKyCongViec.findMany({
-      where: {
-        noiDungChiTiet: { contains: `[${batchId}]` }
-      },
-      select: { projectId: true }
-    });
-
-    const projectIds = batchLogs.map(l => l.projectId);
     
-    if (projectIds.length === 0) {
-      return { error: "Danh sách này đã bị xoá hoặc không tồn tại." };
+    let projectIds: number[] = [];
+    let message = "";
+
+    if (mode === 'latest') {
+      // 1. Tìm nhật ký import excel gần nhất
+      const latestBatchLog = await prisma.nhatKyCongViec.findFirst({
+        where: {
+          ...(isAdmin ? {} : { userId: user.id }),
+          noiDungChiTiet: { startsWith: "Khởi tạo dự án hàng loạt từ Excel [" }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (!latestBatchLog) {
+        return { error: "Không tìm thấy danh sách dự án nào được tạo hàng loạt gần đây." };
+      }
+
+      const match = latestBatchLog.noiDungChiTiet.match(/\[(BATCH_EXCEL_.*?)\]/);
+      if (!match) return { error: "Dữ liệu nhật ký không hợp lệ." };
+
+      const batchId = match[1];
+      const batchLogs = await prisma.nhatKyCongViec.findMany({
+        where: { noiDungChiTiet: { contains: `[${batchId}]` } },
+        select: { projectId: true }
+      });
+      projectIds = batchLogs.map(l => l.projectId);
+      message = `Đã thu hồi thành công mẻ vừa tải gần nhất (${projectIds.length} dự án).`;
+    } else {
+      // 2. Thu hồi TOÀN BỘ trong ngày hôm nay
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const todayLogs = await prisma.nhatKyCongViec.findMany({
+        where: {
+          createdAt: { gte: startOfDay },
+          noiDungChiTiet: { startsWith: "Khởi tạo dự án hàng loạt từ Excel [" },
+          ...(isAdmin ? {} : { userId: user.id })
+        },
+        select: { projectId: true }
+      });
+
+      projectIds = Array.from(new Set(todayLogs.map(l => l.projectId)));
+      message = `Đã dọn sạch toàn bộ ${projectIds.length} dự án tải từ Excel trong ngày hôm nay.`;
     }
 
-    // 3. Xoá dự án theo Chunks để tránh Timeout (ví dụ 100 cái một lần)
+    if (projectIds.length === 0) {
+      return { error: "Không tìm thấy dự án nào hợp lệ để thu hồi." };
+    }
+
+    // 3. Xoá dự án theo Chunks
     const delChunkSize = 100;
     for (let i = 0; i < projectIds.length; i += delChunkSize) {
         const chunk = projectIds.slice(i, i + delChunkSize);
@@ -271,7 +284,7 @@ export async function recallMostRecentExcelProjects() {
     return { 
       success: true, 
       count: projectIds.length,
-      message: `Đã thu hồi thành công danh sách dự án gồm ${projectIds.length} mục.`
+      message
     };
   } catch (error: any) {
     console.error("Lỗi Thu Hồi Excel:", error);

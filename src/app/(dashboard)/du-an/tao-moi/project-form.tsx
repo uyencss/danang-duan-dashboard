@@ -26,6 +26,7 @@ import { FileText, CheckCircle, Building2, Package, Users, Calendar, Banknote } 
 import Link from "next/link";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { CreatableSelect } from "@/components/ui/creatable-select";
+import { format } from "date-fns";
 
 // ── Maps for human-readable labels ──
 
@@ -621,11 +622,17 @@ export default function ProjectForm() {
                         )}
                       </FieldLabel>
                       <FormControl>
-                        <input
-                          type="date"
-                          {...field}
-                          className="w-full bg-[#f8fbfe] border-none rounded-2xl h-[44px] px-4 text-[#0D1F3C] font-bold text-sm"
-                        />
+                        <div className="relative group/date">
+                          <input
+                            type="date"
+                            {...field}
+                            className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full"
+                          />
+                          <div className="w-full bg-[#f8fbfe] border-none rounded-2xl h-[44px] px-4 text-[#0D1F3C] font-bold text-sm flex items-center justify-between group-hover/date:bg-blue-50 transition-colors pointer-events-none">
+                             <span>{field.value ? format(new Date(field.value), "dd/MM/yyyy") : "Chọn ngày..."}</span>
+                             <Calendar className="size-4 text-slate-400 group-hover/date:text-[#0058bc] transition-colors" />
+                          </div>
+                        </div>
                       </FormControl>
                     </FormItem>
                   )}
@@ -639,11 +646,17 @@ export default function ProjectForm() {
                     <FormItem>
                       <FieldLabel>Ngày Kết Thúc</FieldLabel>
                       <FormControl>
-                        <input
-                          type="date"
-                          {...field}
-                          className="w-full bg-[#f8fbfe] border-none rounded-2xl h-[44px] px-4 text-[#0D1F3C] font-bold text-sm"
-                        />
+                         <div className="relative group/date">
+                          <input
+                            type="date"
+                            {...field}
+                            className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full"
+                          />
+                          <div className="w-full bg-[#f8fbfe] border-none rounded-2xl h-[44px] px-4 text-[#0D1F3C] font-bold text-sm flex items-center justify-between group-hover/date:bg-blue-50 transition-colors pointer-events-none">
+                             <span>{field.value ? format(new Date(field.value), "dd/MM/yyyy") : "Chọn ngày..."}</span>
+                             <Calendar className="size-4 text-slate-400 group-hover/date:text-[#0058bc] transition-colors" />
+                          </div>
+                        </div>
                       </FormControl>
                     </FormItem>
                   )}

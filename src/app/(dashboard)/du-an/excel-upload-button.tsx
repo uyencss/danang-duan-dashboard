@@ -2,11 +2,21 @@
 
 import { useState, useRef, useTransition } from "react";
 import * as XLSX from "xlsx";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { FileUp, FileDown, Undo2, Loader2, AlertCircle } from "lucide-react";
-import { importExcelProjects, recallMostRecentExcelProjects } from "./excel-actions";
+import { importExcelProjects, recallExcelProjects } from "./excel-actions";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Define option constants for validation
 const TIEU_CHI_YES_NO = ["Có", "Không"];
@@ -34,7 +44,7 @@ export function ExcelUploadButton({ users }: { users: UserOption[] }) {
         "Tên dự án*", "Trọng điểm", "Kỳ vọng", 
         "Khách hàng*", "Phân loại khách hàng*", "Địa chỉ",
         "Tên sản phẩm chi tiết*", "Nhóm sản phẩm*", "Mô tả sản phẩm",
-        "Tổng doanh thu*", "DT theo tháng", "Mã hợp đồng", "Ngày bắt đầu* (MM/DD/YYYY)", "Ngày kết thúc (MM/DD/YYYY)",
+        "Tổng doanh thu*", "DT theo tháng", "Mã hợp đồng", "Ngày bắt đầu* (DD/MM/YYYY)", "Ngày kết thúc (DD/MM/YYYY)",
         "Chuyên viên chủ trì", "Chuyên viên hỗ trợ 1", "Chuyên viên hỗ trợ 2", "AM phụ trách", "AM hỗ trợ 1",
         "Trạng thái khởi tạo*"
       ],
@@ -42,7 +52,7 @@ export function ExcelUploadButton({ users }: { users: UserOption[] }) {
         "Dự án Viễn thông mẫu", "Có", "Không",
         "Công ty TNHH ABCD", "Doanh nghiệp", "Đà Nẵng",
         "Gói Camera An ninh", "Camera AI", "Camera độ phân giải cao",
-        "150.5", "10", "HD-123456", "10/20/2023", "",
+        "150.5", "10", "HD-123456", "20/10/2023", "",
         "Nguyễn Văn A", "", "", "Trần Thị B", "",
         "Mới"
       ]
@@ -223,10 +233,14 @@ export function ExcelUploadButton({ users }: { users: UserOption[] }) {
     });
   };
 
-  const onRecall = () => {
-    if(confirm("Bạn có CHẮC CHẮN muốn thu hồi danh sách dự án vừa import gần nhất bằng Excel? Các dự án này sẽ bị xóa mãi mãi khỏi hệ thống!")) {
+  const onRecall = (mode: 'latest' | 'today') => {
+    const confirmMsg = mode === 'latest' 
+      ? "Bạn có CHẮC CHẮN muốn thu hồi danh sách dự án vừa import gần nhất bằng Excel?"
+      : "Bạn có CHẮC CHẮN muốn xóa TOÀN BỘ dự án đã tải bằng Excel trong ngày HÔM NAY?";
+
+    if(confirm(confirmMsg)) {
       startTransition(async () => {
-        const res = await recallMostRecentExcelProjects();
+        const res = await recallExcelProjects(mode);
         if (res.error) {
           toast.error(res.error);
         } else {
@@ -265,15 +279,31 @@ export function ExcelUploadButton({ users }: { users: UserOption[] }) {
           {isPending ? <Loader2 className="size-4 animate-spin" /> : <FileUp className="size-4" />}
           Tải Data Lên
         </Button>
-        <Button 
-          variant="outline" 
-          className="gap-2 font-medium bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:text-red-800"
-          onClick={onRecall}
-          disabled={isPending}
-        >
-          {isPending ? <Loader2 className="size-4 animate-spin" /> : <Undo2 className="size-4" />}
-          Thu hồi Excel
-        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger 
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "gap-2 font-medium bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:text-red-800"
+            )}
+            disabled={isPending}
+          >
+            {isPending ? <Loader2 className="size-4 animate-spin" /> : <Undo2 className="size-4" />}
+            Thu hồi Excel
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Lựa chọn thu hồi</DropdownMenuLabel>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onRecall('latest')} className="cursor-pointer">
+              Chỉ mẻ gần nhất
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onRecall('today')} className="cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50">
+              Toàn bộ trong hôm nay
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Dialog open={isConfirmOpen} onOpenChange={(open) => !isPending && setIsConfirmOpen(open)}>

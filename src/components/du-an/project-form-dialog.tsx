@@ -41,8 +41,10 @@ import { extractTimeFields } from "@/lib/utils/time-extract";
 import {
   FileText,
   Banknote,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
 
 interface FormValues {
   tenDuAn: string;
@@ -498,7 +500,17 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Ngày bắt đầu *</FormLabel>
                         <FormControl>
-                          <Input type="date" className="rounded-xl h-10 border-slate-200" {...field} />
+                          <div className="relative group/date">
+                            <input
+                              type="date"
+                              {...field}
+                              className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full"
+                            />
+                            <div className="w-full bg-[#f8fbfe] border border-slate-200 rounded-xl h-10 px-3 text-[#0D1F3C] font-semibold text-sm flex items-center justify-between group-hover/date:bg-blue-50 transition-colors pointer-events-none">
+                               <span>{field.value ? format(new Date(field.value), "dd/MM/yyyy") : "Chọn ngày..."}</span>
+                               <Calendar className="size-4 text-slate-400 group-hover/date:text-[#0058bc] transition-colors" />
+                            </div>
+                          </div>
                         </FormControl>
                         {timeInfo && (
                           <p className="text-[9px] font-bold text-[#0058bc] uppercase mt-1">
@@ -516,7 +528,18 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Ngày kết thúc</FormLabel>
                         <FormControl>
-                          <Input type="date" value={field.value || ""} onChange={field.onChange} className="rounded-xl h-10 border-slate-200" />
+                          <div className="relative group/date">
+                            <input
+                              type="date"
+                              value={field.value || ""}
+                              onChange={field.onChange}
+                              className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full"
+                            />
+                            <div className="w-full bg-[#f8fbfe] border border-slate-200 rounded-xl h-10 px-3 text-[#0D1F3C] font-semibold text-sm flex items-center justify-between group-hover/date:bg-blue-50 transition-colors pointer-events-none">
+                               <span>{field.value ? format(new Date(field.value), "dd/MM/yyyy") : "Chọn ngày..."}</span>
+                               <Calendar className="size-4 text-slate-400 group-hover/date:text-[#0058bc] transition-colors" />
+                            </div>
+                          </div>
                         </FormControl>
                       </FormItem>
                     )}
