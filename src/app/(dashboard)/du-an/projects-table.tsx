@@ -328,7 +328,7 @@ export function ProjectsTable({
         return;
       }
 
-      const exportData = res.data.map(p => {
+      const exportData = res.data.map((p: any) => {
         const logs = p.nhatKy?.map((log: any) => {
           const date = new Date(log.ngayGio).toLocaleDateString("vi-VN");
           const status = STATUS_STYLES[log.trangThaiMoi]?.label || log.trangThaiMoi;
