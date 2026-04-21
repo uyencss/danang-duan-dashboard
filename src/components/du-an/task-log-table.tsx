@@ -44,6 +44,8 @@ import { updateNhatKy, deleteNhatKy, revokeStepLog } from "@/app/(dashboard)/du-
 import { cn } from "@/lib/utils";
 import { TrangThaiDuAn } from "@prisma/client";
 import { format } from "date-fns";
+import { SmartDateInput } from "@/components/ui/smart-date-input";
+
 
 interface TaskLogTableProps {
   logs: any[];
@@ -296,18 +298,11 @@ export function TaskLogTable({ logs }: TaskLogTableProps) {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Thời gian ghi nhận</label>
-                <div className="relative group/date">
-                   <input 
-                    type="datetime-local" 
-                    value={newDate} 
-                    onChange={(e) => setNewDate(e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full"
-                   />
-                   <div className="w-full bg-white border border-slate-200 rounded-xl h-10 px-10 text-[#0D1F3C] font-semibold text-sm flex items-center group-hover/date:bg-blue-50 transition-colors pointer-events-none">
-                      {newDate ? format(new Date(newDate), "dd/MM/yyyy HH:mm") : "Chọn ngày giờ..."}
-                   </div>
-                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-hover/date:text-[#0058bc] transition-colors" />
-                </div>
+                <SmartDateInput 
+                  value={newDate}
+                  onChange={setNewDate}
+                  showTime={true}
+                />
               </div>
             </div>
 

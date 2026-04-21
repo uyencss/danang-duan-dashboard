@@ -58,7 +58,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                </div>
                <div className="space-y-1.5">
                   <div className="flex justify-between items-end">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">% Hoàn thành</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">% HTKH</span>
                     <span className="text-sm font-black text-green-600">{revenueMetrics.dtThangDaKyPerc.toFixed(1)}%</span>
                   </div>
                   <Progress value={revenueMetrics.dtThangDaKyPerc} className="h-2 bg-slate-100" indicatorClassName="bg-gradient-to-r from-[#003B75] to-[#00AEEF]" />
@@ -82,7 +82,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                </div>
                <div className="space-y-1.5">
                   <div className="flex justify-between items-end">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">% Hoàn thành</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">% HTKH</span>
                     <span className="text-sm font-black text-[#0058bc]">{revenueMetrics.dtDuKienThangPerc.toFixed(1)}%</span>
                   </div>
                   <Progress value={revenueMetrics.dtDuKienThangPerc} className="h-2 bg-slate-100" indicatorClassName="bg-gradient-to-r from-[#003B75] to-[#00AEEF]" />
@@ -168,7 +168,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
           <Card className="p-6 rounded-[2rem] border-red-100 border-2 shadow-sm bg-red-50 overflow-hidden flex flex-col justify-between min-h-[160px]">
              <div className="flex items-center gap-2 text-red-600">
                 <AlertTriangle className="size-4 animate-pulse" />
-                <p className="text-[11px] font-black uppercase tracking-widest">CẢNH BÁO (&gt;15 ngày)</p>
+                <p className="text-[11px] font-black uppercase tracking-widest">CẢNH BÁO (&gt;10 ngày)</p>
              </div>
              <div className="grid grid-cols-2 gap-2 mt-2">
                 {projectMetrics.canhBaoTheoTo.map((t: any, i: number) => (

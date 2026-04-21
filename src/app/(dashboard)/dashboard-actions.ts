@@ -587,7 +587,13 @@ export async function getBoardOverview() {
                ngayChamsocCuoiCung: true,
                createdAt: true,
                isTrongDiem: true,
-               am: { select: { diaBan: true } }
+               am: { select: { diaBan: true } },
+               chuyenVien: { select: { diaBan: true } },
+               nhatKy: {
+                 orderBy: { ngayGio: 'desc' },
+                 take: 1,
+                 select: { ngayGio: true }
+               }
             }
         });
 
@@ -620,10 +626,12 @@ export async function getBoardOverview() {
         const dtTheoQuy = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, quarterStart, quarterEnd), 0);
         const dtTheoNam = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, yearStart, yearEnd), 0);
 
-        // 3. DT Dự kiến tháng: DT Tháng đã ký + sum(Total Revenue of Expected Projects for this month)
+        // 3. DT Dự kiến tháng: [DT Tháng đã ký HĐ] + Sum All (Tổng doanh thu dự kiến) của các dự án "Kỳ vọng"
+        // Điều kiện Kỳ vọng: isKyVong = true, chưa ký (khác DA_KY_HOP_DONG và THAT_BAI), và trùng Tháng/Năm hiện tại
         const expectedProjectsInMonth = projectsFull.filter(p => 
             p.isKyVong === true && 
             p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG &&
+            p.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI &&
             p.nam === currentYear &&
             p.thang === currentMonth
         );
@@ -638,13 +646,36 @@ export async function getBoardOverview() {
             stepCounts[step] = (stepCounts[step] || 0) + 1;
         });
 
-        const fifteenDaysAgo = new Date(now.getTime() - (15 * 24 * 60 * 60 * 1000));
+        const tenDaysAgo = new Date(now.getTime() - (10 * 24 * 60 * 60 * 1000));
         const alertTo: Record<string, number> = { "Tổ 1": 0, "Tổ 2": 0, "Tổ 3": 0, "Tổ dự án": 0 };
         projectsFull.forEach(p => {
-            const lastUpdate = p.ngayChamsocCuoiCung ? new Date(p.ngayChamsocCuoiCung) : new Date(p.createdAt);
-            if (lastUpdate < fifteenDaysAgo) {
-                const diaBan = p.am?.diaBan || "";
-                if (alertTo.hasOwnProperty(diaBan)) alertTo[diaBan]++;
+            const pAny = p as any;
+            const logEntry = pAny.nhatKy?.[0]?.ngayGio;
+            const lastUpdate = logEntry ? new Date(logEntry) : (p.ngayChamsocCuoiCung ? new Date(p.ngayChamsocCuoiCung) : new Date(p.createdAt));
+            
+            if (lastUpdate < tenDaysAgo) {
+                const amGroup = pAny.am?.diaBan;
+                const cvGroup = pAny.chuyenVien?.diaBan;
+
+                if (amGroup && cvGroup) {
+                    if (amGroup === cvGroup) {
+                        // 1. Cùng 1 tổ -> Hiện cảnh báo tổ đó
+                        if (alertTo.hasOwnProperty(amGroup)) alertTo[amGroup]++;
+                    } else if (cvGroup === "Tổ dự án") {
+                        // 2. CV thuộc tổ dự án, AM thuộc tổ khác -> Đếm cho cả 2
+                        if (alertTo.hasOwnProperty(cvGroup)) alertTo[cvGroup]++;
+                        if (alertTo.hasOwnProperty(amGroup)) alertTo[amGroup]++;
+                    } else {
+                        // 3. Khác tổ -> Ưu tiên CV chủ trì
+                        if (alertTo.hasOwnProperty(cvGroup)) alertTo[cvGroup]++;
+                    }
+                } else if (cvGroup) {
+                    // 4a. Chỉ có CV -> Theo CV
+                    if (alertTo.hasOwnProperty(cvGroup)) alertTo[cvGroup]++;
+                } else if (amGroup) {
+                    // 4b. Chỉ có AM -> Theo AM
+                    if (alertTo.hasOwnProperty(amGroup)) alertTo[amGroup]++;
+                }
             }
         });
 

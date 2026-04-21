@@ -39,7 +39,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { exportToExcel } from "@/lib/export-excel";
 import { toast } from "sonner";
-import { requestDeleteDuAn } from "./actions";
+import { requestDeleteDuAn, getAllProjectsForExport } from "./actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -244,9 +244,9 @@ export function ProjectsTable({
       header: "Cảnh báo",
       cell: ({ row }) => {
         const p = row.original as any;
-        const lastDate = p.ngayChamsocCuoiCung || p.createdAt;
+        const lastDate = p.nhatKy?.[0]?.ngayGio || p.ngayChamsocCuoiCung || p.createdAt;
         const diff = Math.floor((new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24));
-        if (diff > 15) {
+        if (diff > 10) {
           return (
             <span className="px-2 py-1 rounded bg-[#ba1a1a] text-white text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 w-fit">
               <AlertTriangle className="size-3" /> Cần CS gấp
@@ -257,8 +257,8 @@ export function ProjectsTable({
       },
       filterFn: (row, id, value) => {
         const p = row.original as any;
-        const lastDate = p.ngayChamsocCuoiCung || p.createdAt;
-        const isUrgent = Math.floor((new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24)) > 15;
+        const lastDate = p.nhatKy?.[0]?.ngayGio || p.ngayChamsocCuoiCung || p.createdAt;
+        const isUrgent = Math.floor((new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24)) > 10;
         return value === "urgent" ? isUrgent : !isUrgent;
       },
     },
@@ -319,38 +319,52 @@ export function ProjectsTable({
   const hasNextPage = totalCount ? currentPage * pageSize < totalCount : false;
   const hasPrevPage = currentPage > 1;
 
-  const handleExport = () => {
-    const exportData = table.getFilteredRowModel().rows.map(row => {
-      const p = row.original as any;
-      const logs = p.nhatKy?.map((log: any) => {
-        const date = new Date(log.ngayGio).toLocaleDateString("vi-VN");
-        const status = STATUS_STYLES[log.trangThaiMoi]?.label || log.trangThaiMoi;
-        return `[${date}] (${status}) ${log.noiDungChiTiet}`;
-      }).join("\n") || "";
+  const handleExport = async () => {
+    const toastId = toast.loading("Đang chuẩn bị dữ liệu Excel cho toàn bộ hệ thống...");
+    try {
+      const res = await getAllProjectsForExport();
+      if (res.error || !res.data) {
+        toast.error(res.error || "Không thể lấy dữ liệu xuất Excel", { id: toastId });
+        return;
+      }
 
-      return {
-        "Tên Dự Án": p.tenDuAn,
-        "Trọng Điểm": p.isTrongDiem ? "Có" : "Không",
-        "Kỳ Vọng": p.isKyVong ? "Có" : "Không",
-        "Khách Hàng": p.khachHang?.ten || "",
-        "Lĩnh Vực": LINH_VUC_LABELS[p.linhVuc] || p.linhVuc,
-        "Sản Phẩm": p.sanPham?.tenChiTiet || "",
-        "AM": p.am?.name || "",
-        "AM hỗ trợ": p.amHoTro?.name || "",
-        "Chuyên viên chủ trì": p.chuyenVien?.name || "",
-        "CV hỗ trợ 1": p.cvHoTro1?.name || "",
-        "CV hỗ trợ 2": p.cvHoTro2?.name || "",
-        "Trạng Thái": STATUS_STYLES[p.trangThaiHienTai]?.label || p.trangThaiHienTai,
-        "Tiến độ": p.hienTaiBuoc || "Chưa bắt đầu",
-        "Ngày bắt đầu": p.ngayBatDau ? new Date(p.ngayBatDau).toLocaleDateString("vi-VN") : "",
-        "Ngày kết thúc": p.ngayKetThuc ? new Date(p.ngayKetThuc).toLocaleDateString("vi-VN") : "",
-        "Mã hợp đồng": p.maHopDong || "",
-        "Tổng DT Dự Kiến": p.tongDoanhThuDuKien,
-        "Doanh Thu Theo Tháng": p.doanhThuTheoThang,
-        "Nhật ký công việc": logs,
-      };
-    });
-    exportToExcel(exportData, "DanhSachDuAn_CRM");
+      const exportData = res.data.map(p => {
+        const logs = p.nhatKy?.map((log: any) => {
+          const date = new Date(log.ngayGio).toLocaleDateString("vi-VN");
+          const status = STATUS_STYLES[log.trangThaiMoi]?.label || log.trangThaiMoi;
+          const buocPrefix = log.buoc ? `[${log.buoc}] ` : "";
+          return `[${date}] ${buocPrefix}(${status}) ${log.noiDungChiTiet}`;
+        }).join("\n") || "";
+
+        return {
+          "Tên Dự Án": p.tenDuAn,
+          "Trọng Điểm": p.isTrongDiem ? "Có" : "Không",
+          "Kỳ Vọng": p.isKyVong ? "Có" : "Không",
+          "Khách Hàng": p.khachHang?.ten || "",
+          "Lĩnh Vực": LINH_VUC_LABELS[p.linhVuc] || p.linhVuc,
+          "Sản Phẩm": p.sanPham?.tenChiTiet || "",
+          "AM": p.am?.name || "",
+          "AM hỗ trợ": p.amHoTro?.name || "",
+          "Chuyên viên chủ trì": p.chuyenVien?.name || "",
+          "CV hỗ trợ 1": p.cvHoTro1?.name || "",
+          "CV hỗ trợ 2": p.cvHoTro2?.name || "",
+          "Trạng Thái": STATUS_STYLES[p.trangThaiHienTai]?.label || p.trangThaiHienTai,
+          "Tiến độ": p.hienTaiBuoc || "Chưa bắt đầu",
+          "Ngày bắt đầu": p.ngayBatDau ? new Date(p.ngayBatDau).toLocaleDateString("vi-VN") : "",
+          "Ngày kết thúc": p.ngayKetThuc ? new Date(p.ngayKetThuc).toLocaleDateString("vi-VN") : "",
+          "Mã hợp đồng": p.maHopDong || "",
+          "Tổng DT Dự Kiến": p.tongDoanhThuDuKien,
+          "Doanh Thu Theo Tháng": p.doanhThuTheoThang,
+          "Nhật ký công việc (Chi tiết)": logs,
+        };
+      });
+
+      exportToExcel(exportData, `Danh_Sach_Du_An_CRM_${new Date().toLocaleDateString("vi-VN").replace(/\//g, "-")}`);
+      toast.success(`Đã xuất thành công ${res.data.length} dự án!`, { id: toastId });
+    } catch (err) {
+      console.error("Export Error:", err);
+      toast.error("Lỗi khi xuất Excel", { id: toastId });
+    }
   };
 
   return (
@@ -464,12 +478,12 @@ export function ProjectsTable({
           <tbody className="divide-y divide-blue-50/50">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
-                const p = row.original as any;
-                const lastDate = p.ngayChamsocCuoiCung || p.createdAt;
-                const isUrgent = Math.floor(
+              const p = row.original as any;
+              const lastDate = p.nhatKy?.[0]?.ngayGio || p.ngayChamsocCuoiCung || p.createdAt;
+              const isUrgent = Math.floor(
                   (new Date().getTime() - new Date(lastDate).getTime()) /
                   (1000 * 60 * 60 * 24)
-                ) > 15;
+                ) > 10;
 
                 return (
                   <tr

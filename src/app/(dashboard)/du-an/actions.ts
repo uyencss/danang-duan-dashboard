@@ -521,12 +521,22 @@ export async function createTaskLog(data: {
             }
         }
 
-        // 2. Cập nhật dự án
+        // 2. Cập nhật dự án - Chỉ cập nhật ngày tương tác cuối nếu ngày mới lớn hơn ngày cũ
+        const currentProject = await tx.duAn.findUnique({
+            where: { id: data.projectId },
+            select: { ngayChamsocCuoiCung: true }
+        });
+
+        const existingLastDate = currentProject?.ngayChamsocCuoiCung || new Date(0);
+        const finalLastDate = new Date(data.ngayGio) > new Date(existingLastDate) 
+            ? data.ngayGio 
+            : existingLastDate;
+
         await tx.duAn.update({
             where: { id: data.projectId },
             data: {
                 trangThaiHienTai: data.trangThaiMoi,
-                ngayChamsocCuoiCung: data.ngayGio,
+                ngayChamsocCuoiCung: finalLastDate,
             }
         });
 
@@ -867,4 +877,45 @@ export async function revokeStepLog(logId: number) {
         console.error("Revoke Step Error:", error);
         return { error: "Lỗi hệ thống khi thu hồi bước" };
     }
+}
+
+/**
+ * Lấy toàn bộ dự án trên hệ thống (không phân trang) để xuất Excel.
+ * Bao gồm đầy đủ thông tin khách hàng, sản phẩm, nhân sự và toàn bộ nhật ký.
+ */
+export async function getAllProjectsForExport() {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return { error: "Yêu cầu đăng nhập" };
+
+    const data = await prisma.duAn.findMany({
+      where: { 
+        isPendingDelete: false 
+      },
+      include: {
+        khachHang: true,
+        sanPham: true,
+        am: true,
+        amHoTro: true,
+        chuyenVien: true,
+        cvHoTro1: true,
+        cvHoTro2: true,
+        nhatKy: {
+          orderBy: { ngayGio: 'desc' },
+          select: { 
+            ngayGio: true, 
+            noiDungChiTiet: true, 
+            trangThaiMoi: true,
+            buoc: true 
+          }
+        },
+      } as any,
+      orderBy: { updatedAt: 'desc' },
+    });
+    
+    return { data };
+  } catch (error: any) {
+    console.error("Export Projects Error:", error);
+    return { error: `Lỗi khi lấy dữ liệu: ${error?.message}` };
+  }
 }

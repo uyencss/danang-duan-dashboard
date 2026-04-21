@@ -37,6 +37,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { Calendar } from "lucide-react";
+import { SmartDateInput } from "@/components/ui/smart-date-input";
+
 
 const formSchema = z.object({
   ten: z.string().min(2, "Tên khách hàng tối thiểu 2 ký tự"),
@@ -256,17 +258,11 @@ export function KhachHangFormDialog({ open, setOpen, data }: KhachHangFormDialog
                         <FormItem>
                           <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Ngày sinh nhật</FormLabel>
                           <FormControl>
-                            <div className="relative group/date">
-                               <input 
-                                type="date" 
-                                {...field} 
-                                className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full" 
-                               />
-                               <div className="w-full bg-white border border-slate-200 rounded-xl h-10 px-3 text-[#0D1F3C] font-semibold text-sm flex items-center justify-between group-hover/date:bg-blue-50 transition-colors pointer-events-none">
-                                  <span>{field.value ? format(new Date(field.value), "dd/MM/yyyy") : "Chọn ngày..."}</span>
-                                  <Calendar className="size-3.5 text-slate-400 group-hover/date:text-[#0058bc] transition-colors" />
-                               </div>
-                            </div>
+                            <SmartDateInput 
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="ngày/tháng/năm"
+                            />
                           </FormControl>
                         </FormItem>
                       )}
@@ -312,17 +308,11 @@ export function KhachHangFormDialog({ open, setOpen, data }: KhachHangFormDialog
                         <FormItem>
                           <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Ngày sinh nhật</FormLabel>
                           <FormControl>
-                            <div className="relative group/date">
-                               <input 
-                                type="date" 
-                                {...field} 
-                                className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full" 
-                               />
-                               <div className="w-full bg-white border border-slate-200 rounded-xl h-10 px-3 text-[#0D1F3C] font-semibold text-sm flex items-center justify-between group-hover/date:bg-blue-50 transition-colors pointer-events-none">
-                                  <span>{field.value ? format(new Date(field.value), "dd/MM/yyyy") : "Chọn ngày..."}</span>
-                                  <Calendar className="size-3.5 text-slate-400 group-hover/date:text-[#0058bc] transition-colors" />
-                               </div>
-                            </div>
+                            <SmartDateInput 
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="ngày/tháng/năm"
+                            />
                           </FormControl>
                         </FormItem>
                       )}
@@ -339,17 +329,11 @@ export function KhachHangFormDialog({ open, setOpen, data }: KhachHangFormDialog
                       <FormItem>
                         <FormLabel className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Ngày thành lập</FormLabel>
                         <FormControl>
-                          <div className="relative group/date">
-                             <input 
-                              type="date" 
-                              {...field} 
-                              className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full" 
-                             />
-                             <div className="w-full bg-white border border-slate-200 rounded-xl h-11 px-4 text-[#0D1F3C] font-semibold text-sm flex items-center justify-between group-hover/date:bg-blue-50 transition-colors pointer-events-none">
-                                <span>{field.value ? format(new Date(field.value), "dd/MM/yyyy") : "Chọn ngày..."}</span>
-                                <Calendar className="size-4 text-slate-400 group-hover/date:text-[#0058bc] transition-colors" />
-                             </div>
-                          </div>
+                          <SmartDateInput 
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="ngày/tháng/năm"
+                          />
                         </FormControl>
                       </FormItem>
                     )}
@@ -361,17 +345,11 @@ export function KhachHangFormDialog({ open, setOpen, data }: KhachHangFormDialog
                       <FormItem>
                         <FormLabel className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Ngày kỷ niệm</FormLabel>
                         <FormControl>
-                          <div className="relative group/date">
-                             <input 
-                              type="date" 
-                              {...field} 
-                              className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full" 
-                             />
-                             <div className="w-full bg-white border border-slate-200 rounded-xl h-11 px-4 text-[#0D1F3C] font-semibold text-sm flex items-center justify-between group-hover/date:bg-blue-50 transition-colors pointer-events-none">
-                                <span>{field.value ? format(new Date(field.value), "dd/MM/yyyy") : "Chọn ngày..."}</span>
-                                <Calendar className="size-4 text-slate-400 group-hover/date:text-[#0058bc] transition-colors" />
-                             </div>
-                          </div>
+                          <SmartDateInput 
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="ngày/tháng/năm"
+                          />
                         </FormControl>
                       </FormItem>
                     )}

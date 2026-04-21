@@ -37,6 +37,9 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Clock, History, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { SmartDateInput } from "@/components/ui/smart-date-input";
+
+
 
 const formSchema = z.object({
   trangThaiMoi: z.nativeEnum(TrangThaiDuAn),
@@ -241,17 +244,11 @@ export function QuickUpdateModal({
                     <FormItem>
                     <FormLabel className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Ngày giờ thực hiện</FormLabel>
                     <FormControl>
-                        <div className="relative group/date">
-                          <input
-                            type="datetime-local"
-                            {...field}
-                            className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full"
-                          />
-                          <div className="w-full bg-white border border-slate-200 rounded-xl h-11 px-4 text-[#0D1F3C] font-semibold text-sm flex items-center justify-between group-hover/date:bg-blue-50 transition-colors pointer-events-none">
-                             <span>{field.value ? format(new Date(field.value), "dd/MM/yyyy HH:mm") : "Chọn ngày giờ..."}</span>
-                             <Clock className="size-4 text-slate-400 group-hover/date:text-[#0058bc] transition-colors" />
-                          </div>
-                        </div>
+                        <SmartDateInput 
+                          value={field.value}
+                          onChange={field.onChange}
+                          showTime={true}
+                        />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
