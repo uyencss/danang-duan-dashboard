@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, AlertCircle, RefreshCw } from "lucide-react";
+import { Save, AlertCircle, RefreshCw, Edit3, X } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateKpiTarget } from "./kpi-actions";
@@ -59,6 +59,7 @@ function KpiDashboardContent({ initialData }: { initialData: KpiData[] }) {
     const initialYear = Number(searchParams.get("year")) || 2026;
     const [year, setYear] = useState(initialYear);
     const [isSaving, setIsSaving] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
 
     const [gridData, setGridData] = useState<KpiData[]>(() => generateGrid(initialData, initialYear));
 
@@ -105,6 +106,7 @@ function KpiDashboardContent({ initialData }: { initialData: KpiData[] }) {
                 toast.error("Có lỗi xảy ra khi lưu một số trường. Vui lòng kiểm tra lại.");
             } else {
                 toast.success("Lưu dữ liệu KPI thành công!");
+                setIsEditing(false);
             }
         } catch (e: any) {
             toast.error("Lỗi kết nối: " + e.message);
@@ -127,7 +129,7 @@ function KpiDashboardContent({ initialData }: { initialData: KpiData[] }) {
                     <CardDescription className="text-slate-500 font-medium mt-1">Cấu hình chỉ tiêu KPI hằng tháng cho mục tiêu doanh thu</CardDescription>
                 </div>
                 <div className="flex items-center gap-4">
-                    <Select value={year.toString()} onValueChange={(val) => handleYearChange(val)}>
+                    <Select value={year.toString()} onValueChange={(val) => handleYearChange(val)} disabled={isEditing}>
                         <SelectTrigger className="w-32 bg-white font-bold border-gray-200">
                             <SelectValue placeholder="Chọn Năm" />
                         </SelectTrigger>
@@ -139,9 +141,23 @@ function KpiDashboardContent({ initialData }: { initialData: KpiData[] }) {
                     </Select>
 
                     <Button 
-                        onClick={handleSave} 
+                        variant="outline"
+                        onClick={() => setIsEditing(!isEditing)}
                         disabled={isSaving}
-                        className="bg-[#0070eb] hover:bg-[#0058bc] text-white font-bold rounded-xl h-10 px-6 shadow-md shadow-blue-500/20"
+                        className={`font-bold rounded-xl h-10 px-6 border-gray-200 transition-all ${
+                            isEditing 
+                            ? 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100' 
+                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
+                    >
+                        {isEditing ? <X className="mr-2 size-4" /> : <Edit3 className="mr-2 size-4" />}
+                        {isEditing ? "Hủy Chỉnh Sửa" : "Chỉnh Sửa"}
+                    </Button>
+
+                    <Button 
+                        onClick={handleSave} 
+                        disabled={isSaving || !isEditing}
+                        className="bg-[#0070eb] hover:bg-[#0058bc] text-white font-bold rounded-xl h-10 px-6 shadow-md shadow-blue-500/20 disabled:opacity-50 disabled:shadow-none"
                     >
                         {isSaving ? <RefreshCw className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
                         Lưu Thay Đổi
@@ -174,7 +190,8 @@ function KpiDashboardContent({ initialData }: { initialData: KpiData[] }) {
                                         type="number" 
                                         value={row.cloudDc?.toString() ?? "0"} 
                                         onChange={(e) => handleInputChange(row.thang, 'cloudDc', e.target.value)}
-                                        className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-none h-12 text-center font-medium bg-transparent"
+                                        disabled={!isEditing}
+                                        className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-none h-12 text-center font-medium bg-transparent disabled:opacity-100 disabled:cursor-default"
                                         placeholder="0"
                                     />
                                 </TableCell>
@@ -183,7 +200,8 @@ function KpiDashboardContent({ initialData }: { initialData: KpiData[] }) {
                                         type="number" 
                                         value={row.anNinhMang?.toString() ?? "0"} 
                                         onChange={(e) => handleInputChange(row.thang, 'anNinhMang', e.target.value)}
-                                        className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-none h-12 text-center font-medium bg-transparent"
+                                        disabled={!isEditing}
+                                        className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-none h-12 text-center font-medium bg-transparent disabled:opacity-100 disabled:cursor-default"
                                         placeholder="0"
                                     />
                                 </TableCell>
@@ -192,7 +210,8 @@ function KpiDashboardContent({ initialData }: { initialData: KpiData[] }) {
                                         type="number" 
                                         value={row.giaiPhapCntt?.toString() ?? "0"} 
                                         onChange={(e) => handleInputChange(row.thang, 'giaiPhapCntt', e.target.value)}
-                                        className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-none h-12 text-center font-medium bg-transparent"
+                                        disabled={!isEditing}
+                                        className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-none h-12 text-center font-medium bg-transparent disabled:opacity-100 disabled:cursor-default"
                                         placeholder="0"
                                     />
                                 </TableCell>
@@ -201,7 +220,8 @@ function KpiDashboardContent({ initialData }: { initialData: KpiData[] }) {
                                         type="number" 
                                         value={row.duAnCds?.toString() ?? "0"} 
                                         onChange={(e) => handleInputChange(row.thang, 'duAnCds', e.target.value)}
-                                        className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-none h-12 text-center font-medium bg-transparent"
+                                        disabled={!isEditing}
+                                        className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-none h-12 text-center font-medium bg-transparent disabled:opacity-100 disabled:cursor-default"
                                         placeholder="0"
                                     />
                                 </TableCell>
@@ -210,7 +230,8 @@ function KpiDashboardContent({ initialData }: { initialData: KpiData[] }) {
                                         type="number" 
                                         value={row.cnsAnNinh?.toString() ?? "0"} 
                                         onChange={(e) => handleInputChange(row.thang, 'cnsAnNinh', e.target.value)}
-                                        className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-orange-500 rounded-none h-12 text-center font-medium bg-transparent"
+                                        disabled={!isEditing}
+                                        className="border-0 shadow-none focus-visible:ring-1 focus-visible:ring-orange-500 rounded-none h-12 text-center font-medium bg-transparent disabled:opacity-100 disabled:cursor-default"
                                         placeholder="0"
                                     />
                                 </TableCell>
