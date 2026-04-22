@@ -369,6 +369,9 @@ export async function getDuAnList(params?: {
   trangThai?: string,
   linhVuc?: string,
   amId?: string,
+  chuyenVienId?: string,
+  urgent?: string,
+  hienTaiBuoc?: string,
   isDeleted?: boolean,
   page?: number,
   pageSize?: number
