@@ -30,6 +30,8 @@ export default async function DuAnPage({
     trangThai: typeof params.trangThai === "string" ? params.trangThai : undefined,
     linhVuc: typeof params.linhVuc === "string" ? params.linhVuc : undefined,
     amId: typeof params.amId === "string" ? params.amId : undefined,
+    urgent: typeof params.urgent === "string" ? params.urgent : undefined,
+    hienTaiBuoc: typeof params.hienTaiBuoc === "string" ? params.hienTaiBuoc : undefined,
     page,
     pageSize,
   };
@@ -115,7 +117,7 @@ export default async function DuAnPage({
         </div>
       ) : (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <ProjectsTable data={sortedData} totalCount={total} initialSearch={filters.search} />
+          <ProjectsTable data={sortedData} totalCount={total} initialSearch={filters.search} users={users} />
         </div>
       )}
     </div>

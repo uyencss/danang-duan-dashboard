@@ -381,14 +381,29 @@ export async function getDuAnList(params?: {
       isPendingDelete: params?.isDeleted === true ? true : false
     };
     
-    // Search
+    // Search across multiple fields (Project, Customer, Product)
     if (params?.search) {
-      whereClause.tenDuAn = { contains: params.search };
+      whereClause.OR = [
+        { tenDuAn: { contains: params.search, mode: 'insensitive' } },
+        { khachHang: { ten: { contains: params.search, mode: 'insensitive' } } },
+        { sanPham: { tenChiTiet: { contains: params.search, mode: 'insensitive' } } },
+      ];
+    }
+
+    // Advanced Warning Filter (Urgent: > 10 days)
+    if (params?.urgent === 'true') {
+      const tenDaysAgo = new Date();
+      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+      whereClause.ngayChamsocCuoiCung = { lt: tenDaysAgo };
+    } else if (params?.urgent === 'false') {
+      const tenDaysAgo = new Date();
+      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+      whereClause.ngayChamsocCuoiCung = { gte: tenDaysAgo };
     }
 
     // Filters
     if (params?.phanLoaiKH && params.phanLoaiKH !== "ALL") {
-      whereClause.khachHang = { phanLoai: params.phanLoaiKH };
+      whereClause.khachHang = { ...whereClause.khachHang, phanLoai: params.phanLoaiKH };
     }
     if (params?.productId && params.productId !== "ALL") {
       whereClause.productId = Number(params.productId);
@@ -400,7 +415,13 @@ export async function getDuAnList(params?: {
       whereClause.linhVuc = params.linhVuc;
     }
     if (params?.amId && params.amId !== "ALL") {
-      whereClause.amId = params.amId;
+      whereClause.am = { name: { contains: params.amId, mode: 'insensitive' } };
+    }
+    if (params?.chuyenVienId && params.chuyenVienId !== "ALL") {
+      whereClause.chuyenVien = { name: { contains: params.chuyenVienId, mode: 'insensitive' } };
+    }
+    if (params?.hienTaiBuoc && params.hienTaiBuoc !== "ALL") {
+      whereClause.hienTaiBuoc = { contains: params.hienTaiBuoc };
     }
 
     const pageSize = params?.pageSize || 30;

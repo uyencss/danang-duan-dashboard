@@ -85,15 +85,15 @@ const STEPS = [
 export function ProjectsTable({ 
   data, 
   totalCount,
-  initialSearch = "" 
+  initialSearch = "",
+  users = []
 }: { 
   data: any[]; 
   totalCount?: number;
-  initialSearch?: string 
+  initialSearch?: string;
+  users?: any[];
 }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [globalFilter, setGlobalFilter] = React.useState(initialSearch);
   const [selectedProject, setSelectedProject] = React.useState<any>(null);
   const [openUpdateModal, setOpenUpdateModal] = React.useState(false);
   const [openEditModal, setOpenEditModal] = React.useState(false);
@@ -283,31 +283,48 @@ export function ProjectsTable({
   const currentPage = parseInt(searchParams.get("page") || "1");
   const pageSize = 50;
 
+  // Sync filters from URL
+  const [globalFilter, setGlobalFilter] = React.useState(searchParams.get("search") || "");
+  
+  // Debounced search update
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      const currentSearch = searchParams.get("search") || "";
+      if (globalFilter !== currentSearch) {
+        const params = new URLSearchParams(searchParams.toString());
+        if (globalFilter) {
+          params.set("search", globalFilter);
+        } else {
+          params.delete("search");
+        }
+        params.set("page", "1");
+        router.push(`${pathname}?${params.toString()}`);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [globalFilter, pathname, router, searchParams]);
+
+  const updateParam = (key: string, value: string | undefined) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value && value !== "ALL") {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    params.set("page", "1");
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
   const table = useReactTable({
     data,
     columns,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: (row, columnId, filterValue) => {
-      const value = filterValue.toLowerCase();
-      const project = row.original as any;
-      return (
-        project.tenDuAn?.toLowerCase()?.includes(value) ||
-        project.khachHang?.ten?.toLowerCase()?.includes(value) ||
-        project.sanPham?.tenChiTiet?.toLowerCase()?.includes(value) ||
-        project.am?.name?.toLowerCase()?.includes(value) ||
-        LINH_VUC_LABELS[project.linhVuc]?.toLowerCase()?.includes(value) ||
-        project.hienTaiBuoc?.toLowerCase()?.includes(value) ||
-        false
-      );
-    },
-    state: { sorting, columnFilters, globalFilter, pagination: { pageIndex: currentPage - 1, pageSize } },
     manualPagination: true,
+    manualFiltering: true,
     pageCount: totalCount ? Math.ceil(totalCount / pageSize) : 1,
+    state: { sorting, pagination: { pageIndex: currentPage - 1, pageSize } },
   });
 
   const handlePageChange = (newPage: number) => {
@@ -367,6 +384,18 @@ export function ProjectsTable({
     }
   };
 
+  const hasAnyFilter = 
+    searchParams.has("search") || 
+    searchParams.has("linhVuc") || 
+    searchParams.has("trangThai") || 
+    searchParams.has("urgent") || 
+    searchParams.has("hienTaiBuoc");
+
+  const clearAllFilters = () => {
+    router.push(pathname);
+    setGlobalFilter("");
+  };
+
   return (
     <div className="w-full space-y-4">
       {/* Filter Bar */}
@@ -376,17 +405,22 @@ export function ProjectsTable({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
             <Input
               placeholder="Tìm kiếm dự án, khách hàng..."
-              value={globalFilter ?? ""}
+              value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
               className="bg-white border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#0058bc] shadow-none h-9"
             />
           </div>
+          {hasAnyFilter && (
+            <Button variant="ghost" onClick={clearAllFilters} className="h-9 px-3 text-xs font-bold text-slate-500 gap-2 hover:bg-slate-200 rounded-xl">
+              <X className="size-3.5" /> Xóa lọc
+            </Button>
+          )}
         </div>
         <div className="flex items-center gap-4 px-2">
           <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
-            {totalCount && totalCount > data.length ? `${data.length} / ${totalCount}` : data.length} dự án
+            {totalCount && totalCount > data.length ? `${data.length} / ${totalCount}` : totalCount || data.length} dự án
           </span>
-          <Button onClick={handleExport} variant="outline" size="sm" className="h-9 gap-2 font-bold text-[#0058bc] border-[#0058bc]/20 bg-white shadow-sm hover:bg-[#0058bc]/5">
+          <Button onClick={handleExport} variant="outline" size="sm" className="h-9 gap-2 font-bold text-[#0058bc] border-[#0058bc]/20 bg-white shadow-sm hover:bg-[#0058bc]/5 rounded-xl">
             <Download className="size-4" /> Xuất Excel
           </Button>
         </div>
@@ -398,8 +432,17 @@ export function ProjectsTable({
             <tr>
               {table.getHeaderGroups().map((hg) =>
                 hg.headers.map((header) => {
-                  const filterValue = header.column.getFilterValue();
-                  const isSelectFilter = ["linhVuc", "trangThaiHienTai", "warning", "hienTaiBuoc"].includes(header.id);
+                  const paramMap: Record<string, string> = {
+                    "linhVuc": "linhVuc",
+                    "trangThaiHienTai": "trangThai",
+                    "hienTaiBuoc": "hienTaiBuoc",
+                    "warning": "urgent",
+                    "am": "amId",
+                    "chuyenVien": "chuyenVienId"
+                  };
+                  const paramKey = paramMap[header.id];
+                  const currentFilterValue = paramKey ? searchParams.get(paramKey) : null;
+                  const isSelectFilter = !!paramKey;
 
                   return (
                     <th
@@ -416,52 +459,67 @@ export function ProjectsTable({
                             <PopoverTrigger>
                               <div className={cn(
                                 "p-1 rounded hover:bg-slate-200 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer text-slate-400 hover:text-slate-600",
-                                (filterValue as any) && "opacity-100 bg-slate-100 text-[#0058bc]"
+                                currentFilterValue && "opacity-100 bg-slate-100 text-[#0058bc]"
                               )}>
                                 <Filter className="size-3" />
                               </div>
                             </PopoverTrigger>
-                            <PopoverContent className="w-60 p-3" align="start">
+                            <PopoverContent className="w-60 p-3 max-h-[300px] overflow-y-auto" align="start">
                               <div className="space-y-3">
                                 <div className="flex items-center justify-between">
                                   <span className="text-[10px] font-black uppercase text-slate-400">Lọc {header.column.columnDef.header as string}</span>
-                                  {!!filterValue && (
-                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => header.column.setFilterValue(undefined)}>
+                                  {currentFilterValue && (
+                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => updateParam(paramKey, undefined)}>
                                       Xóa lọc
                                     </Button>
                                   )}
                                 </div>
                                 {isSelectFilter ? (
                                   <div className="flex flex-wrap gap-1">
+                                    {(header.id === "am" || header.id === "chuyenVien") ? (
+                                      <div className="relative w-full">
+                                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-slate-400" />
+                                        <Input 
+                                          key={currentFilterValue || "empty"}
+                                          placeholder="Nhập tên nhân viên..." 
+                                          defaultValue={currentFilterValue || ""} 
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                              updateParam(paramKey, (e.target as HTMLInputElement).value);
+                                            }
+                                          }}
+                                          className="pl-7 pr-3 py-1 h-8 text-xs shadow-none border-slate-200" 
+                                        />
+                                        <p className="text-[9px] text-slate-400 mt-1 italic">* Nhấn Enter để lọc</p>
+                                      </div>
+                                    ) : null}
                                     {header.id === "linhVuc" && Object.entries(LINH_VUC_LABELS).map(([k, v]) => (
-                                      <button key={k} onClick={() => {
-                                        const current = (filterValue as string[]) || [];
-                                        header.column.setFilterValue(current.includes(k) ? current.filter(x => x !== k) : [...current, k]);
-                                      }} className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", ((filterValue as string[]) || []).includes(k) ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{v}</button>
+                                      <button key={k} onClick={() => updateParam("linhVuc", currentFilterValue === k ? undefined : k)} 
+                                       className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", currentFilterValue === k ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{v}</button>
                                     ))}
                                     {header.id === "trangThaiHienTai" && Object.entries(STATUS_STYLES).map(([k, v]) => (
-                                      <button key={k} onClick={() => {
-                                        const current = (filterValue as string[]) || [];
-                                        header.column.setFilterValue(current.includes(k) ? current.filter(x => x !== k) : [...current, k]);
-                                      }} className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", ((filterValue as string[]) || []).includes(k) ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{v.label}</button>
+                                      <button key={k} onClick={() => updateParam("trangThai", currentFilterValue === k ? undefined : k)} 
+                                       className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", currentFilterValue === k ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{v.label}</button>
                                     ))}
-                                    {header.id === "hienTaiBuoc" && STEPS.map((step) => (
-                                      <button key={step} onClick={() => {
-                                        const current = (filterValue as string[]) || [];
-                                        header.column.setFilterValue(current.includes(step) ? current.filter(x => x !== step) : [...current, step]);
-                                      }} className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", ((filterValue as string[]) || []).includes(step) ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{step.split(":")[0]}</button>
-                                    ))}
+                                    {header.id === "hienTaiBuoc" && STEPS.map((step) => {
+                                      const shortStep = step.split(":")[0];
+                                      return (
+                                        <button key={step} onClick={() => updateParam("hienTaiBuoc", currentFilterValue === shortStep ? undefined : shortStep)} 
+                                         className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", currentFilterValue === shortStep ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{shortStep}</button>
+                                      );
+                                    })}
                                     {header.id === "warning" && [
-                                      { k: "urgent", v: "Cần CS gấp" },
-                                      { k: "normal", v: "Bình thường" }
+                                      { k: "true", v: "Cần CS gấp" },
+                                      { k: "false", v: "Bình thường" }
                                     ].map(({ k, v }) => (
-                                      <button key={k} onClick={() => header.column.setFilterValue(filterValue === k ? undefined : k)} className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", filterValue === k ? "bg-[#ba1a1a] text-white border-[#ba1a1a]" : "bg-white text-slate-600 border-slate-200")}>{v}</button>
+                                      <button key={k} onClick={() => updateParam("urgent", currentFilterValue === k ? undefined : k)} 
+                                       className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", currentFilterValue === k ? "bg-[#ba1a1a] text-white border-[#ba1a1a]" : "bg-white text-slate-600 border-slate-200")}>{v}</button>
                                     ))}
                                   </div>
                                 ) : (
                                   <div className="relative">
                                     <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-slate-400" />
-                                    <Input placeholder="Nhập từ khóa..." value={(filterValue as string) || ""} onChange={(e) => header.column.setFilterValue(e.target.value)} className="pl-7 pr-3 py-1 h-8 text-xs shadow-none border-slate-200" />
+                                    <Input placeholder="Nhập từ khóa..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="pl-7 pr-3 py-1 h-8 text-xs shadow-none border-slate-200" />
                                   </div>
                                 )}
                               </div>
@@ -509,7 +567,7 @@ export function ProjectsTable({
                   colSpan={columns.length}
                   className="h-32 text-center text-slate-400 font-medium italic"
                 >
-                  🚀 Chưa có dự án nào được khởi tạo.
+                  🚀 {hasAnyFilter ? "Không tìm thấy dự án nào khớp với bộ lọc." : "Chưa có dự án nào được khởi tạo."}
                 </td>
               </tr>
             )}
@@ -519,7 +577,7 @@ export function ProjectsTable({
         {/* Server-side Pagination matched with "Khách hàng" tab logic */}
         <div className="p-6 bg-slate-50/50 flex justify-between items-center border-t border-slate-100/50">
           <p className="text-xs text-[#44474d] font-medium">
-            Hiển thị {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, totalCount ?? data.length)} của {totalCount ?? data.length} dự án
+            Hiển thị {totalCount ? (currentPage - 1) * pageSize + 1 : 0} - {Math.min(currentPage * pageSize, totalCount ?? data.length)} của {totalCount ?? data.length} dự án
           </p>
           <div className="flex gap-2">
             <Button
@@ -527,7 +585,7 @@ export function ProjectsTable({
               size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={!hasPrevPage}
-              className="h-9 px-4 font-bold border-slate-200 text-slate-600 hover:bg-white hover:text-[#0058bc] shadow-sm transition-all"
+              className="h-9 px-4 font-bold border-slate-200 text-slate-600 hover:bg-white hover:text-[#0058bc] shadow-sm transition-all rounded-xl"
             >
               Trước
             </Button>
@@ -536,7 +594,7 @@ export function ProjectsTable({
               size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={!hasNextPage}
-              className="h-9 px-4 font-bold border-slate-200 text-slate-600 hover:bg-white hover:text-[#0058bc] shadow-sm transition-all"
+              className="h-9 px-4 font-bold border-slate-200 text-slate-600 hover:bg-white hover:text-[#0058bc] shadow-sm transition-all rounded-xl"
             >
               Sau
             </Button>
@@ -560,7 +618,7 @@ export function ProjectsTable({
 
       {/* Xác nhận xóa dự án (Soft Delete) */}
       <AlertDialog open={!!deleteProject} onOpenChange={(open) => !open && setDeleteProject(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
            <AlertDialogHeader>
               <AlertDialogTitle>Xóa dự án này?</AlertDialogTitle>
               <AlertDialogDescription>
@@ -568,8 +626,8 @@ export function ProjectsTable({
               </AlertDialogDescription>
            </AlertDialogHeader>
            <AlertDialogFooter>
-              <AlertDialogCancel>Hủy</AlertDialogCancel>
-              <AlertDialogAction className="bg-red-600 focus:ring-red-600 text-white" onClick={() => {
+              <AlertDialogCancel className="rounded-xl">Hủy</AlertDialogCancel>
+              <AlertDialogAction className="bg-red-600 focus:ring-red-600 text-white rounded-xl" onClick={() => {
                 if (deleteProject) {
                   handleDeleteRequest(deleteProject.id);
                   setDeleteProject(null);
