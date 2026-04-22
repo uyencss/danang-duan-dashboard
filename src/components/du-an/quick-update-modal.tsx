@@ -38,6 +38,7 @@ import { ArrowRight, Clock, History, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { SmartDateInput } from "@/components/ui/smart-date-input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 
 
@@ -186,8 +187,8 @@ export function QuickUpdateModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[800px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
-        <DialogHeader className="p-8 pb-4">
+      <DialogContent className="sm:max-w-[800px] max-h-[92vh] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden flex flex-col">
+        <DialogHeader className="p-8 pb-4 shrink-0">
           <DialogTitle className="text-2xl font-black text-[#000719] flex items-center gap-2">
             <History className="size-6 text-[#000719]" /> Cập nhật Tiến độ
           </DialogTitle>
@@ -196,162 +197,164 @@ export function QuickUpdateModal({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="px-8 space-y-4">
-          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-2xl border border-gray-100 justify-center">
-              <div className="flex flex-col items-center gap-1">
-                  <span className="text-[10px] text-gray-400 font-bold uppercase">Hiện tại</span>
-                  {getStatusBadge(project?.trangThaiHienTai)}
-              </div>
-              <ArrowRight className="size-4 text-gray-300 mx-2" />
-              <div className="flex flex-col items-center gap-1">
-                  <span className="text-[10px] text-gray-400 font-bold uppercase">Mới</span>
-                  {getStatusBadge(form.watch("trangThaiMoi"))}
-              </div>
-          </div>
-        </div>
-
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-8 pt-0">
-            <div className="grid grid-cols-2 gap-6">
-                <FormField
-                control={form.control}
-                name="trangThaiMoi"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Chuyển trạng thái sang</FormLabel>
-                    <Select key={field.name} onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                        <SelectTrigger className="bg-white">
-                            <SelectValue placeholder="Chọn trạng thái">
-                              {field.value ? (TRANG_THAI_LABELS[field.value] || field.value) : "Chọn trạng thái"}
-                            </SelectValue>
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {Object.values(TrangThaiDuAn).map(state => (
-                                <SelectItem key={state} value={state}>{TRANG_THAI_LABELS[state] || state}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="ngayGio"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Ngày giờ thực hiện</FormLabel>
-                    <FormControl>
-                        <SmartDateInput 
-                          value={field.value}
-                          onChange={field.onChange}
-                          showTime={true}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="noiDungChiTiet"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Nội dung chi tiết *</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Mô tả công việc đã thực hiện, kết quả đạt được hoặc khó khăn..." 
-                      className="min-h-[140px] bg-white rounded-2xl border-gray-200 focus:ring-blue-500/20" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-3">
-              <p className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Tiến độ quy trình</p>
-              <div className="flex flex-wrap gap-2">
-                {STEPS.map((step) => {
-                  const isSelected = selectedStep === step;
-                  return (
-                    <button
-                      key={step}
-                      type="button"
-                      onClick={() => setSelectedStep(isSelected ? "" : step)}
-                      className={cn(
-                        "px-4 py-2 rounded-xl text-xs font-bold transition-all border",
-                        isSelected 
-                          ? "bg-gradient-to-r from-[#0058bc] to-[#0070eb] text-white border-transparent shadow-md transform scale-105" 
-                          : "bg-gray-50 text-gray-400 border-gray-100 hover:border-blue-200 hover:text-blue-500"
-                      )}
-                    >
-                      {step}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <p className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest mb-2">Tệp đính kèm</p>
-              <div className="relative group">
-                <Input 
-                  type="file" 
-                  className="hidden" 
-                  id="file-upload" 
-                  multiple
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    setSelectedFiles(prev => [...prev, ...files]);
-                  }}
-                />
-                <label 
-                  htmlFor="file-upload" 
-                  className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all group"
-                >
-                  <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-blue-100 text-gray-400 group-hover:text-blue-600 transition-colors">
-                    <History className="size-4 rotate-45" /> 
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-bold text-gray-600 group-hover:text-blue-700">Tải tệp lên hệ thống</p>
-                    <p className="text-[10px] text-gray-400">Excel, Word, PDF, PPT, CSV... tối đa 20MB</p>
-                  </div>
-                </label>
-              </div>
-
-              {selectedFiles.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  {selectedFiles.map((file, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 px-4 bg-blue-50/50 rounded-xl border border-blue-100 group animate-in slide-in-from-left-2 duration-300">
-                      <div className="flex items-center gap-3">
-                         <div className="p-2 bg-white rounded-lg shadow-sm">
-                            <History className="size-3.5 text-blue-500" />
-                         </div>
-                         <div className="min-w-0">
-                           <p className="text-xs font-bold text-gray-700 truncate max-w-[200px]">{file.name}</p>
-                           <p className="text-[10px] text-gray-400">{(file.size / 1024).toFixed(1)} KB</p>
-                         </div>
-                      </div>
-                      <button 
-                        type="button" 
-                        onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
-                        className="p-1.5 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors"
-                      >
-                        <X className="size-3.5" />
-                      </button>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <ScrollArea className="flex-1">
+              <div className="px-8 space-y-6 pb-8">
+                <div className="flex items-center gap-2 p-3 bg-slate-50/50 rounded-2xl border border-slate-100 justify-center">
+                    <div className="flex flex-col items-center gap-1">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase">Hiện tại</span>
+                        {getStatusBadge(project?.trangThaiHienTai)}
                     </div>
-                  ))}
+                    <ArrowRight className="size-4 text-gray-300 mx-2" />
+                    <div className="flex flex-col items-center gap-1">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase">Mới</span>
+                        {getStatusBadge(form.watch("trangThaiMoi"))}
+                    </div>
                 </div>
-              )}
-            </div>
 
-            <DialogFooter className="pt-6 mt-4 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-6">
+                    <FormField
+                    control={form.control}
+                    name="trangThaiMoi"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Chuyển trạng thái sang</FormLabel>
+                        <Select key={field.name} onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                            <SelectTrigger className="bg-white">
+                                <SelectValue placeholder="Chọn trạng thái">
+                                  {field.value ? (TRANG_THAI_LABELS[field.value] || field.value) : "Chọn trạng thái"}
+                                </SelectValue>
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {Object.values(TrangThaiDuAn).map(state => (
+                                    <SelectItem key={state} value={state}>{TRANG_THAI_LABELS[state] || state}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="ngayGio"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Ngày giờ thực hiện</FormLabel>
+                        <FormControl>
+                            <SmartDateInput 
+                              value={field.value}
+                              onChange={field.onChange}
+                              showTime={true}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="noiDungChiTiet"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Nội dung chi tiết *</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Mô tả công việc đã thực hiện, kết quả đạt được hoặc khó khăn..." 
+                          className="min-h-[140px] bg-white rounded-2xl border-gray-200 focus:ring-blue-500/20" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest">Tiến độ quy trình</p>
+                  <div className="flex flex-wrap gap-2">
+                    {STEPS.map((step) => {
+                      const isSelected = selectedStep === step;
+                      return (
+                        <button
+                          key={step}
+                          type="button"
+                          onClick={() => setSelectedStep(isSelected ? "" : step)}
+                          className={cn(
+                            "px-4 py-2 rounded-xl text-xs font-bold transition-all border",
+                            isSelected 
+                              ? "bg-gradient-to-r from-[#0058bc] to-[#0070eb] text-white border-transparent shadow-md transform scale-105" 
+                              : "bg-gray-50 text-gray-400 border-gray-100 hover:border-blue-200 hover:text-blue-500"
+                          )}
+                        >
+                          {step}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <p className="text-[10px] font-black text-[#8a8d93] uppercase tracking-widest mb-2">Tệp đính kèm</p>
+                  <div className="relative group">
+                    <Input 
+                      type="file" 
+                      className="hidden" 
+                      id="file-upload" 
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        setSelectedFiles(prev => [...prev, ...files]);
+                      }}
+                    />
+                    <label 
+                      htmlFor="file-upload" 
+                      className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all group"
+                    >
+                      <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-blue-100 text-gray-400 group-hover:text-blue-600 transition-colors">
+                        <History className="size-4 rotate-45" /> 
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-bold text-gray-600 group-hover:text-blue-700">Tải tệp lên hệ thống</p>
+                        <p className="text-[10px] text-gray-400">Excel, Word, PDF, PPT, CSV... tối đa 20MB</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {selectedFiles.map((file, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 px-4 bg-blue-50/50 rounded-xl border border-blue-100 group animate-in slide-in-from-left-2 duration-300">
+                          <div className="flex items-center gap-3">
+                             <div className="p-2 bg-white rounded-lg shadow-sm">
+                                <History className="size-3.5 text-blue-500" />
+                             </div>
+                             <div className="min-w-0">
+                               <p className="text-xs font-bold text-gray-700 truncate max-w-[200px]">{file.name}</p>
+                               <p className="text-[10px] text-gray-400">{(file.size / 1024).toFixed(1)} KB</p>
+                             </div>
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
+                            className="p-1.5 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </ScrollArea>
+
+            <DialogFooter className="p-6 px-8 border-t border-gray-100 shrink-0 bg-white shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
               <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={loading} className="font-bold">
                 Bỏ qua
               </Button>

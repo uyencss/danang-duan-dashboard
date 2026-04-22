@@ -529,7 +529,7 @@ function getActiveMonths_Utility(start: Date, end: Date | null, periodStart: Dat
 
 export async function getBoardOverview() {
     try {
-        const now = new Date("2026-04-08T00:00:00Z");
+        const now = new Date();
         const currentYear = now.getUTCFullYear();
         const currentMonth = now.getUTCMonth() + 1;
         const currentQuarter = Math.ceil(currentMonth / 3);
@@ -600,34 +600,27 @@ export async function getBoardOverview() {
         const kpi = await prisma.chiTieuKpi.findUnique({
             where: { nam_thang: { nam: currentYear, thang: currentMonth } }
         });
-        const kpiThang = kpi ? (kpi.anNinhMang + kpi.giaiPhapCntt + kpi.duAnCds + kpi.cnsAnNinh) : 0;
+        const kpiThang = kpi ? (Number(kpi.anNinhMang) + Number(kpi.giaiPhapCntt) + Number(kpi.duAnCds) + Number(kpi.cnsAnNinh) + Number(kpi.cloudDc)) : 0;
 
-        // 1. DT Tổng dự án: sum of Total Revenue of all projects (excluding failed ones via excludeActive)
+        // 1. DT Tổng dự án
         const dtTongDuAn = projectsFull.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
 
-        // 2. DT Tháng đã ký: sum of Monthly Revenue of signed projects active in current month
+        // 2. DT Tháng đã ký
         const signedProjects = projectsFull.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG);
 
-        // Helper to calculate project contribution for a period
         const calculateProjectRevenue = (p: typeof projectsFull[0], start: Date, end: Date) => {
             const active = getActiveMonths_Utility(p.ngayBatDau, p.ngayKetThuc, start, end);
             if (active <= 0) return 0;
-            
-            // Công thức: Sum All (Doanh thu theo tháng)
             const monthlyVal = p.doanhThuTheoThang || 0;
-            
-            // Doanh thu theo tháng x Số tháng có hiệu lực (active)
             const totalInPeriod = monthlyVal * active;
             return Math.min(totalInPeriod, p.tongDoanhThuDuKien || Infinity);
         };
 
         const dtThangDaKy = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, monthStart, monthEnd), 0);
-        
         const dtTheoQuy = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, quarterStart, quarterEnd), 0);
         const dtTheoNam = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, yearStart, yearEnd), 0);
 
-        // 3. DT Dự kiến tháng: [DT Tháng đã ký HĐ] + Sum All (Tổng doanh thu dự kiến) của các dự án "Kỳ vọng"
-        // Điều kiện Kỳ vọng: isKyVong = true, chưa ký (khác DA_KY_HOP_DONG và THAT_BAI), và trùng Tháng/Năm hiện tại
+        // 3. DT Dự kiến tháng
         const expectedProjectsInMonth = projectsFull.filter(p => 
             p.isKyVong === true && 
             p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG &&
@@ -646,36 +639,30 @@ export async function getBoardOverview() {
             stepCounts[step] = (stepCounts[step] || 0) + 1;
         });
 
-        const tenDaysAgo = new Date(now.getTime() - (10 * 24 * 60 * 60 * 1000));
+        const tenDaysAgoThreshold = new Date();
+        tenDaysAgoThreshold.setDate(tenDaysAgoThreshold.getDate() - 10);
+        
         const alertTo: Record<string, number> = { "Tổ 1": 0, "Tổ 2": 0, "Tổ 3": 0, "Tổ dự án": 0 };
+        
         projectsFull.forEach(p => {
             const pAny = p as any;
-            const logEntry = pAny.nhatKy?.[0]?.ngayGio;
-            const lastUpdate = logEntry ? new Date(logEntry) : (p.ngayChamsocCuoiCung ? new Date(p.ngayChamsocCuoiCung) : new Date(p.createdAt));
+            const lastLog = pAny.nhatKy?.[0]?.ngayGio;
+            const lastUpdate = lastLog ? new Date(lastLog) : (p.ngayChamsocCuoiCung ? new Date(p.ngayChamsocCuoiCung) : new Date(p.createdAt));
             
-            if (lastUpdate < tenDaysAgo) {
+            if (lastUpdate < tenDaysAgoThreshold) {
                 const amGroup = pAny.am?.diaBan;
                 const cvGroup = pAny.chuyenVien?.diaBan;
-
-                if (amGroup && cvGroup) {
-                    if (amGroup === cvGroup) {
-                        // 1. Cùng 1 tổ -> Hiện cảnh báo tổ đó
-                        if (alertTo.hasOwnProperty(amGroup)) alertTo[amGroup]++;
-                    } else if (cvGroup === "Tổ dự án") {
-                        // 2. CV thuộc tổ dự án, AM thuộc tổ khác -> Đếm cho cả 2
-                        if (alertTo.hasOwnProperty(cvGroup)) alertTo[cvGroup]++;
-                        if (alertTo.hasOwnProperty(amGroup)) alertTo[amGroup]++;
-                    } else {
-                        // 3. Khác tổ -> Ưu tiên CV chủ trì
-                        if (alertTo.hasOwnProperty(cvGroup)) alertTo[cvGroup]++;
-                    }
-                } else if (cvGroup) {
-                    // 4a. Chỉ có CV -> Theo CV
-                    if (alertTo.hasOwnProperty(cvGroup)) alertTo[cvGroup]++;
-                } else if (amGroup) {
-                    // 4b. Chỉ có AM -> Theo AM
-                    if (alertTo.hasOwnProperty(amGroup)) alertTo[amGroup]++;
-                }
+                
+                // Add to teams based on involvement
+                const involvedTeams = new Set<string>();
+                if (amGroup && alertTo.hasOwnProperty(amGroup)) involvedTeams.add(amGroup);
+                if (cvGroup && alertTo.hasOwnProperty(cvGroup)) involvedTeams.add(cvGroup);
+                
+                // If CV is in Project Team but AM is elsewhere, count both
+                // If they are in different teams, count both to make sure no one misses it
+                involvedTeams.forEach(team => {
+                    alertTo[team]++;
+                });
             }
         });
 
