@@ -103,7 +103,7 @@ export async function getDashboardOverview() {
 
 export async function getAMPerformance() {
     try {
-        const now = new Date("2026-04-08T00:00:00Z");
+        const now = new Date();
         const currentYear = now.getUTCFullYear();
         const currentMonth = now.getUTCMonth() + 1;
         const monthStart = new Date(Date.UTC(currentYear, currentMonth - 1, 1));
@@ -154,8 +154,13 @@ export async function getAMPerformance() {
                 return active > 0 ? sum + (p.doanhThuTheoThang || 0) : sum;
             }, 0);
 
-            // Metric 4: doanhThuKyVong (Full project value for expectation projects not signed yet)
-            const kyVongProjects = myProjects.filter(p => p.isKyVong === true && p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG);
+            // Metric 4: doanhThuKyVong (Full project value for expectation projects targeted for this month)
+            const kyVongProjects = myProjects.filter(p => 
+                p.isKyVong === true && 
+                p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG &&
+                p.nam === currentYear &&
+                p.thang === currentMonth
+            );
             const doanhThuKyVong = kyVongProjects.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
 
             // Metric 5: doanhThuDuKienThang (Final dashboard bar value)
@@ -341,17 +346,39 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
             const pStart = new Date(project.ngayBatDau);
             const pEnd = project.ngayKetThuc ? new Date(project.ngayKetThuc) : null;
             
-            // Calculate total active months from project start up to the context month
-            const contextEnd = new Date(Date.UTC(currentYear, contextMonth, 0, 23, 59, 59));
-            const monthsPassed = getActiveMonths_Utility(pStart, pEnd, pStart, contextEnd);
+            // Period calculation (Consistent with getBoardOverview)
+            let periodStart: Date;
+            let periodEnd: Date;
 
-            if (monthsPassed > 0) {
+            if (filter?.type === 'thang' && filter.month) {
+                periodStart = new Date(Date.UTC(currentYear, filter.month - 1, 1));
+                periodEnd = new Date(Date.UTC(currentYear, filter.month, 0, 23, 59, 59));
+            } else if (filter?.type === 'quy' && filter.quarter) {
+                periodStart = new Date(Date.UTC(currentYear, (filter.quarter - 1) * 3, 1));
+                periodEnd = new Date(Date.UTC(currentYear, (filter.quarter - 1) * 3 + 3, 0, 23, 59, 59));
+            } else {
+                // Year or ALL
+                const targetYear = filter?.year || currentYear;
+                periodStart = new Date(Date.UTC(targetYear, 0, 1));
+                periodEnd = new Date(Date.UTC(targetYear, 11, 31, 23, 59, 59));
+            }
+
+            const activeMonths = getActiveMonths_Utility(pStart, pEnd, periodStart, periodEnd);
+            
+            if (activeMonths > 0) {
                 if (hasMonthly) {
-                    // Recurring or one-off using the monthly field
-                    projRevValue = monthsPassed * (project.doanhThuTheoThang || 0);
+                    const totalInPeriod = activeMonths * (project.doanhThuTheoThang || 0);
+                    projRevValue = Math.min(totalInPeriod, project.tongDoanhThuDuKien || Infinity);
                 } else if (hasTotal) {
-                    // Total revenue only (fallback)
-                    projRevValue = project.tongDoanhThuDuKien;
+                    // For non-recurring projects, we assume revenue is recognized in the start month
+                    // or we just take the total if it's within the period
+                    const sMY = pStart.getUTCFullYear() * 12 + pStart.getUTCMonth();
+                    const psMY = periodStart.getUTCFullYear() * 12 + periodStart.getUTCMonth();
+                    const peMY = periodEnd.getUTCFullYear() * 12 + periodEnd.getUTCMonth();
+                    
+                    if (sMY >= psMY && sMY <= peMY) {
+                        projRevValue = project.tongDoanhThuDuKien;
+                    }
                 }
             }
 
@@ -436,9 +463,9 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
         });
 
         return {
-            diaBanData: Array.from(diaBanMap.values()).map(d => ({
-                ...d,
-                staffCount: d.staffCount.size
+            diaBanData: Array.from(diaBanMap.values()).map(({ staffCount, ...rest }) => ({
+                ...rest,
+                staffCount: staffCount.size
             })).sort((a, b) => b.revenue - a.revenue),
             topStaffData: Array.from(staffMap.values())
                 .map(s => ({
