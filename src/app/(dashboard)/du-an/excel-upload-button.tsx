@@ -21,7 +21,7 @@ import {
 // Define option constants for validation
 const TIEU_CHI_YES_NO = ["Có", "Không"];
 const PHAN_LOAI_KH = ["Chính phủ/Sở ban ngành", "Doanh nghiệp", "Công an"];
-const NHOM_SP = ["Dự án", "Hóa đơn điện tử", "Chữ ký số", "IOC", "Camera AI", "Cloud", "Khác"];
+const NHOM_SP = ["Cloud DC", "An ninh mạng", "Giải pháp CNTT", "Dự án CĐS KHCP, KHDN lớn", "CNS trong lĩnh vực an ninh"];
 const TRANG_THAI = ["Mới", "Đang làm việc", "Đã demo", "Đã gửi báo giá", "Đã ký hợp đồng", "Thất bại"];
 
 interface UserOption {
@@ -51,7 +51,7 @@ export function ExcelUploadButton({ users }: { users: UserOption[] }) {
       [
         "Dự án Viễn thông mẫu", "Có", "Không",
         "Công ty TNHH ABCD", "Doanh nghiệp", "Đà Nẵng",
-        "Gói Camera An ninh", "Camera AI", "Camera độ phân giải cao",
+        "Gói Camera An ninh", "An ninh mạng", "Camera độ phân giải cao",
         "150.5", "10", "HD-123456", "20/10/2023", "",
         "Nguyễn Văn A", "", "", "Trần Thị B", "",
         "Mới"
@@ -62,7 +62,7 @@ export function ExcelUploadButton({ users }: { users: UserOption[] }) {
     wsData.push([]);
     wsData.push(["* LƯU Ý KHI ĐIỀN DỮ LIỆU:"]);
     wsData.push(["- Phân loại khách hàng: Chọn 1 trong số: [Chính phủ/Sở ban ngành, Doanh nghiệp, Công an]"]);
-    wsData.push(["- Nhóm sản phẩm: Chọn 1 trong số: [Dự án, Hóa đơn điện tử, Chữ ký số, IOC, Camera AI, Cloud, Khác]"]);
+    wsData.push(["- Nhóm sản phẩm: Chọn 1 trong số: [Cloud DC, An ninh mạng, Giải pháp CNTT, Dự án CĐS KHCP, KHDN lớn, CNS trong lĩnh vực an ninh]"]);
     wsData.push(["- Trạng thái khởi tạo: Chọn 1 trong số: [Mới, Đang làm việc, Đã demo, Đã gửi báo giá, Đã ký hợp đồng, Thất bại]"]);
     wsData.push(["- Trọng điểm / Kỳ vọng: Điền [Có] hoặc [Không]"]);
     wsData.push(["- Nhân sự (Chuyên viên/AM): Điền ĐÚNG tên (hệ thống sẽ map theo tên)"]);

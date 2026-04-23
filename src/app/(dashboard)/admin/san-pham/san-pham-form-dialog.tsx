@@ -71,13 +71,11 @@ export function SanPhamFormDialog({ open, setOpen, data }: { open: boolean, setO
   }, [data, form]);
 
   const nhomOptions = [
-    "Dự án",
-    "Hoá đơn điện tử",
-    "Chữ ký số",
-    "IOC",
-    "Camera AI",
-    "Cloud",
-    "Khác"
+    "Cloud DC",
+    "An ninh mạng",
+    "Giải pháp CNTT",
+    "Dự án CĐS KHCP, KHDN lớn",
+    "CNS trong lĩnh vực an ninh"
   ];
 
   const onSubmit = async (values: FormValues) => {

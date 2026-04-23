@@ -177,13 +177,11 @@ export default function ProjectForm() {
   // Fixed 7 product group options
   const productGroupOptions = useMemo(
     () => [
-      { value: "Dự án", label: "Dự án" },
-      { value: "Hoá đơn điện tử", label: "Hoá đơn điện tử" },
-      { value: "Chữ ký số", label: "Chữ ký số" },
-      { value: "IOC", label: "IOC" },
-      { value: "Camera AI", label: "Camera AI" },
-      { value: "Cloud", label: "Cloud" },
-      { value: "Khác", label: "Khác" },
+      { value: "Cloud DC", label: "Cloud DC" },
+      { value: "An ninh mạng", label: "An ninh mạng" },
+      { value: "Giải pháp CNTT", label: "Giải pháp CNTT" },
+      { value: "Dự án CĐS KHCP, KHDN lớn", label: "Dự án CĐS KHCP, KHDN lớn" },
+      { value: "CNS trong lĩnh vực an ninh", label: "CNS trong lĩnh vực an ninh" },
     ],
     []
   );

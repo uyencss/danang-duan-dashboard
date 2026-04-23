@@ -27,7 +27,7 @@ export default async function SanPhamPage() {
             <h1 className="text-3xl font-black tracking-tight text-[#003466]">Danh mục Sản phẩm</h1>
           </div>
           <p className="text-gray-500 text-sm pl-12 font-medium">
-            Quản lý các nhóm sản phẩm (Cloud, IOC, mInvoice...) và các giải pháp CRM cho MobiFone.
+            Quản lý các nhóm sản phẩm (Cloud DC, An ninh mạng, Giải pháp CNTT...) và các giải pháp cho dự án.
           </p>
         </div>
       </div>
