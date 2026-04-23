@@ -77,7 +77,7 @@ export default function LoginPage() {
           </div>
         </div>
         <CardTitle className="text-2xl text-center text-primary font-bold">
-          MobiFone Project Tracker
+          MobiFone DNA  GPS
         </CardTitle>
         <CardDescription className="text-center">
           Dành cho Trung tâm Giải pháp số Đà Nẵng

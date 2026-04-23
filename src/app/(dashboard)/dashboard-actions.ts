@@ -302,17 +302,20 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
         const currentYear = 2026;
         let contextMonth = now.getFullYear() === currentYear ? now.getMonth() + 1 : 12;
 
+        let kpiFilter: any = { nam: currentYear }; // Default to current year 2026
+
         if (filter?.type === 'nam' && filter.year) {
-            projectFilter.nam = filter.year;
+            kpiFilter.nam = filter.year;
             if (filter.year !== currentYear) contextMonth = 12;
         } else if (filter?.type === 'quy' && filter.year && filter.quarter) {
-            projectFilter.nam = filter.year;
-            projectFilter.quy = filter.quarter;
             contextMonth = filter.quarter * 3;
+            kpiFilter.nam = filter.year;
+            const qMonths = filter.quarter === 1 ? [1, 2, 3] : filter.quarter === 2 ? [4, 5, 6] : filter.quarter === 3 ? [7, 8, 9] : [10, 11, 12];
+            kpiFilter.thang = { in: qMonths };
         } else if (filter?.type === 'thang' && filter.year && filter.month) {
-            projectFilter.nam = filter.year;
-            projectFilter.thang = filter.month;
             contextMonth = filter.month;
+            kpiFilter.nam = filter.year;
+            kpiFilter.thang = filter.month;
         }
 
         const projects = await (prisma.duAn as any).findMany({
@@ -329,6 +332,7 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
                 chuyenVienId: true,
                 cvHoTro1Id: true,
                 cvHoTro2Id: true,
+                ngayBatDau: true,
                 ngayKetThuc: true
             }
         });
@@ -439,41 +443,30 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
             });
         });
 
-        // 3. Fetch matching KPI
-        let kpiFilter: any = {};
-        if (filter?.type === 'nam' && filter.year) {
-            kpiFilter.nam = filter.year;
-        } else if (filter?.type === 'quy' && filter.year && filter.quarter) {
-            kpiFilter.nam = filter.year;
-            let qMonths: number[] = [];
-            if (filter.quarter === 1) qMonths = [1, 2, 3];
-            else if (filter.quarter === 2) qMonths = [4, 5, 6];
-            else if (filter.quarter === 3) qMonths = [7, 8, 9];
-            else if (filter.quarter === 4) qMonths = [10, 11, 12];
-            kpiFilter.thang = { in: qMonths };
-        } else if (filter?.type === 'thang' && filter.year && filter.month) {
-            kpiFilter.nam = filter.year;
-            kpiFilter.thang = filter.month;
-        }
-
         const kpiRecords = await (prisma as any).chiTieuKpi.findMany({ where: kpiFilter });
         let kpiTotal = 0;
         kpiRecords.forEach((k: any) => {
-            kpiTotal += Number(k.anNinhMang || 0) + Number(k.giaiPhapCntt || 0) + Number(k.duAnCds || 0) + Number(k.cnsAnNinh || 0);
+            kpiTotal += Number(k.anNinhMang || 0) + Number(k.giaiPhapCntt || 0) + Number(k.duAnCds || 0) + Number(k.cnsAnNinh || 0) + Number(k.cloudDc || 0);
         });
 
         return {
             diaBanData: Array.from(diaBanMap.values()).map(({ staffCount, ...rest }) => ({
                 ...rest,
+                revenue: Math.round(rest.revenue),
+                signedRevenue: Math.round(rest.signedRevenue),
+                otherRevenue: Math.round(rest.otherRevenue),
                 staffCount: staffCount.size
             })).sort((a, b) => b.revenue - a.revenue),
             topStaffData: Array.from(staffMap.values())
                 .map(s => ({
                     ...s,
+                    revenue: Math.round(s.revenue),
+                    signedRevenue: Math.round(s.signedRevenue),
+                    otherRevenue: Math.round(s.otherRevenue),
                     conversionRate: s.totalProjects > 0 ? (s.contracts / s.totalProjects) * 100 : 0
                 }))
                 .sort((a, b) => b.revenue - a.revenue),
-            kpiTotal
+            kpiTotal: Math.round(kpiTotal)
         };
     } catch (error: any) {
         logger.error({ msg: "getDiaBanAnalytics Error", err: error instanceof Error ? error.message : error });
@@ -515,10 +508,12 @@ export async function getHoanThanhKeHoachData() {
 }
 
 /**
- * Utility to calculate months between two dates within a period.
- * IMPORTANT: Following the "đến tháng X thì không ghi nhận nữa" rule, 
- * if the project end date falls within a month, that month is NOT counted.
- * Essentially months are calculated as [start, end).
+ * QUY TẮC TÍNH TOÁN BẮT BUỘC (MANDATORY REVENUE LOGIC)
+ * 1. Sử dụng khoảng nửa mở [Tháng Bắt đầu, Tháng Kết thúc).
+ * 2. Loại trừ tháng kết thúc: Nếu dự án kết thúc trong tháng X, tháng X KHÔNG tính doanh thu.
+ * 3. Dự án bán đứt: Nếu bắt đầu & kết thúc cùng tháng, tính 1 tháng duy nhất.
+ * 4. Luôn sử dụng UTC Midnight để tính toán để tránh lệch múi giờ.
+ * KHÔNG THAY ĐỔI trừ khi có yêu cầu nghiệp vụ mới.
  */
 function getActiveMonths_Utility(start: Date, end: Date | null, periodStart: Date, periodEnd: Date): number {
     const sMY = start.getUTCFullYear() * 12 + start.getUTCMonth();

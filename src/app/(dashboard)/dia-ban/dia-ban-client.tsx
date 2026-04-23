@@ -70,7 +70,8 @@ export function DiaBanDashboardClient({ diaBanData, topStaffData, kpiTotal }: { 
             params.delete("value");
         } else {
             const [type, val] = value.split("-");
-            params.set("type", type);
+            const finalType = type === "year" ? "nam" : type;
+            params.set("type", finalType);
             params.set("year", "2026"); 
             params.set("value", val);
         }
@@ -160,18 +161,27 @@ export function DiaBanDashboardClient({ diaBanData, topStaffData, kpiTotal }: { 
                                 <SelectTrigger className="w-full border-none bg-transparent shadow-none font-black text-[#0D1F3C] focus:ring-0 truncate">
                                     <SelectValue placeholder="Toàn thời gian">
                                         {selectedTimePeriod === "all" ? "Toàn thời gian" : 
+                                         selectedTimePeriod.startsWith("nam-") ? `Năm ${selectedTimePeriod.split("-")[1]}` :
+                                         selectedTimePeriod.startsWith("year-") ? `Năm ${selectedTimePeriod.split("-")[1]}` :
                                          selectedTimePeriod.startsWith("quarter-") ? `Quý ${selectedTimePeriod.split("-")[1]} / 2026` :
                                          selectedTimePeriod.startsWith("month-") ? `Tháng ${selectedTimePeriod.split("-")[1]} / 2026` :
                                          selectedTimePeriod}
                                     </SelectValue>
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl border-gray-100 shadow-2xl">
+                                <SelectContent className="rounded-xl border-gray-100 shadow-2xl overflow-y-auto max-h-[400px]">
                                     <SelectItem value="all" className="font-bold">Toàn thời gian</SelectItem>
+                                    <SelectItem value="year-2026" className="font-bold">Năm 2026</SelectItem>
+                                    
+                                    <div className="px-2 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-t border-slate-50 mt-1">Quý</div>
                                     <SelectItem value="quarter-1" className="font-bold">Quý 1 / 2026</SelectItem>
                                     <SelectItem value="quarter-2" className="font-bold">Quý 2 / 2026</SelectItem>
                                     <SelectItem value="quarter-3" className="font-bold">Quý 3 / 2026</SelectItem>
                                     <SelectItem value="quarter-4" className="font-bold">Quý 4 / 2026</SelectItem>
-                                    <SelectItem value="month-1" className="font-bold">Tháng 1 / 2026</SelectItem>
+                                    
+                                    <div className="px-2 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-t border-slate-50 mt-1">Tháng</div>
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => (
+                                        <SelectItem key={m} value={`month-${m}`} className="font-bold">Tháng {m} / 2026</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>

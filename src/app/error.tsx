@@ -60,7 +60,7 @@ export default function GlobalError({
         
         <div className="mt-10 pt-6 border-t border-slate-100">
           <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">
-            MobiFone Project Tracker &bull; 2026
+            MobiFone DNA  GPS &bull; 2026
           </p>
         </div>
       </div>

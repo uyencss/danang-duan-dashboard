@@ -149,8 +149,8 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed, dbMenuItems = [
               <h1 className="font-extrabold text-2xl tracking-tighter leading-none flex items-baseline">
                 <span className="text-white">mobi</span><span className="text-red-500">fone</span>
               </h1>
-              <p className="text-cyan-400 text-sm mt-1 uppercase tracking-[0.2em] font-black drop-shadow-sm leading-none">
-                DỰ ÁN
+              <p className="text-cyan-400 text-[10px] sm:text-xs mt-1 uppercase tracking-[0.1em] font-black drop-shadow-sm leading-none">
+                DNA  GPS
               </p>
             </div>
           </div>
