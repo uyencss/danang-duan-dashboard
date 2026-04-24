@@ -77,10 +77,10 @@ export default function LoginPage() {
           </div>
         </div>
         <CardTitle className="text-2xl text-center text-primary font-bold">
-          MobiFone DNA  GPS
+          MobiFone Dự án
         </CardTitle>
         <CardDescription className="text-center">
-          Dành cho Trung tâm Giải pháp số Đà Nẵng
+          Trung tâm Kinh doanh Giải pháp số Đà Nẵng
         </CardDescription>
       </CardHeader>
       <CardContent>

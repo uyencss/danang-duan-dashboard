@@ -7,8 +7,8 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | MobiFone DNA  GPS",
-    default: "MobiFone DNA  GPS",
+    template: "%s | MobiFone Dự án",
+    default: "MobiFone Dự án",
   },
   description: "Hệ thống Quản trị Báo cáo Dự án Tập trung - MobiFone Đà Nẵng",
 };
