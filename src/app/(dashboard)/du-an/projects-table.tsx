@@ -143,6 +143,28 @@ export function ProjectsTable({
       },
     },
     {
+      id: "phanLoai",
+      header: "Phân loại",
+      cell: ({ row }) => {
+        const p = row.original as any;
+        return (
+          <div className="flex flex-col gap-1">
+            {p.isTrongDiem && (
+              <span className="px-2 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 text-[10px] font-bold w-fit whitespace-nowrap">
+                Trọng điểm
+              </span>
+            )}
+            {p.isKyVong && (
+              <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-bold w-fit whitespace-nowrap">
+                Kỳ vọng
+              </span>
+            )}
+            {!p.isTrongDiem && !p.isKyVong && <span className="text-slate-300 text-[10px]">—</span>}
+          </div>
+        );
+      },
+    },
+    {
       accessorKey: "linhVuc",
       header: "Lĩnh vực",
       cell: ({ row }) => {
@@ -389,6 +411,7 @@ export function ProjectsTable({
     searchParams.has("linhVuc") || 
     searchParams.has("trangThai") || 
     searchParams.has("urgent") || 
+    searchParams.has("phanLoai") || 
     searchParams.has("hienTaiBuoc");
 
   const clearAllFilters = () => {
@@ -438,7 +461,8 @@ export function ProjectsTable({
                     "hienTaiBuoc": "hienTaiBuoc",
                     "warning": "urgent",
                     "am": "amId",
-                    "chuyenVien": "chuyenVienId"
+                    "chuyenVien": "chuyenVienId",
+                    "phanLoai": "phanLoai"
                   };
                   const paramKey = paramMap[header.id];
                   const currentFilterValue = paramKey ? searchParams.get(paramKey) : null;
@@ -508,12 +532,21 @@ export function ProjectsTable({
                                          className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", currentFilterValue === shortStep ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{shortStep}</button>
                                       );
                                     })}
-                                    {header.id === "warning" && [
+                                     {header.id === "warning" && [
                                       { k: "true", v: "Cần CS gấp" },
                                       { k: "false", v: "Bình thường" }
                                     ].map(({ k, v }) => (
                                       <button key={k} onClick={() => updateParam("urgent", currentFilterValue === k ? undefined : k)} 
                                        className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", currentFilterValue === k ? "bg-[#ba1a1a] text-white border-[#ba1a1a]" : "bg-white text-slate-600 border-slate-200")}>{v}</button>
+                                    ))}
+                                    {header.id === "phanLoai" && [
+                                      { k: "TRONG_DIEM", v: "Trọng điểm" },
+                                      { k: "KY_VONG", v: "Kỳ vọng" },
+                                      { k: "CA_HAI", v: "Cả hai" },
+                                      { k: "BINH_THUONG", v: "Bình thường" }
+                                    ].map(({ k, v }) => (
+                                      <button key={k} onClick={() => updateParam("phanLoai", currentFilterValue === k ? undefined : k)} 
+                                       className={cn("px-2 py-1 rounded text-[10px] font-bold border transition-all", currentFilterValue === k ? "bg-[#0058bc] text-white border-[#0058bc]" : "bg-white text-slate-600 border-slate-200")}>{v}</button>
                                     ))}
                                   </div>
                                 ) : (

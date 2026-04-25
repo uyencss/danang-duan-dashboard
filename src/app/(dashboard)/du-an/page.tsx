@@ -32,6 +32,7 @@ export default async function DuAnPage({
     amId: typeof params.amId === "string" ? params.amId : undefined,
     urgent: typeof params.urgent === "string" ? params.urgent : undefined,
     hienTaiBuoc: typeof params.hienTaiBuoc === "string" ? params.hienTaiBuoc : undefined,
+    phanLoai: typeof params.phanLoai === "string" ? params.phanLoai : undefined,
     page,
     pageSize,
   };
@@ -50,16 +51,36 @@ export default async function DuAnPage({
   const error = result?.error;
   const users = userOptionsRes?.data ?? [];
 
-  // Auto Sort logic
+  // Auto Sort logic theo yêu cầu mới:
+  // 1. (Trọng điểm & Kỳ vọng) & (Chưa kết thúc & Chưa ký)
+  // 2. Trọng điểm & (Chưa kết thúc & Chưa ký)
+  // 3. Kỳ vọng & (Chưa kết thúc & Chưa ký)
+  // 4. Bình thường & (Chưa kết thúc & Chưa ký)
+  // 5. Kết thúc (THAT_BAI)
+  // 6. Đã ký hợp đồng (Xếp cuối cùng dù là trọng điểm hay kỳ vọng)
   const sortedData = [...data].sort((a: any, b: any) => {
     const getPriority = (item: any) => {
+      const status = item.trangThaiHienTai;
       const isTrong = !!item.isTrongDiem;
-      const isDaKy = item.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG;
-      if (isTrong && !isDaKy) return 1;
-      if (!isTrong && !isDaKy) return 2;
-      if (!isTrong && isDaKy) return 3;
-      if (isTrong && isDaKy) return 4;
-      return 2;
+      const isKyVong = !!item.isKyVong;
+
+      // Dự án đã ký hợp đồng xếp cuối cùng
+      if (status === TrangThaiDuAn.DA_KY_HOP_DONG) return 6;
+      
+      // Dự án kết thúc (Thất bại)
+      if (status === TrangThaiDuAn.THAT_BAI) return 5;
+
+      // Cả trọng điểm và kỳ vọng (không tính kết thúc và đã ký)
+      if (isTrong && isKyVong) return 1;
+
+      // Dự án trọng điểm (không tính kết thúc và đã ký)
+      if (isTrong) return 2;
+
+      // Dự án kỳ vọng (không tính kết thúc và đã ký)
+      if (isKyVong) return 3;
+
+      // Dự án không phải là trọng điểm và kỳ vọng (không tính kết thúc và đã ký)
+      return 4;
     };
 
     const prioA = getPriority(a);
@@ -69,12 +90,9 @@ export default async function DuAnPage({
       return prioA - prioB;
     }
 
-    const dateA = new Date(a.ngayBatDau).getTime();
-    const dateB = new Date(b.ngayBatDau).getTime();
-
-    if (prioA === 4) {
-      return dateA - dateB;
-    }
+    // Nếu cùng mức ưu tiên, ưu tiên dự án mới cập nhật hơn
+    const dateA = new Date(a.updatedAt || a.ngayBatDau).getTime();
+    const dateB = new Date(b.updatedAt || b.ngayBatDau).getTime();
 
     return dateB - dateA;
   });

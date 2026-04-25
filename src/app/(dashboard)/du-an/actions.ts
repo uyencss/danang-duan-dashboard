@@ -427,6 +427,21 @@ export async function getDuAnList(params?: {
       whereClause.hienTaiBuoc = { contains: params.hienTaiBuoc };
     }
 
+    // Filter Phân loại (Trọng điểm / Kỳ vọng)
+    if (params?.phanLoai && params.phanLoai !== "ALL") {
+      if (params.phanLoai === "TRONG_DIEM") {
+        whereClause.isTrongDiem = true;
+      } else if (params.phanLoai === "KY_VONG") {
+        whereClause.isKyVong = true;
+      } else if (params.phanLoai === "CA_HAI") {
+        whereClause.isTrongDiem = true;
+        whereClause.isKyVong = true;
+      } else if (params.phanLoai === "BINH_THUONG") {
+        whereClause.isTrongDiem = false;
+        whereClause.isKyVong = false;
+      }
+    }
+
     const pageSize = params?.pageSize || 30;
     const page = params?.page || 1;
 
@@ -450,7 +465,11 @@ export async function getDuAnList(params?: {
             select: { nhatKy: true, binhLuan: true }
           }
         } as any,
-        orderBy: { updatedAt: 'desc' },
+        orderBy: [
+          { isTrongDiem: 'desc' },
+          { isKyVong: 'desc' },
+          { updatedAt: 'desc' }
+        ],
         take: pageSize,
         skip: (page - 1) * pageSize,
       }),
