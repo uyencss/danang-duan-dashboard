@@ -8,13 +8,10 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url);
         const isResolved = searchParams.get("resolved") === "true";
 
-        const tasks = await prisma.nhatKyCongViec.findMany({
+        const allTasks = await prisma.nhatKyCongViec.findMany({
             where: {
                 urgentFlag: true,
                 isResolved: isResolved,
-                NOT: {
-                    directorArchived: true
-                }
             },
             orderBy: {
                 createdAt: isResolved ? 'desc' : 'asc'
@@ -30,6 +27,14 @@ export async function GET(req: Request) {
                 }
             }
         });
+
+        // Fetch archived IDs using raw SQL because Prisma Client might not recognize the field yet
+        const archivedLogs: any[] = await prisma.$queryRaw`SELECT id FROM "NhatKyCongViec" WHERE "directorArchived" = true`;
+        const archivedIds = new Set(archivedLogs.map(l => l.id));
+
+        // Filter out archived tasks
+        const tasks = allTasks.filter((t: any) => !archivedIds.has(t.id));
+
         return NextResponse.json(tasks);
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 500 });
@@ -39,18 +44,18 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const { id, archive } = await req.json();
-        
-        const data: any = {};
+        let updated;
         if (archive) {
-            data.directorArchived = true;
+            // Use raw query to bypass Prisma Client runtime validation issues with new fields
+            await prisma.$executeRaw`UPDATE "NhatKyCongViec" SET "directorArchived" = true WHERE id = ${id}`;
+            updated = { id, directorArchived: true };
         } else {
-            data.isResolved = true;
+            updated = await prisma.nhatKyCongViec.update({
+                where: { id },
+                data: { isResolved: true }
+            });
         }
-
-        const updated = await prisma.nhatKyCongViec.update({
-            where: { id },
-            data
-        });
+        
         return NextResponse.json(updated);
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 500 });

@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Flame, CheckCircle2, TrendingUp, Target, AlertCircle, History as HistoryIcon, XCircle, ChevronDown, ChevronUp, Star, Rocket } from "lucide-react";
+import { Flame, CheckCircle2, TrendingUp, Target, AlertCircle, History as HistoryIcon, XCircle, ChevronDown, ChevronUp, Star, Rocket, CheckSquare } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
     PieChart, Pie, Legend
@@ -119,6 +120,22 @@ export default function GiamDocClient() {
                 body: JSON.stringify({ id })
             });
             fetchUrgentTasks(); // Refresh pending
+            fetchResolvedTasks(); // Refresh history
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleArchive = async (id: number) => {
+        if (!confirm("XÁC NHẬN: Bạn có chắc chắn đã hoàn tất hoàn toàn và không muốn theo dõi dự án này nữa không? Dự án sẽ được ẩn khỏi danh sách theo dõi của Giám đốc.")) {
+            return;
+        }
+        try {
+            await fetch("/api/director/urgent-tasks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, archive: true })
+            });
             fetchResolvedTasks(); // Refresh history
         } catch (e) {
             console.error(e);
@@ -270,11 +287,12 @@ export default function GiamDocClient() {
                                         <TableHead className="whitespace-nowrap">Chuyên viên</TableHead>
                                         <TableHead className="text-right whitespace-nowrap">Doanh thu</TableHead>
                                         <TableHead className="text-center whitespace-nowrap">Trạng thái</TableHead>
+                                        <TableHead className="text-center whitespace-nowrap">Hoàn tất xử lý</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {resolvedTasks.length === 0 ? (
-                                        <TableRow><TableCell colSpan={8} className="text-center py-8 text-slate-500">Chưa có lịch sử xử lý.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={9} className="text-center py-8 text-slate-500">Chưa có lịch sử xử lý.</TableCell></TableRow>
                                     ) : resolvedTasks.map((t: any) => (
                                         <TableRow key={t.id} className="bg-slate-50/30">
                                             <TableCell className="text-xs text-slate-400 whitespace-nowrap">
@@ -301,6 +319,16 @@ export default function GiamDocClient() {
                                                     <CheckCircle2 className="w-3 h-3" />
                                                     Đã xong
                                                 </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <div className="flex justify-center">
+                                                    <Checkbox 
+                                                        className="size-5 border-slate-300 data-checked:bg-green-600 data-checked:border-green-600"
+                                                        onCheckedChange={(checked) => {
+                                                            if (checked) handleArchive(t.id);
+                                                        }}
+                                                    />
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}

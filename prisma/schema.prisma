@@ -189,6 +189,7 @@ model NhatKyCongViec {
   urgentFlag     Boolean       @default(false)
   requestContent String?
   isResolved     Boolean       @default(false)
+  directorArchived Boolean     @default(false)
   createdAt      DateTime      @default(now())
   files          FileDinhKem[]
   duAn           DuAn          @relation(fields: [projectId], references: [id], onDelete: Cascade)

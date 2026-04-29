@@ -2,6 +2,7 @@
   "name": "danang-dashboard",
   "version": "0.1.0",
   "private": true,
+  "lastUpdate": "2026-04-30T00:54:00Z",
   "scripts": {
     "db:sync": "tsx scripts/db-sync/sync-prod-to-dev.ts",
     "dev": "next dev",
