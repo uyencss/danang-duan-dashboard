@@ -85,11 +85,13 @@ export function Header({ user, menuItems }: HeaderProps) {
         {/* Mobile Menu Trigger */}
         <div className="lg:hidden">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-slate-600">
-                <MenuIcon className="size-6" />
-              </Button>
-            </SheetTrigger>
+            <SheetTrigger 
+              render={
+                <Button variant="ghost" size="icon" className="text-slate-600">
+                  <MenuIcon className="size-6" />
+                </Button>
+              }
+            />
             <SheetContent side="left" className="p-0 border-none w-72 bg-gradient-to-b from-[#0a192f] via-[#0d2a52] to-[#0a192f]">
               <SheetHeader className="sr-only">
                 <SheetTitle>Menu điều hướng</SheetTitle>
