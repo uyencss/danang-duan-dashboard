@@ -160,29 +160,31 @@ export default function GiamDocClient() {
                 {urgentTasks.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {urgentTasks.slice(0, 3).map((t, index) => (
-                            <div key={t.id} className="bg-red-50 border border-red-100 rounded-xl p-4 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
-                                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
-                                    <Flame className="size-12 text-red-600" />
+                            <Link key={t.id} href={`/du-an/${t.projectId}`} className="block">
+                                <div className="bg-red-50 border border-red-100 rounded-xl p-4 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow cursor-pointer h-full">
+                                    <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                                        <Flame className="size-12 text-red-600" />
+                                    </div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Badge className="bg-red-500 text-white border-none text-[10px] font-black uppercase">
+                                            Ưu tiên {index + 1}
+                                        </Badge>
+                                        <span className="text-[10px] text-red-400 font-bold uppercase">
+                                            {t.createdAt ? format(new Date(t.createdAt), "dd/MM HH:mm") : ""}
+                                        </span>
+                                    </div>
+                                    <h4 className="font-bold text-red-900 truncate mb-1">
+                                        {t.duAn?.tenDuAn}
+                                    </h4>
+                                    <div className="text-[11px] text-red-600 font-semibold mb-1 flex flex-col">
+                                        <span>KH: {t.duAn?.khachHang?.ten || "N/A"}</span>
+                                        <span>Phụ trách: {t.duAn?.chuyenVien?.name || t.duAn?.am?.name || "N/A"}</span>
+                                    </div>
+                                    <p className="text-sm text-red-700 line-clamp-2 font-medium bg-white/50 p-1.5 rounded border border-red-100">
+                                        {t.requestContent || "Cần hỗ trợ gấp"}
+                                    </p>
                                 </div>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Badge className="bg-red-500 text-white border-none text-[10px] font-black uppercase">
-                                        Ưu tiên {index + 1}
-                                    </Badge>
-                                    <span className="text-[10px] text-red-400 font-bold uppercase">
-                                        {t.createdAt ? format(new Date(t.createdAt), "dd/MM HH:mm") : ""}
-                                    </span>
-                                </div>
-                                <h4 className="font-bold text-red-900 truncate mb-1">
-                                    {t.duAn?.tenDuAn}
-                                </h4>
-                                <div className="text-[11px] text-red-600 font-semibold mb-1 flex flex-col">
-                                    <span>KH: {t.duAn?.khachHang?.ten || "N/A"}</span>
-                                    <span>Phụ trách: {t.duAn?.chuyenVien?.name || t.duAn?.am?.name || "N/A"}</span>
-                                </div>
-                                <p className="text-sm text-red-700 line-clamp-2 font-medium bg-white/50 p-1.5 rounded border border-red-100">
-                                    {t.requestContent || "Cần hỗ trợ gấp"}
-                                </p>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 ) : null}
