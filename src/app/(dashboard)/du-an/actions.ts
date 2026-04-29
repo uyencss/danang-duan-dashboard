@@ -528,7 +528,9 @@ export async function createTaskLog(data: {
   noiDungChiTiet: string,
   ngayGio: Date,
   buoc?: string,
-  files?: { name: string, type: string, size: number, url: string }[]
+  files?: { name: string, type: string, size: number, url: string }[],
+  urgentFlag?: boolean,
+  requestContent?: string
 }) {
   try {
     const user = await getCurrentUser();
@@ -547,6 +549,8 @@ export async function createTaskLog(data: {
               ngayGio: data.ngayGio,
               buoc: data.buoc || null,
               status: isStepUpdate ? "PENDING" : "APPROVED",
+              urgentFlag: data.urgentFlag || false,
+              requestContent: data.requestContent || null,
             }
         });
 
@@ -615,6 +619,7 @@ export async function createTaskLog(data: {
     await cacheInvalidate("dashboard:overview");
     revalidatePath(`/du-an/${data.projectId}`);
     revalidatePath("/du-an");
+    revalidatePath("/giam-doc-theo-doi");
     await syncReplica();
     return { success: true, data: result };
   } catch (error: any) {

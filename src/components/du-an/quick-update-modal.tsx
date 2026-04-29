@@ -34,7 +34,8 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createTaskLog } from "@/app/(dashboard)/du-an/actions";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Clock, History, X } from "lucide-react";
+import { ArrowRight, Clock, History, X, Flame } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { SmartDateInput } from "@/components/ui/smart-date-input";
@@ -47,6 +48,7 @@ const formSchema = z.object({
   noiDungChiTiet: z.string().min(10, "Vui lòng nhập tối thiểu 10 ký tự nội dung"),
   ngayGio: z.string(),
   buoc: z.string().optional(),
+  urgentFlag: z.boolean().default(false),
 });
 
 const STEPS = [
@@ -79,6 +81,7 @@ export function QuickUpdateModal({
       noiDungChiTiet: "",
       ngayGio: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
       buoc: "",
+      urgentFlag: false,
     },
   });
 
@@ -89,6 +92,7 @@ export function QuickUpdateModal({
         noiDungChiTiet: "",
         ngayGio: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
         buoc: "",
+        urgentFlag: false,
       });
       setSelectedStep("");
     }
@@ -142,6 +146,8 @@ export function QuickUpdateModal({
           ngayGio: new Date(values.ngayGio),
           buoc: selectedStep || undefined,
           files: uploadedFilesInfo.length > 0 ? uploadedFilesInfo : undefined,
+          urgentFlag: values.urgentFlag,
+          requestContent: values.urgentFlag ? values.noiDungChiTiet : undefined,
       });
 
       if (result.success) {
@@ -201,15 +207,37 @@ export function QuickUpdateModal({
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
             <ScrollArea className="flex-1">
               <div className="px-8 space-y-6 pb-8">
-                <div className="flex items-center gap-2 p-3 bg-slate-50/50 rounded-2xl border border-slate-100 justify-center">
-                    <div className="flex flex-col items-center gap-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase">Hiện tại</span>
-                        {getStatusBadge(project?.trangThaiHienTai)}
-                    </div>
-                    <ArrowRight className="size-4 text-gray-300 mx-2" />
-                    <div className="flex flex-col items-center gap-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase">Mới</span>
-                        {getStatusBadge(form.watch("trangThaiMoi"))}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <FormField
+                        control={form.control}
+                        name="urgentFlag"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-2 space-y-0 p-2.5 px-4 bg-red-50 rounded-xl border border-red-100/50 cursor-pointer hover:bg-red-100/50 transition-colors">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        className="data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500 border-red-200"
+                                    />
+                                </FormControl>
+                                <div className="flex items-center gap-1.5" onClick={() => field.onChange(!field.value)}>
+                                    <Flame className={cn("size-4 text-red-500", field.value && "animate-pulse")} />
+                                    <FormLabel className="text-xs font-bold text-red-600 mb-0 cursor-pointer">Yêu cầu gấp</FormLabel>
+                                </div>
+                            </FormItem>
+                        )}
+                    />
+                    
+                    <div className="flex items-center gap-2 p-2 px-4 bg-slate-50/50 rounded-xl border border-slate-100 flex-1 sm:flex-none justify-center w-full sm:w-auto">
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase">Hiện tại</span>
+                            {getStatusBadge(project?.trangThaiHienTai)}
+                        </div>
+                        <ArrowRight className="size-4 text-gray-300 mx-2" />
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase">Mới</span>
+                            {getStatusBadge(form.watch("trangThaiMoi"))}
+                        </div>
                     </div>
                 </div>
 

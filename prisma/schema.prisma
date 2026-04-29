@@ -149,6 +149,7 @@ model DuAn {
   nam                 Int
   ngayChamsocCuoiCung DateTime?
   trangThaiHienTai    TrangThaiDuAn    @default(MOI)
+  thoiGianDuKien      String?
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
   binhLuan            BinhLuan[]
@@ -185,6 +186,9 @@ model NhatKyCongViec {
   noiDungChiTiet String
   buoc           String?
   status         LogStatus     @default(APPROVED)
+  urgentFlag     Boolean       @default(false)
+  requestContent String?
+  isResolved     Boolean       @default(false)
   createdAt      DateTime      @default(now())
   files          FileDinhKem[]
   duAn           DuAn          @relation(fields: [projectId], references: [id], onDelete: Cascade)

@@ -21,6 +21,7 @@ import {
   RotateCcw,
   CheckCircle2,
   AlertTriangle,
+  Flame,
 } from "lucide-react";
 import { 
   Dialog, 
@@ -213,6 +214,14 @@ export function TaskLogTable({ logs }: TaskLogTableProps) {
                             </Badge>
                           </div>
                         )}
+                      </div>
+                    )}
+                    {log.urgentFlag && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className="text-[10px] uppercase font-black px-2 py-0.5 rounded-lg flex items-center gap-1 bg-red-50 text-red-600 border-red-200">
+                          <Flame className="size-3 animate-pulse" />
+                          Yêu cầu gấp
+                        </Badge>
                       </div>
                     )}
                     {log.noiDungChiTiet}

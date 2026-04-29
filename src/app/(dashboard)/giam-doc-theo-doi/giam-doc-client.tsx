@@ -1,0 +1,602 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Flame, CheckCircle2, TrendingUp, Target, AlertCircle, History as HistoryIcon, XCircle, ChevronDown, ChevronUp, Star, Rocket } from "lucide-react";
+import { 
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+    PieChart, Pie, Legend
+} from 'recharts';
+
+const formatCurrency = (val: number) => {
+    return Math.round(val || 0).toLocaleString('vi-VN');
+};
+
+export default function GiamDocClient() {
+    const [urgentTasks, setUrgentTasks] = useState<any[]>([]);
+    const [resolvedTasks, setResolvedTasks] = useState<any[]>([]);
+    const [b2aProjects, setB2aProjects] = useState<any[]>([]);
+    const [expandedCard, setExpandedCard] = useState<string | null>(null);
+    
+    const [kpiTarget, setKpiTarget] = useState(0);
+    const [kpiActual, setKpiActual] = useState(0);
+    const [kpiGap, setKpiGap] = useState(0);
+
+    const [startDate, setStartDate] = useState(() => {
+        const d = new Date();
+        d.setMonth(0, 1);
+        return d.toISOString().split('T')[0];
+    });
+    const [endDate, setEndDate] = useState(() => {
+        const d = new Date();
+        d.setMonth(11, 31);
+        return d.toISOString().split('T')[0];
+    });
+    const [includeExpected, setIncludeExpected] = useState(false);
+
+    const [loadingTasks, setLoadingTasks] = useState(true);
+    const [loadingKpi, setLoadingKpi] = useState(true);
+    const [loadingB2a, setLoadingB2a] = useState(true);
+
+    const fetchUrgentTasks = async () => {
+        try {
+            const res = await fetch(`/api/director/urgent-tasks?resolved=false&t=${Date.now()}`);
+            const data = await res.json();
+            setUrgentTasks(Array.isArray(data) ? data : []);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoadingTasks(false);
+        }
+    };
+
+    const fetchResolvedTasks = async () => {
+        try {
+            const res = await fetch(`/api/director/urgent-tasks?resolved=true&t=${Date.now()}`);
+            const data = await res.json();
+            setResolvedTasks(Array.isArray(data) ? data : []);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const fetchKpi = async () => {
+        setLoadingKpi(true);
+        try {
+            const res = await fetch("/api/director/dynamic-kpi", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ startDate, endDate, includeExpected })
+            });
+            const data = await res.json();
+            setKpiTarget(data.target || 0);
+            setKpiActual(data.actual || 0);
+            setKpiGap(data.gap || 0);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoadingKpi(false);
+        }
+    };
+
+    const fetchB2aRoadmap = async () => {
+        try {
+            const res = await fetch("/api/director/b2a-roadmap");
+            const data = await res.json();
+            setB2aProjects(Array.isArray(data) ? data : []);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoadingB2a(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUrgentTasks();
+        fetchResolvedTasks();
+        fetchB2aRoadmap();
+    }, []);
+
+    useEffect(() => {
+        fetchKpi();
+    }, [startDate, endDate, includeExpected]);
+
+    const handleResolve = async (id: number) => {
+        try {
+            await fetch("/api/director/urgent-tasks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id })
+            });
+            fetchUrgentTasks(); // Refresh pending
+            fetchResolvedTasks(); // Refresh history
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    return (
+        <div className="space-y-12">
+            {/* SECTION 1: URGENT ACTION CENTER */}
+            <section className="space-y-4">
+                <div className="flex items-center gap-2">
+                    <Flame className="text-red-500" />
+                    <h3 className="text-2xl font-bold text-slate-800">Cần xử lý gấp</h3>
+                </div>
+
+                {urgentTasks.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {urgentTasks.slice(0, 3).map((t, index) => (
+                            <div key={t.id} className="bg-red-50 border border-red-100 rounded-xl p-4 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <Flame className="size-12 text-red-600" />
+                                </div>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Badge className="bg-red-500 text-white border-none text-[10px] font-black uppercase">
+                                        Ưu tiên {index + 1}
+                                    </Badge>
+                                    <span className="text-[10px] text-red-400 font-bold uppercase">
+                                        {t.createdAt ? format(new Date(t.createdAt), "dd/MM HH:mm") : ""}
+                                    </span>
+                                </div>
+                                <h4 className="font-bold text-red-900 truncate mb-1">
+                                    {t.duAn?.tenDuAn}
+                                </h4>
+                                <div className="text-[11px] text-red-600 font-semibold mb-1 flex flex-col">
+                                    <span>KH: {t.duAn?.khachHang?.ten || "N/A"}</span>
+                                    <span>Phụ trách: {t.duAn?.chuyenVien?.name || t.duAn?.am?.name || "N/A"}</span>
+                                </div>
+                                <p className="text-sm text-red-700 line-clamp-2 font-medium bg-white/50 p-1.5 rounded border border-red-100">
+                                    {t.requestContent || "Cần hỗ trợ gấp"}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                ) : null}
+
+                <Tabs defaultValue="pending" className="w-full">
+                    <div className="flex justify-between items-center mb-2">
+                        <TabsList className="bg-slate-100 p-1 h-10 rounded-xl">
+                            <TabsTrigger value="pending" className="rounded-lg px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                <AlertCircle className="w-4 h-4 mr-2 text-red-500" />
+                                Đang chờ xử lý ({urgentTasks.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="history" className="rounded-lg px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                <HistoryIcon className="w-4 h-4 mr-2 text-slate-500" />
+                                Lịch sử xử lý ({resolvedTasks.length})
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
+
+                    <TabsContent value="pending" className="mt-0">
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <Table>
+                                <TableHeader className="bg-slate-50">
+                                    <TableRow>
+                                        <TableHead>Thời gian</TableHead>
+                                        <TableHead>Nội dung yêu cầu</TableHead>
+                                        <TableHead>Tên dự án</TableHead>
+                                        <TableHead>Khách hàng</TableHead>
+                                        <TableHead>Lĩnh vực</TableHead>
+                                        <TableHead>Chuyên viên chủ trì</TableHead>
+                                        <TableHead className="text-right">Doanh thu dự kiến</TableHead>
+                                        <TableHead className="text-center">Thao tác</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {loadingTasks ? (
+                                        <TableRow><TableCell colSpan={8} className="text-center py-8">Đang tải...</TableCell></TableRow>
+                                    ) : urgentTasks.length === 0 ? (
+                                        <TableRow><TableCell colSpan={8} className="text-center py-8 text-slate-500">Không có yêu cầu gấp nào.</TableCell></TableRow>
+                                    ) : urgentTasks.map((t: any) => (
+                                        <TableRow key={t.id}>
+                                            <TableCell className="text-xs text-slate-500 font-medium whitespace-nowrap">
+                                                {t.createdAt ? format(new Date(t.createdAt), "dd/MM/yyyy HH:mm") : ""}
+                                            </TableCell>
+                                            <TableCell className="font-bold text-red-600 max-w-[200px] truncate" title={t.requestContent || "Cần hỗ trợ"}>
+                                                {t.requestContent || "Cần hỗ trợ"}
+                                            </TableCell>
+                                            <TableCell className="max-w-[150px]">
+                                                <Link href={`/du-an/${t.projectId}`} className="text-blue-600 hover:underline font-semibold truncate block" title={t.duAn?.tenDuAn}>
+                                                    {t.duAn?.tenDuAn}
+                                                </Link>
+                                            </TableCell>
+                                            <TableCell>{t.duAn?.khachHang?.ten}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">{t.duAn?.sanPham?.nhom || "Không rõ"}</Badge>
+                                            </TableCell>
+                                            <TableCell>{t.duAn?.chuyenVien?.name || t.duAn?.am?.name || "Chưa phân công"}</TableCell>
+                                            <TableCell className="text-right font-semibold text-green-700">
+                                                {formatCurrency(t.duAn?.tongDoanhThuDuKien)}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Button size="sm" variant="outline" className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-red-200" onClick={() => handleResolve(t.id)}>
+                                                    <XCircle className="w-4 h-4 mr-1" />
+                                                    Chưa xử lý
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="history" className="mt-0">
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <Table>
+                                <TableHeader className="bg-slate-50">
+                                    <TableRow>
+                                        <TableHead>Thời gian yêu cầu</TableHead>
+                                        <TableHead>Nội dung</TableHead>
+                                        <TableHead>Dự án</TableHead>
+                                        <TableHead>Khách hàng</TableHead>
+                                        <TableHead>Lĩnh vực</TableHead>
+                                        <TableHead>Chuyên viên</TableHead>
+                                        <TableHead className="text-right">Doanh thu</TableHead>
+                                        <TableHead className="text-center">Trạng thái</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {resolvedTasks.length === 0 ? (
+                                        <TableRow><TableCell colSpan={8} className="text-center py-8 text-slate-500">Chưa có lịch sử xử lý.</TableCell></TableRow>
+                                    ) : resolvedTasks.map((t: any) => (
+                                        <TableRow key={t.id} className="bg-slate-50/30">
+                                            <TableCell className="text-xs text-slate-400 whitespace-nowrap">
+                                                {t.createdAt ? format(new Date(t.createdAt), "dd/MM/yyyy HH:mm") : ""}
+                                            </TableCell>
+                                            <TableCell className="text-slate-600 italic line-through decoration-slate-300 max-w-[200px] truncate" title={t.requestContent || "Cần hỗ trợ"}>
+                                                {t.requestContent || "Cần hỗ trợ"}
+                                            </TableCell>
+                                            <TableCell className="max-w-[150px]">
+                                                <Link href={`/du-an/${t.projectId}`} className="text-slate-500 hover:underline truncate block" title={t.duAn?.tenDuAn}>
+                                                    {t.duAn?.tenDuAn}
+                                                </Link>
+                                            </TableCell>
+                                            <TableCell className="text-slate-500">{t.duAn?.khachHang?.ten}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-slate-200">{t.duAn?.sanPham?.nhom || "Không rõ"}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-slate-500">{t.duAn?.chuyenVien?.name || t.duAn?.am?.name || "Chưa phân công"}</TableCell>
+                                            <TableCell className="text-right text-slate-400">
+                                                {formatCurrency(t.duAn?.tongDoanhThuDuKien)}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge className="bg-green-100 text-green-700 border-green-200 flex items-center gap-1 mx-auto w-fit">
+                                                    <CheckCircle2 className="w-3 h-3" />
+                                                    Đã xong
+                                                </Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </TabsContent>
+                </Tabs>
+            </section>
+
+            {/* SECTION 2: DYNAMIC KPI CONTROL CENTER */}
+            <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Target className="text-blue-600" />
+                        <h3 className="text-2xl font-bold text-slate-800">Tiến độ HTKH</h3>
+                    </div>
+                    <div className="flex items-center gap-6 bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+                        <div className="flex items-center gap-2">
+                            <Label htmlFor="start">Từ:</Label>
+                            <input type="date" id="start" value={startDate} onChange={e => setStartDate(e.target.value)} className="border rounded p-1 text-sm outline-none" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Label htmlFor="end">Đến:</Label>
+                            <input type="date" id="end" value={endDate} onChange={e => setEndDate(e.target.value)} className="border rounded p-1 text-sm outline-none" />
+                        </div>
+                        <div className="h-6 w-px bg-slate-200" />
+                        <div className="flex items-center gap-2">
+                            <Switch id="include-expected" checked={includeExpected} onCheckedChange={setIncludeExpected} />
+                            <Label htmlFor="include-expected" className="cursor-pointer">{includeExpected ? "Đã ký + Kỳ vọng" : "Doanh thu đã ký"}</Label>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-none shadow-sm">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-blue-800">Mục tiêu (Target)</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-black text-blue-900">{formatCurrency(kpiTarget)}</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-green-50 to-green-100 border-none shadow-sm">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-green-800">Thực tế đạt được</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-black text-green-900">{formatCurrency(kpiActual)}</div>
+                            <div className="mt-2 text-sm font-semibold text-green-700">
+                                {kpiTarget > 0 ? ((kpiActual / kpiTarget) * 100).toFixed(1) : 0}% hoàn thành
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-none shadow-sm">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-orange-800">Khoảng cách cần bù đắp</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-black text-orange-900">{formatCurrency(kpiGap)}</div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="bg-slate-100 rounded-full h-8 w-full overflow-hidden shadow-inner relative">
+                    <div 
+                        className={`h-full flex items-center justify-end px-2 text-xs font-bold text-white ${kpiActual >= kpiTarget ? 'bg-green-500' : 'bg-blue-500'} transition-all duration-1000`} 
+                        style={{ width: `${Math.min(100, kpiTarget > 0 ? (kpiActual / kpiTarget) * 100 : 0)}%` }}
+                    >
+                        {kpiTarget > 0 && (kpiActual / kpiTarget * 100) > 5 ? `${((kpiActual / kpiTarget) * 100).toFixed(1)}%` : ''}
+                    </div>
+                </div>
+            </section>
+
+            {/* SECTION 3: B2A EXECUTIVE CARDS */}
+            <section className="space-y-6">
+                <div className="flex items-center gap-2">
+                    <TrendingUp className="text-blue-600" />
+                    <h3 className="text-2xl font-bold text-slate-800 uppercase tracking-tight">Điều hành dự án Công an</h3>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* CARD 1: ROADMAP BY YEAR */}
+                    <ExecutiveCard 
+                        title="Phân kỳ theo năm (Roadmap)"
+                        projects={b2aProjects}
+                        expanded={expandedCard === 'roadmap'}
+                        onToggle={() => setExpandedCard(expandedCard === 'roadmap' ? null : 'roadmap')}
+                        type="roadmap"
+                    />
+
+                    {/* CARD 2: STATUS FUNNEL */}
+                    <ExecutiveCard 
+                        title="Trạng thái hiện trạng (Funnel)"
+                        projects={b2aProjects}
+                        expanded={expandedCard === 'funnel'}
+                        onToggle={() => setExpandedCard(expandedCard === 'funnel' ? null : 'funnel')}
+                        type="funnel"
+                    />
+
+                    {/* CARD 3: STRATEGIC PRIORITIES */}
+                    <ExecutiveCard 
+                        title="Ưu tiên chiến lược (Priorities)"
+                        projects={b2aProjects}
+                        expanded={expandedCard === 'priorities'}
+                        onToggle={() => setExpandedCard(expandedCard === 'priorities' ? null : 'priorities')}
+                        type="priorities"
+                    />
+
+                    {/* CARD 4: WORKFLOW 7 STEPS */}
+                    <ExecutiveCard 
+                        title="Tiến độ 7 bước (Workflow)"
+                        projects={b2aProjects}
+                        expanded={expandedCard === 'workflow'}
+                        onToggle={() => setExpandedCard(expandedCard === 'workflow' ? null : 'workflow')}
+                        type="workflow"
+                    />
+                </div>
+            </section>
+            
+            <style jsx global>{`
+                @keyframes marquee {
+                    0% { transform: translateX(100%); }
+                    100% { transform: translateX(-100%); }
+                }
+            `}</style>
+        </div>
+    );
+}
+
+function ExecutiveCard({ title, projects, expanded, onToggle, type }: any) {
+    const [filterValue, setFilterValue] = useState<string | null>(null);
+
+    // Data Processing
+    let chartData: any[] = [];
+    let filteredProjects = projects;
+
+    if (type === 'roadmap') {
+        const yearMap: Record<string, number> = {};
+        projects.forEach((p: any) => {
+            const year = p.thoiGianDuKien || (p.ngayBatDau ? new Date(p.ngayBatDau).getFullYear().toString() : "N/A");
+            yearMap[year] = (yearMap[year] || 0) + 1;
+        });
+        chartData = Object.entries(yearMap).map(([name, value]) => ({ name, value })).sort((a, b) => a.name.localeCompare(b.name));
+        if (filterValue) {
+            filteredProjects = projects.filter((p: any) => {
+                const y = p.thoiGianDuKien || (p.ngayBatDau ? new Date(p.ngayBatDau).getFullYear().toString() : "N/A");
+                return y === filterValue;
+            });
+        }
+    } else if (type === 'funnel') {
+        const statusMap: Record<string, number> = {};
+        projects.forEach((p: any) => {
+            const status = p.trangThaiHienTai;
+            statusMap[status] = (statusMap[status] || 0) + 1;
+        });
+        chartData = Object.entries(statusMap).map(([name, value]) => ({ name, value }));
+        if (filterValue) {
+            filteredProjects = projects.filter((p: any) => p.trangThaiHienTai === filterValue);
+        }
+    } else if (type === 'priorities') {
+        const trongDiem = projects.filter((p: any) => p.isTrongDiem).length;
+        const kyVong = projects.filter((p: any) => p.isKyVong).length;
+        chartData = [
+            { name: 'Trọng điểm', value: trongDiem, color: '#ef4444' },
+            { name: 'Kỳ vọng', value: kyVong, color: '#3b82f6' }
+        ];
+        if (filterValue) {
+            filteredProjects = projects.filter((p: any) => filterValue === 'Trọng điểm' ? p.isTrongDiem : p.isKyVong);
+        }
+    } else if (type === 'workflow') {
+        const stepMap: Record<string, number> = {};
+        // Initialize 7 steps
+        for(let i=1; i<=7; i++) stepMap[`Bước ${i}`] = 0;
+        projects.forEach((p: any) => {
+            if (p.hienTaiBuoc) stepMap[p.hienTaiBuoc] = (stepMap[p.hienTaiBuoc] || 0) + 1;
+        });
+        chartData = Object.entries(stepMap).map(([name, value]) => ({ name, value }));
+        if (filterValue) {
+            filteredProjects = projects.filter((p: any) => p.hienTaiBuoc === filterValue);
+        }
+    }
+
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+
+    return (
+        <Card className="overflow-hidden border-slate-200 shadow-md hover:shadow-lg transition-all duration-300 bg-white group/card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 bg-slate-50/50">
+                <CardTitle className="text-lg font-bold text-slate-700 flex items-center gap-2">
+                    {type === 'roadmap' && <TrendingUp className="w-5 h-5 text-blue-500" />}
+                    {type === 'funnel' && <Target className="w-5 h-5 text-emerald-500" />}
+                    {type === 'priorities' && <Star className="w-5 h-5 text-amber-500" />}
+                    {type === 'workflow' && <Rocket className="w-5 h-5 text-purple-500" />}
+                    {title}
+                </CardTitle>
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={onToggle}
+                    className="hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                >
+                    {expanded ? (
+                        <><ChevronUp className="w-4 h-4 mr-1" /> Thu gọn</>
+                    ) : (
+                        <><ChevronDown className="w-4 h-4 mr-1" /> Xem chi tiết</>
+                    )}
+                </Button>
+            </CardHeader>
+            <CardContent className="pt-6">
+                {/* VISUAL SUMMARY */}
+                <div className="h-[200px] w-full">
+                    {type === 'roadmap' && (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData} onClick={(data) => { if(data && data.activeLabel) { setFilterValue(data.activeLabel); if(!expanded) onToggle(); } }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={12} tick={{fill: '#64748b'}} />
+                                <YAxis axisLine={false} tickLine={false} fontSize={12} tick={{fill: '#64748b'}} />
+                                <Tooltip 
+                                    cursor={{fill: '#f8fafc'}}
+                                    contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                                />
+                                <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                    {type === 'funnel' && (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={chartData}
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    onClick={(data) => { if(data && data.name) { setFilterValue(data.name); if(!expanded) onToggle(); } }}
+                                >
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                                <Legend verticalAlign="bottom" height={36} wrapperStyle={{fontSize: '11px'}} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    )}
+                    {type === 'priorities' && (
+                        <div className="flex justify-around items-center h-full gap-4">
+                            {chartData.map(d => (
+                                <div 
+                                    key={d.name} 
+                                    className="text-center cursor-pointer p-4 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors flex-1 border border-slate-100"
+                                    onClick={() => { setFilterValue(d.name); if(!expanded) onToggle(); }}
+                                >
+                                    <div className="text-4xl font-black mb-1" style={{color: d.color}}>{d.value}</div>
+                                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">{d.name}</div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {type === 'workflow' && (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart layout="vertical" data={chartData} onClick={(data) => { if(data && data.activeLabel) { setFilterValue(data.activeLabel); if(!expanded) onToggle(); } }}>
+                                <XAxis type="number" hide />
+                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} fontSize={10} width={60} tick={{fill: '#64748b'}} />
+                                <Tooltip cursor={{fill: '#f8fafc'}} />
+                                <Bar dataKey="value" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
+
+                {/* EXPANDABLE DATA TABLE */}
+                <div className={`mt-6 overflow-hidden transition-all duration-500 ease-in-out ${expanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="border-t border-slate-100 pt-4">
+                        <div className="flex items-center justify-between mb-4">
+                            <h5 className="font-bold text-slate-800 text-sm">
+                                Chi tiết {filterValue ? `: ${filterValue}` : ''}
+                            </h5>
+                            {filterValue && (
+                                <Button variant="link" size="sm" className="text-xs h-auto p-0" onClick={() => setFilterValue(null)}>
+                                    Hiện tất cả
+                                </Button>
+                            )}
+                        </div>
+                        <div className="rounded-lg border border-slate-100 overflow-hidden shadow-sm">
+                            <Table>
+                                <TableHeader className="bg-slate-50">
+                                    <TableRow>
+                                        <TableHead className="text-[10px] uppercase font-bold py-2">Dự án</TableHead>
+                                        <TableHead className="text-[10px] uppercase font-bold py-2">Khách hàng</TableHead>
+                                        <TableHead className="text-[10px] uppercase font-bold py-2 text-right">Doanh thu</TableHead>
+                                        <TableHead className="text-[10px] uppercase font-bold py-2">Trạng thái</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredProjects.length === 0 ? (
+                                        <TableRow><TableCell colSpan={4} className="text-center py-4 text-xs text-slate-400 italic">Không có dữ liệu</TableCell></TableRow>
+                                    ) : filteredProjects.map((p: any) => (
+                                        <TableRow key={p.id} className="hover:bg-slate-50 transition-colors">
+                                            <TableCell className="py-2">
+                                                <Link href={`/du-an/${p.id}`} className="text-[11px] font-bold text-blue-600 hover:underline line-clamp-1">
+                                                    {p.tenDuAn}
+                                                </Link>
+                                            </TableCell>
+                                            <TableCell className="text-[10px] py-2 truncate max-w-[80px]">{p.khachHang?.ten}</TableCell>
+                                            <TableCell className="text-[10px] py-2 text-right font-bold text-green-700">
+                                                {Math.round(p.tongDoanhThuDuKien || 0).toLocaleString('vi-VN')}
+                                            </TableCell>
+                                            <TableCell className="py-2">
+                                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-white border-slate-200">
+                                                    {p.trangThaiHienTai}
+                                                </Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
