@@ -27,7 +27,11 @@ export async function sendTelegramAlert({
     return;
   }
 
-  const chatIds = chatIdsStr.split(",").map(id => id.trim());
+  const chatIds = chatIdsStr.split(",").map(id => id.trim()).filter(id => id.length > 0);
+  if (chatIds.length === 0) {
+    console.warn("No valid Telegram chat IDs found in TELEGRAM_DIRECTOR_CHAT_ID.");
+    return;
+  }
   const text = `🚨 <b>THÔNG BÁO KHẨN TỪ TTKDGPS</b> 🚨\n\n` +
                `<b>Dự án:</b> ${escapeHtml(projectName)}\n` +
                `<b>Khách hàng:</b> ${escapeHtml(customerName)}\n` +
