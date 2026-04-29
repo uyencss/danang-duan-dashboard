@@ -78,6 +78,13 @@ services:
       - NEXT_PUBLIC_ABLY_KEY=${NEXT_PUBLIC_ABLY_KEY}
       - REDIS_URL=redis://redis:6379
       - BUILD_ID=${BUILD_ID}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_DIRECTOR_CHAT_ID=${TELEGRAM_DIRECTOR_CHAT_ID}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
 
     volumes:
       - ./logs:/app/logs
