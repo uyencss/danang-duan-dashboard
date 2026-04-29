@@ -489,7 +489,7 @@ function ExecutiveCard({ title, projects, expanded, onToggle, type }: any) {
                 <div className="h-[200px] w-full">
                     {type === 'roadmap' && (
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData} onClick={(data) => { if(data && data.activeLabel) { setFilterValue(data.activeLabel); if(!expanded) onToggle(); } }}>
+                            <BarChart data={chartData} onClick={(data) => { if(data && data.activeLabel) { setFilterValue(String(data.activeLabel)); if(!expanded) onToggle(); } }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={12} tick={{fill: '#64748b'}} />
                                 <YAxis axisLine={false} tickLine={false} fontSize={12} tick={{fill: '#64748b'}} />
@@ -510,7 +510,7 @@ function ExecutiveCard({ title, projects, expanded, onToggle, type }: any) {
                                     outerRadius={80}
                                     paddingAngle={5}
                                     dataKey="value"
-                                    onClick={(data) => { if(data && data.name) { setFilterValue(data.name); if(!expanded) onToggle(); } }}
+                                    onClick={(data) => { if(data && data.name) { setFilterValue(String(data.name)); if(!expanded) onToggle(); } }}
                                 >
                                     {chartData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -537,7 +537,7 @@ function ExecutiveCard({ title, projects, expanded, onToggle, type }: any) {
                     )}
                     {type === 'workflow' && (
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={chartData} onClick={(data) => { if(data && data.activeLabel) { setFilterValue(data.activeLabel); if(!expanded) onToggle(); } }}>
+                            <BarChart layout="vertical" data={chartData} onClick={(data) => { if(data && data.activeLabel) { setFilterValue(String(data.activeLabel)); if(!expanded) onToggle(); } }}>
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} fontSize={10} width={60} tick={{fill: '#64748b'}} />
                                 <Tooltip cursor={{fill: '#f8fafc'}} />
