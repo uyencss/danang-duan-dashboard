@@ -30,11 +30,13 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_DIRECTOR_CHAT_ID: ${{ secrets.TELEGRAM_DIRECTOR_CHAT_ID }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: DATABASE_URL,POSTGRES_PASSWORD,NEXT_PUBLIC_APP_URL,BETTER_AUTH_SECRET,BETTER_AUTH_URL,ABLY_API_KEY,NEXT_PUBLIC_ABLY_KEY,CLOUDFLARE_TUNNEL_TOKEN,CLOUDFLARE_DB_TUNNEL_TOKEN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASSWORD,SMTP_FROM
+          envs: DATABASE_URL,POSTGRES_PASSWORD,NEXT_PUBLIC_APP_URL,BETTER_AUTH_SECRET,BETTER_AUTH_URL,ABLY_API_KEY,NEXT_PUBLIC_ABLY_KEY,CLOUDFLARE_TUNNEL_TOKEN,CLOUDFLARE_DB_TUNNEL_TOKEN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASSWORD,SMTP_FROM,TELEGRAM_BOT_TOKEN,TELEGRAM_DIRECTOR_CHAT_ID
           script: |
             mkdir -p /home/hieunq/Desktop/code-deployments
             cd /home/hieunq/Desktop/code-deployments
@@ -66,6 +68,8 @@ jobs:
             SMTP_USER="$SMTP_USER"
             SMTP_PASSWORD="$SMTP_PASSWORD"
             SMTP_FROM="$SMTP_FROM"
+            TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN"
+            TELEGRAM_DIRECTOR_CHAT_ID="$TELEGRAM_DIRECTOR_CHAT_ID"
             EOF
 
             # Build and deploy locally on this machine
