@@ -11,7 +11,10 @@ export async function GET(req: Request) {
         const tasks = await prisma.nhatKyCongViec.findMany({
             where: {
                 urgentFlag: true,
-                isResolved: isResolved
+                isResolved: isResolved,
+                NOT: {
+                    directorArchived: true
+                }
             },
             orderBy: {
                 createdAt: isResolved ? 'desc' : 'asc'
@@ -35,10 +38,18 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
     try {
-        const { id } = await req.json();
+        const { id, archive } = await req.json();
+        
+        const data: any = {};
+        if (archive) {
+            data.directorArchived = true;
+        } else {
+            data.isResolved = true;
+        }
+
         const updated = await prisma.nhatKyCongViec.update({
             where: { id },
-            data: { isResolved: true }
+            data
         });
         return NextResponse.json(updated);
     } catch (e: any) {
