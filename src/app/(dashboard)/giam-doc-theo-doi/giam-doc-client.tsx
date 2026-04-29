@@ -16,6 +16,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
     PieChart, Pie, Legend
 } from 'recharts';
+import { SmartDateInput } from "@/components/ui/smart-date-input";
 
 const formatCurrency = (val: number) => {
     return Math.round(val || 0).toLocaleString('vi-VN');
@@ -125,12 +126,35 @@ export default function GiamDocClient() {
     };
 
     return (
-        <div className="space-y-12">
+        <div className="space-y-8 md:space-y-12">
+            {/* SECTION 0: URGENT MARQUEE BANNER */}
+            {urgentTasks.length > 0 && (
+                <div className="bg-red-600 text-white overflow-hidden py-2.5 rounded-xl flex items-center shadow-lg border-2 border-red-500/50">
+                    <div className="flex items-center gap-2 px-3 md:px-5 font-black whitespace-nowrap bg-red-700 h-full py-1 z-10 shadow-[5px_0_15px_rgba(0,0,0,0.3)]">
+                        <Flame className="size-4 md:size-5 animate-pulse text-yellow-400" />
+                        <span className="text-[10px] md:text-xs uppercase tracking-widest">Bản tin khẩn</span>
+                    </div>
+                    <div className="flex-1 overflow-hidden relative h-6 flex items-center">
+                        <div className="absolute whitespace-nowrap will-change-transform flex items-center gap-10 md:gap-20" style={{ animation: 'marquee 40s linear infinite' }}>
+                            {[...urgentTasks, ...urgentTasks].map((t, i) => (
+                                <div key={`${t.id}-${i}`} className="text-xs md:text-sm font-bold flex items-center gap-2">
+                                    <Badge className="bg-white/20 text-white border-none text-[9px] h-4">#{i % urgentTasks.length + 1}</Badge>
+                                    <span className="text-white/90">DỰ ÁN:</span> 
+                                    <span className="text-white">{t.duAn?.tenDuAn}</span>
+                                    <span className="mx-2 text-white/50">|</span>
+                                    <span className="text-yellow-200">{t.requestContent || "Cần xử lý gấp"}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* SECTION 1: URGENT ACTION CENTER */}
             <section className="space-y-4">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <Flame className="text-red-500" />
-                    <h3 className="text-2xl font-bold text-slate-800">Cần xử lý gấp</h3>
+                    <h3 className="text-xl md:text-2xl font-bold text-slate-800">Cần xử lý gấp</h3>
                 </div>
 
                 {urgentTasks.length > 0 ? (
@@ -164,32 +188,32 @@ export default function GiamDocClient() {
                 ) : null}
 
                 <Tabs defaultValue="pending" className="w-full">
-                    <div className="flex justify-between items-center mb-2">
-                        <TabsList className="bg-slate-100 p-1 h-10 rounded-xl">
-                            <TabsTrigger value="pending" className="rounded-lg px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                <AlertCircle className="w-4 h-4 mr-2 text-red-500" />
-                                Đang chờ xử lý ({urgentTasks.length})
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                        <TabsList className="bg-slate-100 p-1 h-auto md:h-10 rounded-xl flex flex-col md:flex-row w-full md:w-auto">
+                            <TabsTrigger value="pending" className="rounded-lg px-4 md:px-6 py-2 md:py-0 data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm md:text-base w-full md:w-auto">
+                                <AlertCircle className="w-4 h-4 mr-2 text-red-500 shrink-0" />
+                                <span className="truncate">Đang chờ xử lý ({urgentTasks.length})</span>
                             </TabsTrigger>
-                            <TabsTrigger value="history" className="rounded-lg px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                <HistoryIcon className="w-4 h-4 mr-2 text-slate-500" />
-                                Lịch sử xử lý ({resolvedTasks.length})
+                            <TabsTrigger value="history" className="rounded-lg px-4 md:px-6 py-2 md:py-0 data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm md:text-base w-full md:w-auto">
+                                <HistoryIcon className="w-4 h-4 mr-2 text-slate-500 shrink-0" />
+                                <span className="truncate">Lịch sử xử lý ({resolvedTasks.length})</span>
                             </TabsTrigger>
                         </TabsList>
                     </div>
 
                     <TabsContent value="pending" className="mt-0">
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <Table>
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full overflow-x-auto">
+                            <Table className="min-w-[800px] md:min-w-full">
                                 <TableHeader className="bg-slate-50">
                                     <TableRow>
-                                        <TableHead>Thời gian</TableHead>
-                                        <TableHead>Nội dung yêu cầu</TableHead>
-                                        <TableHead>Tên dự án</TableHead>
-                                        <TableHead>Khách hàng</TableHead>
-                                        <TableHead>Lĩnh vực</TableHead>
-                                        <TableHead>Chuyên viên chủ trì</TableHead>
-                                        <TableHead className="text-right">Doanh thu dự kiến</TableHead>
-                                        <TableHead className="text-center">Thao tác</TableHead>
+                                        <TableHead className="whitespace-nowrap">Thời gian</TableHead>
+                                        <TableHead className="whitespace-nowrap">Nội dung yêu cầu</TableHead>
+                                        <TableHead className="whitespace-nowrap">Tên dự án</TableHead>
+                                        <TableHead className="whitespace-nowrap">Khách hàng</TableHead>
+                                        <TableHead className="whitespace-nowrap">Lĩnh vực</TableHead>
+                                        <TableHead className="whitespace-nowrap">Chuyên viên</TableHead>
+                                        <TableHead className="text-right whitespace-nowrap">Doanh thu dự kiến</TableHead>
+                                        <TableHead className="text-center whitespace-nowrap">Thao tác</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -232,18 +256,18 @@ export default function GiamDocClient() {
                     </TabsContent>
 
                     <TabsContent value="history" className="mt-0">
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <Table>
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full overflow-x-auto">
+                            <Table className="min-w-[800px] md:min-w-full">
                                 <TableHeader className="bg-slate-50">
                                     <TableRow>
-                                        <TableHead>Thời gian yêu cầu</TableHead>
-                                        <TableHead>Nội dung</TableHead>
-                                        <TableHead>Dự án</TableHead>
-                                        <TableHead>Khách hàng</TableHead>
-                                        <TableHead>Lĩnh vực</TableHead>
-                                        <TableHead>Chuyên viên</TableHead>
-                                        <TableHead className="text-right">Doanh thu</TableHead>
-                                        <TableHead className="text-center">Trạng thái</TableHead>
+                                        <TableHead className="whitespace-nowrap">Thời gian yêu cầu</TableHead>
+                                        <TableHead className="whitespace-nowrap">Nội dung</TableHead>
+                                        <TableHead className="whitespace-nowrap">Dự án</TableHead>
+                                        <TableHead className="whitespace-nowrap">Khách hàng</TableHead>
+                                        <TableHead className="whitespace-nowrap">Lĩnh vực</TableHead>
+                                        <TableHead className="whitespace-nowrap">Chuyên viên</TableHead>
+                                        <TableHead className="text-right whitespace-nowrap">Doanh thu</TableHead>
+                                        <TableHead className="text-center whitespace-nowrap">Trạng thái</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -287,24 +311,32 @@ export default function GiamDocClient() {
 
             {/* SECTION 2: DYNAMIC KPI CONTROL CENTER */}
             <section className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <Target className="text-blue-600" />
-                        <h3 className="text-2xl font-bold text-slate-800">Tiến độ HTKH</h3>
+                        <h3 className="text-xl md:text-2xl font-bold text-slate-800">Tiến độ HTKH</h3>
                     </div>
-                    <div className="flex items-center gap-6 bg-white p-3 rounded-xl shadow-sm border border-slate-200">
-                        <div className="flex items-center gap-2">
-                            <Label htmlFor="start">Từ:</Label>
-                            <input type="date" id="start" value={startDate} onChange={e => setStartDate(e.target.value)} className="border rounded p-1 text-sm outline-none" />
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4 bg-white p-3 md:p-2 rounded-xl shadow-sm border border-slate-200">
+                        <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                            <Label htmlFor="start" className="text-[10px] md:text-xs font-black text-slate-500 uppercase shrink-0">Từ:</Label>
+                            <SmartDateInput 
+                                value={startDate} 
+                                onChange={setStartDate} 
+                                className="w-full sm:w-[140px] md:w-[160px] h-9 text-xs" 
+                            />
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Label htmlFor="end">Đến:</Label>
-                            <input type="date" id="end" value={endDate} onChange={e => setEndDate(e.target.value)} className="border rounded p-1 text-sm outline-none" />
+                        <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                            <Label htmlFor="end" className="text-[10px] md:text-xs font-black text-slate-500 uppercase shrink-0">Đến:</Label>
+                            <SmartDateInput 
+                                value={endDate} 
+                                onChange={setEndDate} 
+                                className="w-full sm:w-[140px] md:w-[160px] h-9 text-xs" 
+                            />
                         </div>
-                        <div className="h-6 w-px bg-slate-200" />
-                        <div className="flex items-center gap-2">
+                        <div className="hidden sm:block h-6 w-px bg-slate-200" />
+                        <div className="flex items-center gap-2 pt-2 sm:pt-0">
                             <Switch id="include-expected" checked={includeExpected} onCheckedChange={setIncludeExpected} />
-                            <Label htmlFor="include-expected" className="cursor-pointer">{includeExpected ? "Đã ký + Kỳ vọng" : "Doanh thu đã ký"}</Label>
+                            <Label htmlFor="include-expected" className="cursor-pointer text-xs md:text-sm font-medium">{includeExpected ? "Đã ký + Kỳ vọng" : "Doanh thu đã ký"}</Label>
                         </div>
                     </div>
                 </div>
@@ -312,29 +344,29 @@ export default function GiamDocClient() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-none shadow-sm">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-blue-800">Mục tiêu (Target)</CardTitle>
+                            <CardTitle className="text-xs md:text-sm font-bold text-blue-800 uppercase tracking-wider">Mục tiêu (Target)</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-black text-blue-900">{formatCurrency(kpiTarget)}</div>
+                            <div className="text-2xl md:text-3xl font-black text-blue-900">{formatCurrency(kpiTarget)}</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-gradient-to-br from-green-50 to-green-100 border-none shadow-sm">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-green-800">Thực tế đạt được</CardTitle>
+                            <CardTitle className="text-xs md:text-sm font-bold text-green-800 uppercase tracking-wider">Thực tế đạt được</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-black text-green-900">{formatCurrency(kpiActual)}</div>
-                            <div className="mt-2 text-sm font-semibold text-green-700">
+                            <div className="text-2xl md:text-3xl font-black text-green-900">{formatCurrency(kpiActual)}</div>
+                            <div className="mt-2 text-xs md:text-sm font-semibold text-green-700">
                                 {kpiTarget > 0 ? ((kpiActual / kpiTarget) * 100).toFixed(1) : 0}% hoàn thành
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-none shadow-sm">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-orange-800">Khoảng cách cần bù đắp</CardTitle>
+                            <CardTitle className="text-xs md:text-sm font-bold text-orange-800 uppercase tracking-wider">Khoảng cách cần bù đắp</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-black text-orange-900">{formatCurrency(kpiGap)}</div>
+                            <div className="text-2xl md:text-3xl font-black text-orange-900">{formatCurrency(kpiGap)}</div>
                         </CardContent>
                     </Card>
                 </div>
@@ -560,14 +592,14 @@ function ExecutiveCard({ title, projects, expanded, onToggle, type }: any) {
                                 </Button>
                             )}
                         </div>
-                        <div className="rounded-lg border border-slate-100 overflow-hidden shadow-sm">
-                            <Table>
+                        <div className="rounded-lg border border-slate-100 overflow-hidden shadow-sm overflow-x-auto">
+                            <Table className="min-w-[400px]">
                                 <TableHeader className="bg-slate-50">
                                     <TableRow>
-                                        <TableHead className="text-[10px] uppercase font-bold py-2">Dự án</TableHead>
-                                        <TableHead className="text-[10px] uppercase font-bold py-2">Khách hàng</TableHead>
-                                        <TableHead className="text-[10px] uppercase font-bold py-2 text-right">Doanh thu</TableHead>
-                                        <TableHead className="text-[10px] uppercase font-bold py-2">Trạng thái</TableHead>
+                                        <TableHead className="text-[10px] uppercase font-bold py-2 whitespace-nowrap">Dự án</TableHead>
+                                        <TableHead className="text-[10px] uppercase font-bold py-2 whitespace-nowrap">Khách hàng</TableHead>
+                                        <TableHead className="text-[10px] uppercase font-bold py-2 text-right whitespace-nowrap">Doanh thu</TableHead>
+                                        <TableHead className="text-[10px] uppercase font-bold py-2 whitespace-nowrap">Trạng thái</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
