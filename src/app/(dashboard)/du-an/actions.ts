@@ -625,6 +625,7 @@ export async function createTaskLog(data: {
     // 4. Trigger Telegram Alert if Urgent (Awaited for reliability)
     if (result.urgentFlag) {
         try {
+            console.log(`[Telegram] Starting alert for project: ${result.projectId}, urgent: ${result.urgentFlag}`);
             const project = await prisma.duAn.findUnique({
                 where: { id: result.projectId },
                 include: {
@@ -636,14 +637,16 @@ export async function createTaskLog(data: {
             if (project) {
                 await sendTelegramAlert({
                     projectName: project.tenDuAn,
-                    customerName: project.khachHang.ten,
+                    customerName: project.khachHang?.ten || "N/A",
                     amName: project.am?.name || project.chuyenVien?.name || "Hệ thống",
                     requestContent: result.requestContent || result.noiDungChiTiet,
-                    projectId: project.id
                 });
+                console.log(`[Telegram] Alert process completed for project: ${project.tenDuAn}`);
+            } else {
+                console.error(`[Telegram] Project not found for alert ID: ${result.projectId}`);
             }
         } catch (err) {
-            console.error("Telegram alert error:", err);
+            console.error("[Telegram] Fatal error in alert flow:", err);
         }
     }
 
