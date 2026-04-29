@@ -48,7 +48,7 @@ const formSchema = z.object({
   noiDungChiTiet: z.string().min(10, "Vui lòng nhập tối thiểu 10 ký tự nội dung"),
   ngayGio: z.string(),
   buoc: z.string().optional(),
-  urgentFlag: z.boolean().default(false),
+  urgentFlag: z.boolean(),
 });
 
 const STEPS = [
