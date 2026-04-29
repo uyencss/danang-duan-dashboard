@@ -622,31 +622,29 @@ export async function createTaskLog(data: {
     revalidatePath("/du-an");
     revalidatePath("/giam-doc-theo-doi");
     await syncReplica();
-    // 4. Trigger Telegram Alert if Urgent (Background)
+    // 4. Trigger Telegram Alert if Urgent (Awaited for reliability)
     if (result.urgentFlag) {
-        (async () => {
-            try {
-                const project = await prisma.duAn.findUnique({
-                    where: { id: result.projectId },
-                    include: {
-                        khachHang: true,
-                        am: true,
-                        chuyenVien: true
-                    }
-                });
-                if (project) {
-                    await sendTelegramAlert({
-                        projectName: project.tenDuAn,
-                        customerName: project.khachHang.ten,
-                        amName: project.am?.name || project.chuyenVien?.name || "Hệ thống",
-                        requestContent: result.requestContent || result.noiDungChiTiet,
-                        projectId: project.id
-                    });
+        try {
+            const project = await prisma.duAn.findUnique({
+                where: { id: result.projectId },
+                include: {
+                    khachHang: true,
+                    am: true,
+                    chuyenVien: true
                 }
-            } catch (err) {
-                console.error("Telegram background alert error:", err);
+            });
+            if (project) {
+                await sendTelegramAlert({
+                    projectName: project.tenDuAn,
+                    customerName: project.khachHang.ten,
+                    amName: project.am?.name || project.chuyenVien?.name || "Hệ thống",
+                    requestContent: result.requestContent || result.noiDungChiTiet,
+                    projectId: project.id
+                });
             }
-        })();
+        } catch (err) {
+            console.error("Telegram alert error:", err);
+        }
     }
 
     return { success: true, data: result };
