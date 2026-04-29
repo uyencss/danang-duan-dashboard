@@ -25,17 +25,20 @@ export function DashboardWrapper({ children, user, menuItems }: DashboardWrapper
   return (
     <UserProvider user={user}>
       <div className="flex h-screen overflow-hidden bg-transparent">
-        <Sidebar
-          userRole={user.role as AppRole}
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          dbMenuItems={menuItems}
-        />
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:flex shrink-0">
+          <Sidebar
+            userRole={user.role as AppRole}
+            isCollapsed={isCollapsed}
+            setIsCollapsed={setIsCollapsed}
+            dbMenuItems={menuItems}
+          />
+        </div>
 
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          <Header user={user} />
+          <Header user={user} menuItems={menuItems} />
 
-          <main className="flex-1 overflow-y-auto p-8">
+          <main className="flex-1 overflow-y-auto p-4 md:p-8">
             <div className="max-w-screen-2xl mx-auto">
               {children}
             </div>

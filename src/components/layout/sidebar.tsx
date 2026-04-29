@@ -55,9 +55,18 @@ interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
   dbMenuItems?: any[];
+  isMobile?: boolean;
+  onItemClick?: () => void;
 }
 
-export function Sidebar({ userRole, isCollapsed, setIsCollapsed, dbMenuItems = [] }: SidebarProps) {
+export function Sidebar({ 
+  userRole, 
+  isCollapsed, 
+  setIsCollapsed, 
+  dbMenuItems = [],
+  isMobile = false,
+  onItemClick
+}: SidebarProps) {
   const pathname = usePathname();
 
   let finalMainItems: SidebarItem[] = [];
@@ -97,6 +106,7 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed, dbMenuItems = [
           <Link
             key={item.href}
             href={item.href}
+            onClick={onItemClick}
             title={isCollapsed ? item.label : undefined}
             className={cn(
               "flex items-center gap-4 px-4 py-2.5 rounded-lg transition-all duration-200 group relative",
@@ -135,7 +145,8 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed, dbMenuItems = [
       className={cn(
         "relative flex flex-col h-screen transition-all duration-300 ease-in-out z-40 shadow-2xl border-r border-[#0058bc]/20",
         "bg-gradient-to-b from-[#0a192f] via-[#0d2a52] to-[#0a192f]",
-        isCollapsed ? "w-20" : "w-72"
+        isCollapsed ? "w-20" : "w-72",
+        isMobile && "w-full border-none shadow-none"
       )}
     >
       {/* Brand */}
@@ -202,12 +213,14 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed, dbMenuItems = [
       </div>
 
       {/* Toggle Button */}
-      <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-20 w-6 h-6 bg-[#0D1F3C] border border-white/10 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition-colors shadow-lg"
-      >
-        {isCollapsed ? <Menu className="size-3" /> : <ChevronLeft className="size-3" />}
-      </button>
+      {!isMobile && (
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="absolute -right-3 top-20 w-6 h-6 bg-[#0D1F3C] border border-white/10 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition-colors shadow-lg"
+        >
+          {isCollapsed ? <Menu className="size-3" /> : <ChevronLeft className="size-3" />}
+        </button>
+      )}
     </aside>
   );
 }

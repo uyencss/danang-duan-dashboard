@@ -102,12 +102,12 @@ export default async function DuAnPage({
       <Breadcrumb items={[{ label: "CRM & DS Dự án" }]} />
 
       {/* Page Header */}
-      <div className="flex justify-between items-end flex-wrap gap-4">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-[#191c1e]">
+          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#191c1e]">
             CRM &amp; Danh sách Dự án
           </h2>
-          <p className="text-[#44474d] mt-1">
+          <p className="text-[#44474d] text-sm md:text-base mt-1">
             Quản lý lộ trình triển khai và chăm sóc khách hàng doanh nghiệp
           </p>
         </div>
@@ -115,14 +115,15 @@ export default async function DuAnPage({
         <div className="flex items-center gap-2 flex-wrap">
           {/* Nhóm button Tính năng Import Excel */}
           <ExcelUploadButton users={users} />
-
+ 
           {/* Tạo dự án đơn lẻ */}
           <Link
             href="/du-an/tao-moi"
-            className="bg-gradient-to-r from-[#0058bc] to-blue-500 hover:from-blue-600 hover:to-cyan-500 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/30 active:scale-95 transition-all text-sm h-10"
+            className="bg-gradient-to-r from-[#0058bc] to-blue-500 hover:from-blue-600 hover:to-cyan-500 text-white px-4 md:px-6 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/30 active:scale-95 transition-all text-xs md:text-sm h-10"
           >
             <PlusCircle className="size-4" />
-            + Tạo dự án
+            <span className="hidden xs:inline">+ Tạo dự án</span>
+            <span className="xs:hidden">+ Tạo</span>
           </Link>
         </div>
       </div>

@@ -251,16 +251,16 @@ export function DashboardTabs({ data }: { data: any[] }) {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold text-slate-700">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="h-64">
+      <CardContent className="h-64 sm:h-72">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={chartData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+            <Pie data={chartData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <RechartsTooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#0f172a' }} />
-            <Legend />
+            <RechartsTooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#0f172a', fontSize: '12px' }} />
+            <Legend wrapperStyle={{ fontSize: '10px' }} />
           </PieChart>
         </ResponsiveContainer>
       </CardContent>
@@ -272,13 +272,13 @@ export function DashboardTabs({ data }: { data: any[] }) {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold text-slate-700">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="h-64">
+      <CardContent className="h-64 sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} layout="vertical" margin={{ left: -20 }}>
+          <BarChart data={chartData} layout="vertical" margin={{ left: -20, right: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-            <XAxis type="number" stroke="#64748b" />
-            <YAxis dataKey="name" type="category" width={120} stroke="#64748b" tick={{ fontSize: 11 }} />
-            <RechartsTooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#0f172a' }} />
+            <XAxis type="number" stroke="#64748b" tick={{ fontSize: 10 }} />
+            <YAxis dataKey="name" type="category" width={100} stroke="#64748b" tick={{ fontSize: 9 }} />
+            <RechartsTooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#0f172a', fontSize: '12px' }} />
             <Bar dataKey="value" fill="#0070eb" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
@@ -289,20 +289,22 @@ export function DashboardTabs({ data }: { data: any[] }) {
   return (
     <>
       <Tabs defaultValue="camera" className="mt-8 space-y-6">
-        <TabsList className="bg-slate-100 p-1 rounded-xl shadow-inner border border-slate-200">
-          <TabsTrigger value="camera" className="data-[state=active]:bg-[#0070eb] data-[state=active]:text-white text-slate-600 flex items-center gap-2 px-6 font-medium">
-            <Camera className="w-4 h-4" /> I. Camera Giám Sát
-          </TabsTrigger>
-          <TabsTrigger value="kiosk" className="data-[state=active]:bg-[#0070eb] data-[state=active]:text-white text-slate-600 flex items-center gap-2 px-6 font-medium">
-            <MonitorSmartphone className="w-4 h-4" /> II. Kiosk Tiếp Dân
-          </TabsTrigger>
-          <TabsTrigger value="truyenthanh" className="data-[state=active]:bg-[#0070eb] data-[state=active]:text-white text-slate-600 flex items-center gap-2 px-6 font-medium">
-            <Radio className="w-4 h-4" /> III. Truyền Thanh
-          </TabsTrigger>
-          <TabsTrigger value="dexuat" className="data-[state=active]:bg-[#0070eb] data-[state=active]:text-white text-slate-600 flex items-center gap-2 px-6 font-medium">
-            <Lightbulb className="w-4 h-4" /> IV. Đề Xuất Khác
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-2">
+          <TabsList className="bg-slate-100 p-1 rounded-xl shadow-inner border border-slate-200 flex w-max sm:w-auto">
+            <TabsTrigger value="camera" className="data-[state=active]:bg-[#0070eb] data-[state=active]:text-white text-slate-600 flex items-center gap-2 px-4 md:px-6 font-medium whitespace-nowrap text-xs sm:text-sm">
+              <Camera className="w-4 h-4" /> I. Camera
+            </TabsTrigger>
+            <TabsTrigger value="kiosk" className="data-[state=active]:bg-[#0070eb] data-[state=active]:text-white text-slate-600 flex items-center gap-2 px-4 md:px-6 font-medium whitespace-nowrap text-xs sm:text-sm">
+              <MonitorSmartphone className="w-4 h-4" /> II. Kiosk
+            </TabsTrigger>
+            <TabsTrigger value="truyenthanh" className="data-[state=active]:bg-[#0070eb] data-[state=active]:text-white text-slate-600 flex items-center gap-2 px-4 md:px-6 font-medium whitespace-nowrap text-xs sm:text-sm">
+              <Radio className="w-4 h-4" /> III. Truyền Thanh
+            </TabsTrigger>
+            <TabsTrigger value="dexuat" className="data-[state=active]:bg-[#0070eb] data-[state=active]:text-white text-slate-600 flex items-center gap-2 px-4 md:px-6 font-medium whitespace-nowrap text-xs sm:text-sm">
+              <Lightbulb className="w-4 h-4" /> IV. Đề Xuất
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* HELPER FOR CONFLICT WARNING */}
         {(() => {
@@ -414,9 +416,9 @@ export function DashboardTabs({ data }: { data: any[] }) {
             <CardHeader>
               <CardTitle className="text-slate-800">Danh sách chi tiết</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="rounded-md border border-slate-200 overflow-hidden bg-white">
-                <Table>
+            <CardContent className="p-0 sm:p-6">
+              <div className="rounded-md border border-slate-200 overflow-x-auto bg-white">
+                <Table className="min-w-[700px]">
                   <TableHeader className="bg-slate-50 border-b border-slate-200">
                     <TableRow>
                       <TableHead className="text-slate-700 font-semibold w-[60px]">
@@ -486,9 +488,9 @@ export function DashboardTabs({ data }: { data: any[] }) {
             <CardHeader>
               <CardTitle className="text-slate-800">Danh sách chi tiết</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="rounded-md border border-slate-200 overflow-hidden bg-white">
-                <Table>
+            <CardContent className="p-0 sm:p-6">
+              <div className="rounded-md border border-slate-200 overflow-x-auto bg-white">
+                <Table className="min-w-[700px]">
                   <TableHeader className="bg-slate-50 border-b border-slate-200">
                     <TableRow>
                       <TableHead className="text-slate-700 font-semibold w-[60px]">
@@ -563,9 +565,9 @@ export function DashboardTabs({ data }: { data: any[] }) {
             <CardHeader>
               <CardTitle className="text-slate-800">Danh sách chi tiết</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="rounded-md border border-slate-200 overflow-hidden bg-white">
-                <Table>
+            <CardContent className="p-0 sm:p-6">
+              <div className="rounded-md border border-slate-200 overflow-x-auto bg-white">
+                <Table className="min-w-[700px]">
                   <TableHeader className="bg-slate-50 border-b border-slate-200">
                     <TableRow>
                       <TableHead className="text-slate-700 font-semibold w-[60px]">

@@ -422,29 +422,29 @@ export function ProjectsTable({
   return (
     <div className="w-full space-y-4">
       {/* Filter Bar */}
-      <div className="bg-[#f2f4f6] p-2 rounded-2xl flex flex-wrap gap-2 items-center justify-between">
-        <div className="flex-1 flex gap-2 overflow-x-auto px-2 py-1 min-w-0">
-          <div className="relative min-w-[280px]">
+      <div className="bg-[#f2f4f6] p-2 rounded-2xl flex flex-col sm:flex-row gap-2 items-center justify-between">
+        <div className="w-full sm:flex-1 flex gap-2 overflow-x-auto px-1 py-1 min-w-0">
+          <div className="relative w-full sm:min-w-[280px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
             <Input
               placeholder="Tìm kiếm dự án, khách hàng..."
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              className="bg-white border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#0058bc] shadow-none h-9"
+              className="bg-white border-none rounded-lg pl-10 pr-4 py-2 text-xs md:text-sm focus:ring-2 focus:ring-[#0058bc] shadow-none h-9"
             />
           </div>
           {hasAnyFilter && (
-            <Button variant="ghost" onClick={clearAllFilters} className="h-9 px-3 text-xs font-bold text-slate-500 gap-2 hover:bg-slate-200 rounded-xl">
+            <Button variant="ghost" onClick={clearAllFilters} className="h-9 px-3 text-[10px] md:text-xs font-bold text-slate-500 gap-2 hover:bg-slate-200 rounded-xl whitespace-nowrap">
               <X className="size-3.5" /> Xóa lọc
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-4 px-2">
-          <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
+        <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-3 md:gap-4 px-2">
+          <span className="text-[10px] md:text-xs text-slate-500 font-medium whitespace-nowrap">
             {totalCount && totalCount > data.length ? `${data.length} / ${totalCount}` : totalCount || data.length} dự án
           </span>
-          <Button onClick={handleExport} variant="outline" size="sm" className="h-9 gap-2 font-bold text-[#0058bc] border-[#0058bc]/20 bg-white shadow-sm hover:bg-[#0058bc]/5 rounded-xl">
-            <Download className="size-4" /> Xuất Excel
+          <Button onClick={handleExport} variant="outline" size="sm" className="h-9 gap-2 font-bold text-[#0058bc] border-[#0058bc]/20 bg-white shadow-sm hover:bg-[#0058bc]/5 rounded-xl text-xs">
+            <Download className="size-4" /> <span className="hidden xs:inline">Xuất Excel</span><span className="xs:hidden">Xuất</span>
           </Button>
         </div>
       </div>
@@ -608,17 +608,17 @@ export function ProjectsTable({
         </table>
 
         {/* Server-side Pagination matched with "Khách hàng" tab logic */}
-        <div className="p-6 bg-slate-50/50 flex justify-between items-center border-t border-slate-100/50">
-          <p className="text-xs text-[#44474d] font-medium">
+        <div className="p-4 md:p-6 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-slate-100/50">
+          <p className="text-[10px] md:text-xs text-[#44474d] font-medium order-2 sm:order-1">
             Hiển thị {totalCount ? (currentPage - 1) * pageSize + 1 : 0} - {Math.min(currentPage * pageSize, totalCount ?? data.length)} của {totalCount ?? data.length} dự án
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-2 order-1 sm:order-2 w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={!hasPrevPage}
-              className="h-9 px-4 font-bold border-slate-200 text-slate-600 hover:bg-white hover:text-[#0058bc] shadow-sm transition-all rounded-xl"
+              className="flex-1 sm:flex-none h-9 px-4 font-bold border-slate-200 text-slate-600 hover:bg-white hover:text-[#0058bc] shadow-sm transition-all rounded-xl text-xs"
             >
               Trước
             </Button>
@@ -627,7 +627,7 @@ export function ProjectsTable({
               size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={!hasNextPage}
-              className="h-9 px-4 font-bold border-slate-200 text-slate-600 hover:bg-white hover:text-[#0058bc] shadow-sm transition-all rounded-xl"
+              className="flex-1 sm:flex-none h-9 px-4 font-bold border-slate-200 text-slate-600 hover:bg-white hover:text-[#0058bc] shadow-sm transition-all rounded-xl text-xs"
             >
               Sau
             </Button>

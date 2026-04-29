@@ -44,7 +44,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
           />
 
           {/* Card 2: DT Tháng Đã Ký */}
-          <Card className="relative p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden group">
+          <Card className="relative p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden group">
             <div className="relative z-10 space-y-4">
                <div className="flex items-center justify-between">
                  <div className="p-2.5 rounded-2xl bg-green-50 text-green-600">
@@ -68,7 +68,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
           </Card>
 
           {/* Card 3: DT Dự Kiến Tháng */}
-          <Card className="relative p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden group">
+          <Card className="relative p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden group">
             <div className="relative z-10 space-y-4">
                <div className="flex items-center justify-between">
                  <div className="p-2.5 rounded-2xl bg-blue-50 text-[#0058bc]">
@@ -138,7 +138,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
           />
 
           {/* Metric 8: Hiện trạng tháng */}
-          <Card className="p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden flex flex-col justify-between min-h-[160px]">
+          <Card className="p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden flex flex-col justify-between min-h-[160px]">
             <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Hiện Trạng Tháng</p>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
                 {projectMetrics.hienTrangThang.map((s: any, i: number) => (
@@ -151,7 +151,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
           </Card>
 
           {/* Metric 9: Thống kê theo bước */}
-          <Card className="p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden flex flex-col min-h-[160px]">
+          <Card className="p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden flex flex-col min-h-[160px]">
              <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Theo Bước Quy Trình</p>
              <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 custom-scrollbar">
                 {projectMetrics.thongKeTheoBuoc.map((b: any, i: number) => (
@@ -165,7 +165,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
           </Card>
 
           {/* Metric 10: Cảnh báo theo tổ */}
-          <Card className="p-6 rounded-[2rem] border-red-100 border-2 shadow-sm bg-red-50 overflow-hidden flex flex-col justify-between min-h-[160px]">
+          <Card className="p-4 md:p-6 rounded-[2rem] border-red-100 border-2 shadow-sm bg-red-50 overflow-hidden flex flex-col justify-between min-h-[160px]">
              <div className="flex items-center gap-2 text-red-600">
                 <AlertTriangle className="size-4 animate-pulse" />
                 <p className="text-[11px] font-black uppercase tracking-widest">CẢNH BÁO (&gt;10 ngày)</p>
@@ -187,7 +187,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
 
 function MetricCard({ title, value, description, icon: Icon, accentColor }: any) {
   return (
-    <Card className="group relative p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden transition-all hover:shadow-xl hover:shadow-blue-900/5">
+    <Card className="group relative p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden transition-all hover:shadow-xl hover:shadow-blue-900/5">
       <div className="relative z-10 flex flex-col h-full justify-between gap-4">
         <div className="flex items-center justify-between">
           <div className={cn("p-2.5 rounded-2xl bg-gradient-to-br text-white shadow-lg", accentColor)}>

@@ -137,12 +137,12 @@ export default function GiamDocClient() {
                     <div className="flex-1 overflow-hidden relative h-6 flex items-center">
                         <div className="absolute whitespace-nowrap will-change-transform flex items-center gap-10 md:gap-20" style={{ animation: 'marquee 40s linear infinite' }}>
                             {[...urgentTasks, ...urgentTasks].map((t, i) => (
-                                <div key={`${t.id}-${i}`} className="text-xs md:text-sm font-bold flex items-center gap-2">
-                                    <Badge className="bg-white/20 text-white border-none text-[9px] h-4">#{i % urgentTasks.length + 1}</Badge>
+                                <div key={`${t.id}-${i}`} className="text-[10px] md:text-sm font-bold flex items-center gap-2">
+                                    <Badge className="bg-white/20 text-white border-none text-[8px] md:text-[9px] h-3.5 md:h-4">#{i % urgentTasks.length + 1}</Badge>
                                     <span className="text-white/90">DỰ ÁN:</span> 
-                                    <span className="text-white">{t.duAn?.tenDuAn}</span>
-                                    <span className="mx-2 text-white/50">|</span>
-                                    <span className="text-yellow-200">{t.requestContent || "Cần xử lý gấp"}</span>
+                                    <span className="text-white truncate max-w-[100px] md:max-w-none">{t.duAn?.tenDuAn}</span>
+                                    <span className="mx-1 md:mx-2 text-white/50">|</span>
+                                    <span className="text-yellow-200 truncate max-w-[150px] md:max-w-none">{t.requestContent || "Cần xử lý gấp"}</span>
                                 </div>
                             ))}
                         </div>
@@ -495,7 +495,7 @@ function ExecutiveCard({ title, projects, expanded, onToggle, type }: any) {
 
     return (
         <Card className="overflow-hidden border-slate-200 shadow-md hover:shadow-lg transition-all duration-300 bg-white group/card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 bg-slate-50/50">
+            <CardHeader className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 pb-4 bg-slate-50/50">
                 <CardTitle className="text-lg font-bold text-slate-700 flex items-center gap-2">
                     {type === 'roadmap' && <TrendingUp className="w-5 h-5 text-blue-500" />}
                     {type === 'funnel' && <Target className="w-5 h-5 text-emerald-500" />}
@@ -518,7 +518,7 @@ function ExecutiveCard({ title, projects, expanded, onToggle, type }: any) {
             </CardHeader>
             <CardContent className="pt-6">
                 {/* VISUAL SUMMARY */}
-                <div className="h-[200px] w-full">
+                <div className="h-[180px] sm:h-[200px] w-full">
                     {type === 'roadmap' && (
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={chartData} onClick={(data) => { if(data && data.activeLabel) { setFilterValue(String(data.activeLabel)); if(!expanded) onToggle(); } }}>

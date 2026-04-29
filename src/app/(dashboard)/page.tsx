@@ -87,28 +87,28 @@ export default async function DashboardPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <Breadcrumb items={[]} />
       {/* Page Header */}
-      <section className="flex justify-between items-end">
+      <section className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
         <div>
-          <h2 className="text-3xl font-black text-[#191c1e] tracking-tight mb-1">
+          <h2 className="text-2xl md:text-3xl font-black text-[#191c1e] tracking-tight mb-1">
             Dashboard Tổng quan
           </h2>
-          <p className="text-[#44474d] font-medium">
+          <p className="text-[#44474d] text-sm md:text-base font-medium">
             Theo dõi hiệu quả kinh doanh và tiến độ dự án thực tế.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 md:gap-3">
           <Link
             href="/du-an"
             className={cn(
               buttonVariants({ variant: "outline" }),
-              "rounded-full font-bold px-6 py-2.5 h-[38px] border-[#c5c6ce] text-[#191c1e] hover:bg-[#eceef0]"
+              "rounded-full font-bold px-4 md:px-6 py-2 md:py-2.5 h-auto md:h-[38px] border-[#c5c6ce] text-[#191c1e] hover:bg-[#eceef0] text-xs md:text-sm"
             )}
           >
             Danh sách dự án
           </Link>
           <Link
             href="/du-an/tao-moi"
-            className="px-6 py-2.5 h-[38px] rounded-full bg-[#0d6efd] hover:bg-[#0b5ed7] text-white font-bold text-[13px] flex items-center justify-center gap-2 transition-colors shadow-sm"
+            className="px-4 md:px-6 py-2 md:py-2.5 h-auto md:h-[38px] rounded-full bg-[#0d6efd] hover:bg-[#0b5ed7] text-white font-bold text-[11px] md:text-[13px] flex items-center justify-center gap-2 transition-colors shadow-sm"
           >
             <Package2 className="size-4" />
             Tạo dự án mới

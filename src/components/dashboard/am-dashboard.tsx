@@ -43,7 +43,7 @@ export function AMPerformanceTab({ amPerf }: AMPerformanceTabProps) {
   return (
     <div className="space-y-8">
       {/* SECTION 1: FULL-WIDTH COMBINED CHART */}
-      <Card className="p-8 rounded-[2rem] border-[#eceef0] shadow-sm bg-white overflow-hidden overflow-x-auto">
+      <Card className="p-4 md:p-8 rounded-[2rem] border-[#eceef0] shadow-sm bg-white overflow-hidden overflow-x-auto">
         <div className="flex items-center justify-between mb-10">
           <div className="space-y-1">
             <h4 className="text-xl font-black uppercase tracking-tight text-[#191c1e] flex items-center gap-3">
@@ -55,7 +55,7 @@ export function AMPerformanceTab({ amPerf }: AMPerformanceTabProps) {
           </div>
         </div>
 
-        <div className="h-[550px] w-full min-w-[800px]">
+        <div className="h-[350px] md:h-[550px] w-full min-w-[600px] md:min-w-[800px]">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={amPerf} margin={{ top: 20, right: 30, bottom: 100, left: 20 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -124,7 +124,7 @@ export function AMPerformanceTab({ amPerf }: AMPerformanceTabProps) {
       {/* SECTION 2: TOP 3 & BOTTOM 3 RANKINGS WITH TABS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* TOP 3 HIGHEST */}
-        <div className="bg-white p-8 rounded-[2rem] border border-[#eceef0] shadow-sm flex flex-col">
+        <div className="bg-white p-4 md:p-8 rounded-[2rem] border border-[#eceef0] shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <h4 className="text-lg font-black uppercase tracking-tight text-[#0058bc] flex items-center gap-3">
               <span className="p-2 bg-blue-50 rounded-xl">
@@ -155,7 +155,7 @@ export function AMPerformanceTab({ amPerf }: AMPerformanceTabProps) {
         </div>
 
         {/* TOP 3 LOWEST */}
-        <div className="bg-white p-8 rounded-[2rem] border border-[#eceef0] shadow-sm flex flex-col">
+        <div className="bg-white p-4 md:p-8 rounded-[2rem] border border-[#eceef0] shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <h4 className="text-lg font-black uppercase tracking-tight text-red-600 flex items-center gap-3">
               <span className="p-2 bg-red-50 rounded-xl">
