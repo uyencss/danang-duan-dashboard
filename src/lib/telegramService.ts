@@ -12,13 +12,12 @@ export async function sendTelegramAlert({
   customerName, 
   amName, 
   requestContent, 
-  projectId 
 }: { 
   projectName: string; 
   customerName: string; 
   amName: string; 
   requestContent: string; 
-  projectId: string | number;
+  projectId?: string | number;
 }) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatIdsStr = process.env.TELEGRAM_DIRECTOR_CHAT_ID;
