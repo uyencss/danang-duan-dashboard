@@ -353,6 +353,7 @@ enum UserRole {
   AM
   CV
   USER
+  LEADER
 }
 
 enum LogStatus {

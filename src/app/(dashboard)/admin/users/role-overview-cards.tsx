@@ -9,6 +9,7 @@ const ROLE_ICONS: Record<AppRole, React.ElementType> = {
   USER: UserCog,
   AM: ShieldAlert,
   CV: GraduationCap,
+  LEADER: ShieldCheck,
 };
 
 const ROLE_PERMISSIONS_SUMMARY: Record<AppRole, string> = {
@@ -16,6 +17,7 @@ const ROLE_PERMISSIONS_SUMMARY: Record<AppRole, string> = {
   USER: "Tất cả chức năng + Quản lý nhân sự",
   AM: "Dashboard, CRM, Khách hàng, Giao KPI",
   CV: "Dashboard, CRM, Khách hàng, Giao KPI",
+  LEADER: "Dashboard, CRM, Theo dõi tiến độ",
 };
 
 interface RoleOverviewCardsProps {
@@ -59,6 +61,7 @@ export function RoleOverviewCards({ roleCounts }: RoleOverviewCardsProps) {
                       role === "ADMIN" ? "bg-purple-500" :
                       role === "USER" ? "bg-indigo-500" :
                       role === "AM" ? "bg-blue-500" :
+                      role === "LEADER" ? "bg-amber-500" :
                       "bg-emerald-500"
                     }`}
                     style={{ width: `${(count / total) * 100}%` }}

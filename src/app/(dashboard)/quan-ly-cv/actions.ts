@@ -23,7 +23,10 @@ export async function getCVManagementData(filters?: { year?: number, quarter?: n
     const cvs = await prisma.user.findMany({
       where: { 
         role: { in: [UserRole.CV, UserRole.USER] },
-        NOT: { diaBan: "Lãnh đạo" }
+        NOT: [
+            { diaBan: "Lãnh đạo" },
+            { role: UserRole.LEADER }
+        ]
       },
       select: { id: true, name: true, diaBan: true }
     });

@@ -26,7 +26,7 @@ const KhachHangSchema = z.object({
 
 export async function getKhachHangList(params?: { search?: string, phanLoai?: string }) {
   try {
-    await requireRole("ADMIN", "USER", "AM", "CV");
+    await requireRole("ADMIN", "USER", "AM", "CV", "LEADER");
     const whereClause: any = {};
     
     if (params?.search) {

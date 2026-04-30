@@ -4,7 +4,7 @@ import { PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { TrangThaiDuAn } from "@prisma/client";
-import { getCurrentUser } from "@/lib/auth-utils";
+import { getCurrentUser, requireRole } from "@/lib/auth-utils";
 import { ExcelUploadButton } from "./excel-upload-button";
 
 export const metadata = {
@@ -37,7 +37,7 @@ export default async function DuAnPage({
     pageSize,
   };
 
-  const user = await getCurrentUser();
+  const user = await requireRole("ADMIN", "USER", "AM", "CV", "LEADER");
   const isQuảnTrịViên = user?.role === "ADMIN" || user?.role === "USER";
 
   const [result, pendingLogsRes, userOptionsRes] = await Promise.all([

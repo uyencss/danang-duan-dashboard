@@ -39,7 +39,7 @@ export default async function DashboardPage() {
     headers: await headers(),
   });
   
-  await requireRole("ADMIN", "USER", "AM", "CV");
+  await requireRole("ADMIN", "USER", "AM", "CV", "LEADER");
 
   // EMERGENCY PURGE LOGIC (One-time)
   const isPurgeEnabled = false; 

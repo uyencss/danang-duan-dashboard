@@ -214,16 +214,14 @@ export async function resetUserPassword(id: string) {
     const sessionRes = await (auth.api as any).getSession({ headers: await headers() });
     if (!sessionRes?.user) return { error: "Không có quyền thực hiện" };
 
-    const res = await (auth.api as any).adminUpdateUser({
+    const res = await (auth.api as any).setUserPassword({
         body: {
             userId: id,
             password: "123456",
         }
     });
     
-    // Better auth plugin `admin` might just use adminUpdateUser for password or `setUserPassword`
-    // Let's also try `admin.setUserPassword` if `adminUpdateUser` doesn't work. We'll use prisma to hash directly if it fails.
-    if (!res && res?.error) {
+    if (res?.error) {
        return { error: res.error.message || "Không thể reset mật khẩu" };
     }
     return { success: true };

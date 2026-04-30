@@ -1,3 +1,4 @@
+// Triggering server restart to pick up Prisma Client changes (Added LEADER role)
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {

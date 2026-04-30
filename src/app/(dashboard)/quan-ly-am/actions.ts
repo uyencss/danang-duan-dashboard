@@ -23,7 +23,10 @@ export async function getAMManagementData(filters?: { year?: number, quarter?: n
     const ams = await prisma.user.findMany({
       where: { 
         role: UserRole.AM,
-        NOT: { diaBan: "Lãnh đạo" }
+        NOT: [
+            { diaBan: "Lãnh đạo" },
+            { role: UserRole.LEADER }
+        ]
       },
       select: { id: true, name: true, diaBan: true }
     });

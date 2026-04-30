@@ -184,6 +184,7 @@ export function UserFormDialog({ open, setOpen, data }: { open: boolean, setOpen
                           <SelectItem value={"USER" as any}>Quản trị viên (Chuyên viên)</SelectItem>
                           <SelectItem value={"AM" as any}>AM</SelectItem>
                           <SelectItem value={"CV" as any}>Chuyên viên (CV)</SelectItem>
+                          <SelectItem value={"LEADER" as any}>Lãnh đạo</SelectItem>
                         </SelectContent>
                     </Select>
                     <FormMessage />

@@ -7,7 +7,7 @@ import { requireRole } from "@/lib/auth-utils";
 export const dynamic = "force-dynamic";
 
 export default async function KPIPage({ searchParams }: { searchParams: Promise<{ granularity?: string }> }) {
-    await requireRole("ADMIN", "USER");
+    await requireRole("ADMIN", "USER", "LEADER");
     const params = await searchParams;
     const granularity = (params.granularity === 'thang' || params.granularity === 'quy' || params.granularity === 'nam')
         ? params.granularity

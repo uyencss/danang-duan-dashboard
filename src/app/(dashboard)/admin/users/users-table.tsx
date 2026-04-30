@@ -79,6 +79,7 @@ const ROLE_FILTER_TABS: { label: string; value: string; icon: React.ElementType 
   { label: "Chuyên viên QT", value: "USER", icon: UserCog },
   { label: "AM", value: "AM", icon: ShieldAlert },
   { label: "Chuyên viên", value: "CV", icon: GraduationCap },
+  { label: "Lãnh đạo", value: "LEADER", icon: ShieldCheck },
 ];
 
 function RoleBadge({ role }: { role: string }) {
@@ -88,6 +89,7 @@ function RoleBadge({ role }: { role: string }) {
   const Icon = role === "ADMIN" ? ShieldCheck :
                role === "USER" ? UserCog :
                role === "AM" ? ShieldAlert :
+               role === "LEADER" ? ShieldCheck :
                GraduationCap;
 
   return (

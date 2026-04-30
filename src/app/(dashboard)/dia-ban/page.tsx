@@ -7,7 +7,7 @@ import { requireRole } from "@/lib/auth-utils";
 export const dynamic = "force-dynamic";
 
 export default async function DiaBanPage({ searchParams }: { searchParams: Promise<{ type?: string, year?: string, value?: string }> }) {
-    await requireRole("ADMIN", "USER");
+    await requireRole("ADMIN", "USER", "LEADER");
     const params = await searchParams;
     let filterArgs: any = { type: 'all' };
 

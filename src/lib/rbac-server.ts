@@ -107,6 +107,25 @@ export async function invalidateRbacCache() {
 
 export async function getMenuItemsForRole(role: AppRole) {
   try {
+    // Admin bypass: Admins see all active menu items
+    if (role === "ADMIN") {
+      return await prisma.menuItem.findMany({
+        where: { isActive: true },
+        orderBy: [{ sortOrder: "asc" }],
+      });
+    }
+
+    // Leader bypass: Leaders see monitoring items
+    if (role === "LEADER") {
+      return await prisma.menuItem.findMany({
+        where: { 
+          isActive: true, 
+          key: { in: ['dashboard', 'du_an', 'giam_doc_theo_doi', 'tracking', 'kpi', 'dia_ban', 'quan_ly_am', 'quan_ly_cv'] } 
+        },
+        orderBy: [{ sortOrder: "asc" }],
+      });
+    }
+
     const records = await prisma.menuPermission.findMany({
       where: { role, canView: true, menu: { isActive: true } },
       include: { menu: true },

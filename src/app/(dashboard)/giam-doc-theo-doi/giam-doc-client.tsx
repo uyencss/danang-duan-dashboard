@@ -127,7 +127,7 @@ export default function GiamDocClient() {
     };
 
     const handleArchive = async (id: number) => {
-        if (!confirm("XÁC NHẬN: Bạn có chắc chắn đã hoàn tất hoàn toàn và không muốn theo dõi dự án này nữa không? Dự án sẽ được ẩn khỏi danh sách theo dõi của Giám đốc.")) {
+        if (!confirm("XÁC NHẬN: Bạn có chắc chắn đã hoàn tất hoàn toàn và không muốn theo dõi dự án này nữa không? Dự án sẽ được ẩn khỏi danh sách theo dõi của Lãnh đạo.")) {
             return;
         }
         try {

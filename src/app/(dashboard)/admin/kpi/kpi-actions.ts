@@ -7,7 +7,7 @@ import { cacheInvalidate } from "@/lib/cache";
 
 export async function getKpiTargets(year: number) {
     try {
-        await requireRole("ADMIN", "USER", "AM", "CV");
+        await requireRole("ADMIN", "USER", "AM", "CV", "LEADER");
         const data = await prisma.chiTieuKpi.findMany({
             where: { nam: year },
             orderBy: { thang: 'asc' }

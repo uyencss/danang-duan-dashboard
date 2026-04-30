@@ -1,6 +1,6 @@
 
 
-export type AppRole = "ADMIN" | "USER" | "AM" | "CV";
+export type AppRole = "ADMIN" | "USER" | "AM" | "CV" | "LEADER";
 
 export interface RoleMetadata {
   label: string;
@@ -40,10 +40,18 @@ export const ROLE_METADATA: Record<AppRole, RoleMetadata> = {
     textColor: "text-emerald-700",
     borderColor: "border-emerald-200",
   },
+  LEADER: {
+    label: "Lãnh đạo",
+    description: "Theo dõi Dashboard và tiến độ dự án toàn hệ thống. Không tham gia quy trình xử lý hoặc đánh giá.",
+    badgeColor: "bg-amber-50",
+    textColor: "text-amber-700",
+    borderColor: "border-amber-200",
+    color: "amber",
+  },
 };
 
-export const ALL_ROLES: AppRole[] = ["ADMIN", "USER", "AM", "CV"];
-const MANAGER_ROLES: AppRole[] = ["ADMIN", "USER"];
+export const ALL_ROLES: AppRole[] = ["ADMIN", "USER", "AM", "CV", "LEADER"];
+const MANAGER_ROLES: AppRole[] = ["ADMIN", "USER", "LEADER"];
 
 export const PUBLIC_ROUTES = [
   "/login",

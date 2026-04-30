@@ -12,7 +12,7 @@ export default async function AMManagementPage({
 }: {
     searchParams: Promise<{ y?: string; q?: string; m?: string }>;
 }) {
-    await requireRole("ADMIN", "USER");
+    await requireRole("ADMIN", "USER", "LEADER");
     const params = await searchParams;
     const year = params.y ? parseInt(params.y) : 2026;
     const quarter = params.q && params.q !== "all" ? parseInt(params.q) : undefined;
