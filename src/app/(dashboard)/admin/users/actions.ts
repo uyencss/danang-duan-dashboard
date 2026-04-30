@@ -23,8 +23,8 @@ const UserSchema = z.object({
 });
 
 export async function getUserList(params?: { search?: string, role?: string }) {
+  await requireRole("ADMIN", "USER");
   try {
-    await requireRole("ADMIN", "USER");
     const whereClause: any = {};
     if (params?.search) {
       whereClause.OR = [

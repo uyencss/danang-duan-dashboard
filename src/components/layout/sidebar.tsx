@@ -81,7 +81,7 @@ export function Sidebar({
         label: item.label,
         href: item.href,
         icon: ICON_MAP[item.icon] || LayoutDashboard,
-        allowedRoles: ["ADMIN", "USER", "AM", "CV"], 
+        allowedRoles: ["ADMIN", "USER", "AM", "CV", "LEADER"], 
       }));
   };
   finalMainItems = mapDbItems(mainDb);
