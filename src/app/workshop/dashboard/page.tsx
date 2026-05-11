@@ -219,7 +219,7 @@ export default function WorkshopDashboard() {
           <div className="flex items-center space-x-4">
              <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg px-3 py-1">
                 <Filter className="h-3 w-3 text-slate-500 mr-2" />
-                <Select value={filter} onValueChange={setFilter}>
+                <Select value={filter} onValueChange={(val) => setFilter(val || "ALL")}>
                     <SelectTrigger className="w-[180px] border-none bg-transparent h-8 text-xs font-bold text-slate-300 focus:ring-0">
                         <SelectValue placeholder="Lọc theo 5M" />
                     </SelectTrigger>

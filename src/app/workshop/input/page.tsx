@@ -206,7 +206,7 @@ export default function WorkshopInputPage() {
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Phân loại 5M</label>
                   <Select
                     value={idea.category}
-                    onValueChange={(val) => updateIdea(index, "category", val)}
+                    onValueChange={(val) => updateIdea(index, "category", val || "")}
                   >
                     <SelectTrigger className="w-full bg-white h-11 border-slate-200">
                       <SelectValue placeholder="Chọn 1 trong 5M..." />

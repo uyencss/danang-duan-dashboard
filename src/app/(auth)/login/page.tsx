@@ -29,7 +29,11 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+import { Suspense } from "react";
+
+// ... (schema and types stay same)
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
@@ -147,5 +151,17 @@ export default function LoginPage() {
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+        <Card className="shadow-lg border-primary/20 animate-pulse">
+            <div className="h-[400px] flex items-center justify-center text-muted-foreground">Đang tải...</div>
+        </Card>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
