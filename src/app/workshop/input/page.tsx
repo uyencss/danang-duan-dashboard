@@ -18,11 +18,11 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
 const CATEGORIES = [
-  { value: "MAN", label: "MAN (Con người)" },
-  { value: "METHOD", label: "METHOD (Phương pháp)" },
-  { value: "MATERIAL", label: "MATERIAL (Nguyên vật liệu)" },
-  { value: "MACHINE", label: "MACHINE (Máy móc/Thiết bị)" },
-  { value: "MARKET", label: "MARKET (Thị trường)" },
+  { value: "MAN", label: "Man (Con người)" },
+  { value: "METHOD", label: "Method (Quy trình)" },
+  { value: "MATERIAL", label: "Material (Sản phẩm)" },
+  { value: "MACHINE", label: "Machine (Công cụ hệ thống)" },
+  { value: "MARKET", label: "Market (Thị trường)" },
 ];
 
 export default function WorkshopInputPage() {

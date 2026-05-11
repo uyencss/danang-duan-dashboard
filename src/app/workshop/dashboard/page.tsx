@@ -34,11 +34,11 @@ import {
 const COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6"];
 
 const CATEGORY_LABELS: Record<string, string> = {
-  MAN: "MAN (Con người)",
-  METHOD: "METHOD (Phương pháp)",
-  MATERIAL: "MATERIAL (Nguyên vật liệu)",
-  MACHINE: "MACHINE (Máy móc)",
-  MARKET: "MARKET (Thị trường)",
+  MAN: "Man (Con người)",
+  METHOD: "Method (Quy trình)",
+  MATERIAL: "Material (Sản phẩm)",
+  MACHINE: "Machine (Công cụ hệ thống)",
+  MARKET: "Market (Thị trường)",
 };
 
 export default function WorkshopDashboard() {
