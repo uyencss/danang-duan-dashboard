@@ -402,9 +402,21 @@ model WorkshopIdea {
   category        FiveMCategory
   content         String         @db.Text
   batchId         String
+  voteCount       Int            @default(0)
   createdAt       DateTime       @default(now())
 
   @@index([batchId])
   @@index([category])
+  @@index([voteCount])
 }
 
+model WorkshopCleanIdea {
+  id        String        @id @default(uuid())
+  category  FiveMCategory
+  content   String        @db.Text
+  voteCount Int           @default(0)
+  createdAt DateTime      @default(now())
+
+  @@index([category])
+  @@index([voteCount])
+}

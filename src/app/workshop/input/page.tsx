@@ -33,9 +33,6 @@ export default function WorkshopInputPage() {
     if (!isPending && !session) {
       router.push("/login?callbackUrl=/workshop/input");
     }
-    if (session?.user) {
-      setParticipantName(session.user.name || "");
-    }
   }, [session, isPending, router]);
 
   const [ideas, setIdeas] = useState(

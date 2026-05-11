@@ -17,9 +17,26 @@ export async function getWorkshopData() {
       }, {}),
     };
 
-    return { ideas, stats };
+    const topRisks = await prisma.workshopCleanIdea.findMany({
+      orderBy: { voteCount: "desc" },
+      take: 20,
+    });
+
+    return { ideas, stats, topRisks };
   } catch (error) {
     console.error("[GET_WORKSHOP_DATA_ERROR]", error);
-    return { ideas: [], stats: { totalIdeas: 0, totalParticipants: 0, byCategory: {} } };
+    return { ideas: [], stats: { totalIdeas: 0, totalParticipants: 0, byCategory: {} }, topRisks: [] };
+  }
+}
+
+export async function getCleanIdeasForVoting() {
+  try {
+    const ideas = await prisma.workshopCleanIdea.findMany({
+      orderBy: { createdAt: "asc" },
+    });
+    return { ideas };
+  } catch (error) {
+    console.error("[GET_CLEAN_IDEAS_ERROR]", error);
+    return { ideas: [] };
   }
 }
