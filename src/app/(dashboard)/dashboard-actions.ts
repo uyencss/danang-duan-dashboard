@@ -29,16 +29,16 @@ async function _getDashboardOverview(userId: string, userRole: string) {
             }
         });
 
-        // Urgent care: null or > 15 days ago
-        const fifteenDaysAgo = new Date();
-        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+        // Urgent care: null or > 10 days ago (Standardized to 10 days as per business request)
+        const tenDaysAgo = new Date();
+        tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
         const urgentWhere = {
             AND: [
                 whereClause,
                 {
                     OR: [
                         { ngayChamsocCuoiCung: null },
-                        { ngayChamsocCuoiCung: { lt: fifteenDaysAgo } }
+                        { ngayChamsocCuoiCung: { lt: tenDaysAgo } }
                     ]
                 }
             ]
@@ -150,14 +150,14 @@ export async function getAMPerformance() {
 
             // Metric 3: doanhThuDaKy (Active monthly revenue for signed projects)
             const doanhThuDaKy = signedProjects.reduce((sum, p) => {
-                const active = getActiveMonths_Utility(p.ngayBatDau, p.ngayKetThuc, monthStart, monthEnd);
-                return active > 0 ? sum + (p.doanhThuTheoThang || 0) : sum;
+                return sum + calculateEffectiveRevenue_Utility(p, monthStart, monthEnd);
             }, 0);
 
             // Metric 4: doanhThuKyVong (Full project value for expectation projects targeted for this month)
             const kyVongProjects = myProjects.filter(p => 
                 p.isKyVong === true && 
                 p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG &&
+                p.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI && // Ensure not failed
                 p.nam === currentYear &&
                 p.thang === currentMonth
             );
@@ -346,7 +346,6 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
             const hasTotal = project.tongDoanhThuDuKien && project.tongDoanhThuDuKien > 0;
             const hasMonthly = project.doanhThuTheoThang && project.doanhThuTheoThang > 0;
 
-            let projRevValue = 0;
             const pStart = new Date(project.ngayBatDau);
             const pEnd = project.ngayKetThuc ? new Date(project.ngayKetThuc) : null;
             
@@ -369,22 +368,7 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
 
             const activeMonths = getActiveMonths_Utility(pStart, pEnd, periodStart, periodEnd);
             
-            if (activeMonths > 0) {
-                if (hasMonthly) {
-                    const totalInPeriod = activeMonths * (project.doanhThuTheoThang || 0);
-                    projRevValue = Math.min(totalInPeriod, project.tongDoanhThuDuKien || Infinity);
-                } else if (hasTotal) {
-                    // For non-recurring projects, we assume revenue is recognized in the start month
-                    // or we just take the total if it's within the period
-                    const sMY = pStart.getUTCFullYear() * 12 + pStart.getUTCMonth();
-                    const psMY = periodStart.getUTCFullYear() * 12 + periodStart.getUTCMonth();
-                    const peMY = periodEnd.getUTCFullYear() * 12 + periodEnd.getUTCMonth();
-                    
-                    if (sMY >= psMY && sMY <= peMY) {
-                        projRevValue = project.tongDoanhThuDuKien;
-                    }
-                }
-            }
+            const projRevValue = calculateEffectiveRevenue_Utility(project, periodStart, periodEnd);
 
             const isSigned = project.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG;
 
@@ -549,6 +533,40 @@ function getActiveMonths_Utility(start: Date, end: Date | null, periodStart: Dat
     return rangeEnd - rangeStart + 1;
 }
 
+/**
+ * Centralized revenue calculation logic for signed projects.
+ * Follows business rules for monthly recognition and total value capping.
+ */
+function calculateEffectiveRevenue_Utility(p: { 
+    ngayBatDau: Date; 
+    ngayKetThuc: Date | null; 
+    doanhThuTheoThang: number | null; 
+    tongDoanhThuDuKien: number 
+}, periodStart: Date, periodEnd: Date): number {
+    const active = getActiveMonths_Utility(new Date(p.ngayBatDau), p.ngayKetThuc ? new Date(p.ngayKetThuc) : null, periodStart, periodEnd);
+    if (active <= 0) return 0;
+
+    // 1. If monthly revenue is provided, distribute it across active months
+    if (p.doanhThuTheoThang && p.doanhThuTheoThang > 0) {
+        const totalInPeriod = p.doanhThuTheoThang * active;
+        // Apply cap: Resulting revenue in any window cannot exceed project's total value
+        return Math.min(totalInPeriod, p.tongDoanhThuDuKien);
+    } 
+    
+    // 2. Fallback for one-off projects (Bán đứt) where monthly is 0 or missing
+    // Recognize full amount in the START month.
+    const start = new Date(p.ngayBatDau);
+    const sMY = start.getUTCFullYear() * 12 + start.getUTCMonth();
+    const psMY = periodStart.getUTCFullYear() * 12 + periodStart.getUTCMonth();
+    const peMY = periodEnd.getUTCFullYear() * 12 + periodEnd.getUTCMonth();
+    
+    if (sMY >= psMY && sMY <= peMY) {
+        return p.tongDoanhThuDuKien;
+    }
+
+    return 0;
+}
+
 export async function getBoardOverview() {
     try {
         const now = new Date();
@@ -630,17 +648,9 @@ export async function getBoardOverview() {
         // 2. DT Tháng đã ký
         const signedProjects = projectsFull.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG);
 
-        const calculateProjectRevenue = (p: typeof projectsFull[0], start: Date, end: Date) => {
-            const active = getActiveMonths_Utility(p.ngayBatDau, p.ngayKetThuc, start, end);
-            if (active <= 0) return 0;
-            const monthlyVal = p.doanhThuTheoThang || 0;
-            const totalInPeriod = monthlyVal * active;
-            return Math.min(totalInPeriod, p.tongDoanhThuDuKien || Infinity);
-        };
-
-        const dtThangDaKy = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, monthStart, monthEnd), 0);
-        const dtTheoQuy = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, quarterStart, quarterEnd), 0);
-        const dtTheoNam = signedProjects.reduce((sum, p) => sum + calculateProjectRevenue(p, yearStart, yearEnd), 0);
+        const dtThangDaKy = signedProjects.reduce((sum, p) => sum + calculateEffectiveRevenue_Utility(p, monthStart, monthEnd), 0);
+        const dtTheoQuy = signedProjects.reduce((sum, p) => sum + calculateEffectiveRevenue_Utility(p, quarterStart, quarterEnd), 0);
+        const dtTheoNam = signedProjects.reduce((sum, p) => sum + calculateEffectiveRevenue_Utility(p, yearStart, yearEnd), 0);
 
         // 3. DT Dự kiến tháng
         const expectedProjectsInMonth = projectsFull.filter(p => 

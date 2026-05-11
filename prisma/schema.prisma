@@ -387,3 +387,24 @@ enum LoaiTinNhan {
   TEXT
   SYSTEM
 }
+
+enum FiveMCategory {
+  MAN
+  METHOD
+  MATERIAL
+  MACHINE
+  MARKET
+}
+
+model WorkshopIdea {
+  id              String         @id @default(uuid())
+  participantName String?
+  category        FiveMCategory
+  content         String         @db.Text
+  batchId         String
+  createdAt       DateTime       @default(now())
+
+  @@index([batchId])
+  @@index([category])
+}
+

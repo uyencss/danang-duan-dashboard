@@ -10,6 +10,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import logoPng from "../../../../public/logo.png";
+import { useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -30,6 +31,9 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -46,16 +50,16 @@ export default function LoginPage() {
       await authClient.signIn.email({
         email: values.email.trim().toLowerCase(),
         password: values.password.trim(),
-        callbackURL: "/",
+        callbackURL: callbackUrl,
       }, {
         onSuccess: () => {
           toast.success("Đăng nhập thành công!");
           router.refresh();
-          router.push("/");
+          router.push(callbackUrl);
           // Fallback if router fails
           setTimeout(() => {
             if (window.location.pathname === "/login") {
-              window.location.href = "/";
+              window.location.href = callbackUrl;
             }
           }, 100);
         },
