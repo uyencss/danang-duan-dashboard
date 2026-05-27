@@ -1,0 +1,1468 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,900&family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  /* MobiFone brand blues */
+  --mb-blue:      #0055a5;
+  --mb-blue-mid:  #0077cc;
+  --mb-blue-sky:  #00aaee;
+  --mb-red:       #e2001a;
+  /* Gradient palette — bright, digital, tourism */
+  --grad-hero:    linear-gradient(135deg, #003d82 0%, #0077cc 40%, #00c2e0 75%, #00e5d0 100%);
+  --grad-card:    linear-gradient(135deg, #e8f4fd 0%, #f0fbff 100%);
+  --grad-accent:  linear-gradient(90deg, #00aaee, #00e5d0);
+  --grad-warm:    linear-gradient(135deg, #fff7e6 0%, #fff 100%);
+  --grad-section: linear-gradient(180deg, #f0f9ff 0%, #ffffff 100%);
+  /* Surface */
+  --bg:           #f5fbff;
+  --surface:      #ffffff;
+  --surface2:     #eaf5ff;
+  --ink:          #0a1929;
+  --ink-mid:      #2d4a6e;
+  --ink-light:    #5a7fa8;
+  --border:       rgba(0,119,204,0.12);
+  --border-strong:rgba(0,119,204,0.28);
+  /* Accents */
+  --cyan:         #00c2e0;
+  --teal:         #00d4b8;
+  --orange:       #ff7a2f;
+  --yellow:       #ffcc00;
+  /* Type */
+  --display:      'Playfair Display', Georgia, serif;
+  --body:         'Be Vietnam Pro', sans-serif;
+  /* Shadows */
+  --shadow-sm:    0 2px 12px rgba(0,119,204,0.10);
+  --shadow-md:    0 8px 32px rgba(0,85,165,0.14);
+  --shadow-lg:    0 20px 60px rgba(0,85,165,0.18);
+  --shadow-card:  0 4px 24px rgba(0,119,204,0.12);
+}
+
+.vr360-body *, .vr360-body *::before, .vr360-body *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.vr360-body {
+  font-family: var(--body);
+  background: var(--bg);
+  color: var(--ink);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ══════════════════════════════════════
+   NAV
+ ══════════════════════════════════════ */
+.vr360-body nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.7rem 2rem;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 20px rgba(0,85,165,0.08);
+}
+.vr360-body .nav-logo { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; }
+.vr360-body .nav-logo-img {
+  height: 24px;
+  width: auto;
+  display: block;
+}
+.vr360-body .nav-title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 1rem;
+  background: var(--grad-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.01em;
+}
+.vr360-body .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+.vr360-body .nav-links a {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-mid);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.vr360-body .nav-links a:hover { color: var(--mb-blue); }
+.vr360-body .nav-cta {
+  background: var(--grad-hero);
+  color: #fff;
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0.5rem 1.2rem;
+  border-radius: 50px;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 14px rgba(0,119,204,0.35);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.vr360-body .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,119,204,0.45); }
+
+/* ══════════════════════════════════════
+   HERO — full viewport, MobiFone blue gradient + Da Nang skyline SVG
+ ══════════════════════════════════════ */
+.vr360-body #hero {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 7rem 2rem 5rem;
+}
+.vr360-body .hero-gradient {
+  position: absolute; inset: 0; z-index: 0;
+  background: var(--grad-hero);
+}
+/* animated shimmer wave across gradient */
+.vr360-body .hero-gradient::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%);
+  animation: shimmer 4s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+/* floating blobs */
+.vr360-body .hero-blob {
+  position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
+}
+.vr360-body .blob1 { width: 500px; height: 500px; top: -100px; right: -80px; background: rgba(0,229,208,0.22); animation: float1 8s ease-in-out infinite; }
+.vr360-body .blob2 { width: 400px; height: 400px; bottom: -60px; left: -60px; background: rgba(0,194,224,0.18); animation: float2 10s ease-in-out infinite; }
+.vr360-body .blob3 { width: 300px; height: 300px; top: 40%; left: 20%; background: rgba(255,255,255,0.07); animation: float1 12s ease-in-out infinite 2s; }
+@keyframes float1 { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(20px,-20px) scale(1.05);} }
+@keyframes float2 { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-15px,15px) scale(1.08);} }
+
+/* Đà Nẵng skyline silhouette images processed directly from the official logo artwork */
+.vr360-body .skyline-wrap {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 1; pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 75vh;
+  padding: 0;
+  overflow: hidden;
+}
+.vr360-body .skyline-img-left {
+  height: 68vh;
+  width: auto;
+  opacity: 0.08;
+  margin-left: -8vh; /* push left to keep center clear */
+  margin-bottom: -20px; /* sits flush with the bottom wave */
+}
+.vr360-body .skyline-img-right {
+  height: 68vh;
+  width: auto;
+  opacity: 0.08;
+  margin-right: -12vh; /* push right to keep center clear */
+  margin-bottom: -20px;
+}
+
+@media (max-width: 1024px) {
+  .vr360-body .skyline-wrap {
+    height: 55vh;
+  }
+  .vr360-body .skyline-img-left {
+    height: 48vh;
+    margin-left: -5vh;
+  }
+  .vr360-body .skyline-img-right {
+    height: 48vh;
+    margin-right: -8vh;
+  }
+}
+
+@media (max-width: 768px) {
+  .vr360-body .skyline-wrap {
+    height: 45vh;
+  }
+  .vr360-body .skyline-img-left {
+    height: 38vh;
+    margin-left: -3vh;
+  }
+  .vr360-body .skyline-img-right {
+    height: 38vh;
+    margin-right: -5vh;
+  }
+}
+
+@media (max-width: 640px) {
+  .vr360-body .skyline-wrap {
+    height: 35vh;
+  }
+  .vr360-body .skyline-img-left {
+    height: 28vh;
+    margin-left: -2vh;
+  }
+  .vr360-body .skyline-img-right {
+    height: 28vh;
+    margin-right: -3vh;
+  }
+}
+
+/* diagonal wave separator at bottom */
+.vr360-body .hero-wave {
+  position: absolute; bottom: -2px; left: 0; right: 0; z-index: 2;
+  overflow: hidden; line-height: 0;
+}
+.vr360-body .hero-wave svg { display: block; width: 100%; }
+
+/* hero content */
+.vr360-body .hero-content { position: relative; z-index: 3; max-width: 780px; }
+
+.vr360-body .hero-badge {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.35);
+  color: #fff;
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 0.4rem 1.1rem; border-radius: 50px;
+  margin-bottom: 1.6rem;
+  animation: fadeUp 0.7s ease both;
+}
+.vr360-body .hero-badge .live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--yellow);
+  animation: pulse-dot 1.5s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(255,204,0,0.6);
+}
+@keyframes pulse-dot {
+  0%   { box-shadow: 0 0 0 0 rgba(255,204,0,0.6); }
+  70%  { box-shadow: 0 0 0 6px rgba(255,204,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,204,0,0); }
+}
+
+.vr360-body h1.hero-title {
+  font-family: var(--display);
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 900;
+  line-height: 1.0;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+  text-shadow: 0 4px 24px rgba(0,30,80,0.25);
+  animation: fadeUp 0.7s 0.1s ease both;
+}
+.vr360-body h1.hero-title .highlight {
+  font-style: italic;
+  position: relative; display: inline-block;
+  background: linear-gradient(90deg, #fff 30%, #ffe066 60%, #00ffea 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.vr360-body .hero-sub {
+  font-family: var(--display);
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  font-weight: 700;
+  font-style: italic;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 1.8rem;
+  animation: fadeUp 0.7s 0.18s ease both;
+  letter-spacing: 0.01em;
+}
+.vr360-body .hero-desc {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.82);
+  max-width: 580px;
+  margin: 0 auto 2.5rem;
+  font-weight: 400;
+  animation: fadeUp 0.7s 0.26s ease both;
+}
+.vr360-body .hero-desc strong { color: #fff; font-weight: 700; }
+
+.vr360-body .hero-btns {
+  display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+  margin-bottom: 3.5rem;
+  animation: fadeUp 0.7s 0.34s ease both;
+}
+.vr360-body .btn-primary {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: #fff;
+  color: var(--mb-blue);
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.85rem 2rem;
+  border-radius: 50px;
+  text-decoration: none;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+  transition: all 0.22s;
+  letter-spacing: 0.01em;
+}
+.vr360-body .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(0,0,0,0.2); }
+.vr360-body .btn-outline {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  border: 2px solid rgba(255,255,255,0.6);
+  color: #fff;
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.82rem 1.8rem;
+  border-radius: 50px;
+  text-decoration: none;
+  backdrop-filter: blur(4px);
+  background: rgba(255,255,255,0.1);
+  transition: all 0.22s;
+}
+.vr360-body .btn-outline:hover { background: rgba(255,255,255,0.2); border-color: #fff; transform: translateY(-2px); }
+
+/* ── countdown ── */
+.vr360-body .countdown-wrap {
+  animation: fadeUp 0.7s 0.42s ease both;
+}
+.vr360-body .cd-label {
+  font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 0.4rem;
+}
+.vr360-body .cd-next-name {
+  font-family: var(--display);
+  font-size: 0.88rem; font-weight: 700;
+  color: var(--yellow);
+  margin-bottom: 0.8rem;
+  text-shadow: 0 0 12px rgba(255,204,0,0.4);
+}
+.vr360-body .cd-timer {
+  display: flex; align-items: flex-start; gap: 0.5rem; justify-content: center;
+  margin-bottom: 1.2rem;
+}
+.vr360-body .cd-unit { text-align: center; }
+.vr360-body .cd-box {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  min-width: 56px;
+  display: block;
+  font-family: var(--display);
+  font-size: 2rem; font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+.vr360-body .cd-unit-lbl {
+  font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  display: block; margin-top: 0.3rem;
+}
+.vr360-body .cd-colon {
+  font-family: var(--display);
+  font-size: 2rem; font-weight: 900;
+  color: rgba(255,255,255,0.4);
+  padding-top: 0.4rem;
+}
+.vr360-body .diff-pills {
+  display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap;
+}
+.vr360-body .d-pill {
+  font-size: 0.68rem; font-weight: 700;
+  padding: 0.25rem 0.8rem; border-radius: 50px;
+  border: 1.5px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.5);
+  cursor: default; letter-spacing: 0.04em;
+  transition: all 0.2s;
+}
+.vr360-body .d-pill.upcoming { border-color: rgba(255,255,255,0.5); color: rgba(255,255,255,0.8); }
+.vr360-body .d-pill.active   { border-color: var(--yellow); color: var(--yellow); background: rgba(255,204,0,0.15); box-shadow: 0 0 10px rgba(255,204,0,0.2); }
+.vr360-body .d-pill.past     { opacity: 0.3; text-decoration: line-through; }
+.vr360-body .d-pill.final    { border-color: rgba(255,102,0,0.8); color: #ff9944; }
+
+/* scroll cue */
+.vr360-body .scroll-cue {
+  position: absolute; bottom: 4rem; left: 50%; transform: translateX(-50%);
+  z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  color: rgba(255,255,255,0.5);
+  animation: bounce 2.5s ease-in-out infinite;
+}
+.vr360-body .scroll-cue span { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
+@keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0);} 50%{transform:translateX(-50%) translateY(8px);} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(22px);} to{opacity:1;transform:translateY(0);} }
+
+/* ══════════════════════════════════════
+   SECTION INTRO HEADER
+ ══════════════════════════════════════ */
+.vr360-body .section-header {
+  text-align: center;
+  padding: 5rem 1.5rem 1.5rem;
+  background: var(--grad-section);
+}
+.vr360-body .section-eyebrow {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-size: 0.7rem; font-weight: 800;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--mb-blue);
+  background: var(--surface2);
+  border: 1px solid var(--border-strong);
+  padding: 0.35rem 1rem; border-radius: 50px;
+  margin-bottom: 1.2rem;
+}
+.vr360-body .section-eyebrow::before { content: '✦'; color: var(--cyan); }
+.vr360-body .section-h2 {
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+}
+.vr360-body .section-h2 .grad-text {
+  font-style: italic;
+  background: var(--grad-accent);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.vr360-body .section-p {
+  font-size: 0.97rem;
+  color: var(--ink-light);
+  max-width: 540px; margin: 0 auto;
+  line-height: 1.75;
+}
+
+/* ══════════════════════════════════════
+   GEM CARDS — bright light theme
+ ══════════════════════════════════════ */
+.vr360-body .gems-wrap {
+  background: linear-gradient(180deg, #f0f9ff 0%, #e8f5fe 60%, #f0fbff 100%);
+  padding: 2rem 1.5rem 5rem;
+}
+.vr360-body .gems-grid {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.vr360-body .gem-card {
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+.vr360-body .gem-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+}
+.vr360-body .gem-card:nth-child(even) {
+  grid-template-columns: 1fr 380px;
+}
+.vr360-body .gem-card:nth-child(even) .gem-visual { order: 2; }
+.vr360-body .gem-card:nth-child(even) .gem-body-wrap { order: 1; }
+
+/* visual panel */
+.vr360-body .gem-visual {
+  position: relative;
+  overflow: hidden;
+  min-height: 380px;
+  cursor: pointer;
+}
+.vr360-body .gem-visual-bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  transition: transform 0.6s ease;
+}
+.vr360-body .gem-card:hover .gem-visual-bg { transform: scale(1.06); }
+/* Each gem gets a vibrant gradient "photo" */
+.vr360-body .gem-card:nth-child(1) .gem-visual-bg {
+  background: linear-gradient(135deg, #1a3a5c 0%, #1e5fa8 40%, #0fa8d6 70%, #0dd8b8 100%);
+}
+.vr360-body .gem-card:nth-child(2) .gem-visual-bg {
+  background: linear-gradient(135deg, #7b3f00 0%, #c46200 40%, #f09000 70%, #ffd060 100%);
+}
+.vr360-body .gem-card:nth-child(3) .gem-visual-bg {
+  background: linear-gradient(135deg, #004d4d 0%, #007a6a 40%, #00c2a0 70%, #55eed8 100%);
+}
+.vr360-body .gem-card:nth-child(4) .gem-visual-bg {
+  background: linear-gradient(135deg, #2c0050 0%, #5a1080 40%, #9040c0 70%, #c888f0 100%);
+}
+.vr360-body .gem-card:nth-child(5) .gem-visual-bg {
+  background: linear-gradient(135deg, #00254d 0%, #004080 45%, #0077cc 75%, #00ccff 100%);
+}
+
+/* overlays to add depth */
+.vr360-body .gem-visual-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom right, rgba(0,0,0,0.18) 0%, transparent 55%, rgba(0,0,0,0.1) 100%);
+}
+
+/* decorative pattern grid */
+.vr360-body .gem-visual-pattern {
+  position: absolute; inset: 0;
+  opacity: 0.06;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.vr360-body .gem-number-bg {
+  position: absolute; bottom: -20px; right: -10px;
+  font-family: var(--display);
+  font-size: 9rem; font-weight: 900;
+  color: rgba(255,255,255,0.07);
+  line-height: 1;
+  pointer-events: none; user-select: none;
+}
+
+/* VR play button */
+.vr360-body .gem-vr-btn {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
+  transition: transform 0.3s;
+  text-decoration: none;
+}
+.vr360-body .gem-card:hover .gem-vr-btn { transform: translate(-50%,-50%) scale(1.08); }
+.vr360-body .vr-ring {
+  width: 76px; height: 76px; border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255,255,255,0.5);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.vr360-body .gem-card:hover .vr-ring {
+  background: rgba(255,255,255,0.35);
+  border-color: #fff;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 0 8px rgba(255,255,255,0.1);
+}
+.vr360-body .vr-ring svg { width: 32px; height: 32px; color: #fff; }
+.vr360-body .vr-ring-label {
+  font-size: 0.68rem; font-weight: 800;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,255,255,0.85);
+}
+
+/* gem number badge top-left */
+.vr360-body .gem-num-badge {
+  position: absolute; top: 1.2rem; left: 1.2rem;
+  width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.35);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--display);
+  font-size: 0.9rem; font-weight: 900;
+  color: #fff;
+}
+
+/* bottom chip */
+.vr360-body .gem-chip {
+  position: absolute; bottom: 1.2rem; left: 1.2rem;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.8);
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.28rem 0.75rem; border-radius: 50px;
+}
+
+/* content panel */
+.vr360-body .gem-body-wrap {
+  padding: 2.5rem 2.8rem;
+  display: flex; flex-direction: column; justify-content: center;
+  background: #fff;
+}
+
+.vr360-body .gem-label {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.65rem; font-weight: 800;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--mb-blue-sky);
+  margin-bottom: 0.8rem;
+}
+.vr360-body .gem-label-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--grad-accent);
+  flex-shrink: 0;
+}
+
+.vr360-body .gem-h3 {
+  font-family: var(--display);
+  font-size: clamp(1.3rem, 2vw, 1.75rem);
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.4rem;
+}
+
+.vr360-body .gem-tagline {
+  font-family: var(--display);
+  font-size: 0.9rem;
+  font-style: italic;
+  color: var(--mb-blue);
+  font-weight: 700;
+  margin-bottom: 1.3rem;
+  line-height: 1.5;
+}
+
+.vr360-body .gem-text {
+  font-size: 0.9rem;
+  line-height: 1.78;
+  color: var(--ink-mid);
+  margin-bottom: 0.8rem;
+  font-weight: 400;
+}
+.vr360-body .gem-text strong { color: var(--ink); font-weight: 700; }
+.vr360-body .gem-text:last-of-type { margin-bottom: 1.4rem; }
+
+.vr360-body .gem-tags {
+  display: flex; flex-wrap: wrap; gap: 0.4rem;
+  margin-bottom: 1.6rem;
+}
+.vr360-body .gem-tag-pill {
+  font-size: 0.67rem; font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.28rem 0.8rem; border-radius: 50px;
+  background: var(--surface2);
+  border: 1px solid var(--border-strong);
+  color: var(--mb-blue);
+}
+
+.vr360-body .gem-cta-link {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: var(--grad-hero);
+  color: #fff;
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 0.84rem;
+  padding: 0.75rem 1.6rem;
+  border-radius: 50px;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(0,119,204,0.3);
+  transition: all 0.2s;
+  width: fit-content;
+  letter-spacing: 0.02em;
+}
+.vr360-body .gem-cta-link:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,119,204,0.4); }
+.vr360-body .gem-cta-link svg { width: 16px; transition: transform 0.2s; }
+.vr360-body .gem-cta-link:hover svg { transform: translateX(3px); }
+
+/* ══════════════════════════════════════
+   PASSPORT
+ ══════════════════════════════════════ */
+.vr360-body #passport {
+  background: linear-gradient(135deg, #003d82 0%, #0077cc 50%, #00c2e0 100%);
+  padding: 6rem 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.vr360-body #passport::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.vr360-body .passport-eyebrow {
+  font-size: 0.7rem; font-weight: 800;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 0.8rem;
+}
+.vr360-body .passport-h2 {
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 900; color: #fff;
+  margin-bottom: 0.75rem; letter-spacing: -0.02em;
+}
+.vr360-body .passport-h2 .hl {
+  font-style: italic;
+  background: linear-gradient(90deg, #ffe066, #00ffea);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.vr360-body .passport-sub {
+  font-size: 0.92rem; color: rgba(255,255,255,0.7);
+  max-width: 480px; margin: 0 auto 2.5rem;
+  line-height: 1.7;
+}
+.vr360-body .passport-card-ui {
+  display: inline-block;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 20px;
+  padding: 2.5rem 2.5rem 2rem;
+  max-width: 460px; width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  position: relative; z-index: 1;
+}
+.vr360-body .passport-card-ui::before {
+  content: 'MOBIFONE VR360 · DIFF 2026';
+  position: absolute; top: 1rem; right: 1.4rem;
+  font-size: 0.52rem; font-weight: 800;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+}
+.vr360-body .pass-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.2rem;
+}
+.vr360-body .pass-icon svg { width: 26px; color: #fff; }
+.vr360-body .pass-title {
+  font-family: var(--display);
+  font-size: 1.6rem; font-weight: 900; color: #fff;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.25rem;
+}
+.vr360-body .pass-subtitle {
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 2rem;
+}
+.vr360-body .stamps-row {
+  display: flex; justify-content: center; gap: 0.75rem; margin-bottom: 1.4rem;
+  flex-wrap: wrap;
+}
+.vr360-body .stamp-circle {
+  width: 58px; height: 58px; border-radius: 50%;
+  border: 2px dashed rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  background: rgba(255,255,255,0.05);
+  transition: all 0.3s; cursor: pointer;
+  position: relative;
+}
+.vr360-body .stamp-circle:hover { border-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.1); }
+.vr360-body .stamp-circle.lit {
+  border-style: solid;
+  border-color: var(--yellow);
+  background: rgba(255,204,0,0.15);
+  box-shadow: 0 0 16px rgba(255,204,0,0.3);
+}
+.vr360-body .stamp-lbl {
+  position: absolute; bottom: -1.5rem;
+  font-size: 0.52rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: rgba(255,255,255,0.3); white-space: nowrap;
+}
+.vr360-body .pass-progress {
+  font-size: 0.78rem; color: rgba(255,255,255,0.55);
+  margin-bottom: 1.6rem; margin-top: 0.5rem;
+}
+.vr360-body .pass-progress span { color: var(--yellow); font-weight: 800; }
+.vr360-body .btn-passport {
+  background: #fff;
+  color: var(--mb-blue);
+  font-family: var(--body);
+  font-weight: 700; font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  padding: 0.8rem 1.8rem;
+  border-radius: 50px; border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+  transition: all 0.2s;
+  width: 100%;
+}
+.vr360-body .btn-passport:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+
+/* ══════════════════════════════════════
+   DIFF 2026
+ ══════════════════════════════════════ */
+.vr360-body #diff-section {
+  background: var(--surface);
+  padding: 5.5rem 2rem;
+  text-align: center;
+}
+.vr360-body .diff-eyebrow {
+  font-size: 0.7rem; font-weight: 800;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--mb-blue-sky);
+  margin-bottom: 0.8rem;
+}
+.vr360-body .diff-h2 {
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 3.5vw, 2.5rem);
+  font-weight: 900;
+  color: var(--ink); line-height: 1.18;
+  letter-spacing: -0.02em; margin-bottom: 1.1rem;
+}
+.vr360-body .diff-h2 .grad-text {
+  font-style: italic;
+  background: var(--grad-hero);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.vr360-body .diff-body {
+  font-size: 0.95rem; color: var(--ink-light);
+  max-width: 600px; margin: 0 auto 2.5rem;
+  line-height: 1.75;
+}
+.vr360-body .nights-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem; max-width: 640px;
+  margin: 0 auto 3rem;
+}
+.vr360-body .night-tile {
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem 0.75rem;
+  background: var(--surface2);
+  transition: all 0.2s;
+}
+.vr360-body .night-tile:hover { border-color: var(--mb-blue); box-shadow: var(--shadow-sm); }
+.vr360-body .night-tile.hot {
+  background: linear-gradient(135deg, #e8f4fd, #d0ecff);
+  border-color: var(--mb-blue-sky);
+  box-shadow: 0 4px 20px rgba(0,170,238,0.15);
+}
+.vr360-body .night-tile.past { opacity: 0.4; }
+.vr360-body .night-date {
+  font-family: var(--display);
+  font-size: 1.4rem; font-weight: 900;
+  color: var(--ink); display: block;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.01em;
+}
+.vr360-body .night-tile.hot .night-date {
+  background: var(--grad-hero);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.vr360-body .night-name {
+  font-size: 0.65rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-light);
+}
+.vr360-body .night-tile.hot .night-name { color: var(--mb-blue); }
+.vr360-body .diff-btns {
+  display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+}
+.vr360-body .btn-blue {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  background: var(--grad-hero);
+  color: #fff;
+  font-family: var(--body);
+  font-weight: 700; font-size: 0.88rem;
+  padding: 0.82rem 1.8rem; border-radius: 50px;
+  text-decoration: none;
+  box-shadow: 0 6px 20px rgba(0,119,204,0.3);
+  transition: all 0.22s;
+}
+.vr360-body .btn-blue:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,119,204,0.4); }
+.vr360-body .btn-border {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  border: 2px solid var(--border-strong);
+  color: var(--mb-blue);
+  font-family: var(--body);
+  font-weight: 700; font-size: 0.88rem;
+  padding: 0.8rem 1.8rem; border-radius: 50px;
+  text-decoration: none;
+  transition: all 0.22s;
+}
+.vr360-body .btn-border:hover { background: var(--surface2); border-color: var(--mb-blue); }
+
+/* ══════════════════════════════════════
+   B2B
+ ══════════════════════════════════════ */
+.vr360-body #b2b {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2ff 100%);
+  border-top: 1px solid var(--border);
+  padding: 4.5rem 2rem;
+}
+.vr360-body .b2b-inner {
+  max-width: 720px; margin: 0 auto;
+  display: grid; grid-template-columns: auto 1fr;
+  gap: 2.5rem; align-items: center;
+}
+.vr360-body .b2b-icon-box {
+  width: 68px; height: 68px;
+  background: var(--grad-hero);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 24px rgba(0,119,204,0.3);
+  flex-shrink: 0;
+}
+.vr360-body .b2b-icon-box svg { width: 30px; color: #fff; }
+.vr360-body .b2b-eyebrow {
+  font-size: 0.65rem; font-weight: 800;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--mb-blue-sky); margin-bottom: 0.45rem;
+}
+.vr360-body .b2b-h3 {
+  font-family: var(--display);
+  font-size: 1.3rem; font-weight: 900;
+  color: var(--ink); line-height: 1.3; margin-bottom: 0.55rem;
+  letter-spacing: -0.02em;
+}
+.vr360-body .b2b-p {
+  font-size: 0.87rem; color: var(--ink-light);
+  line-height: 1.7; margin-bottom: 1rem;
+}
+.vr360-body .b2b-link {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-family: var(--display);
+  font-size: 0.83rem; font-weight: 800;
+  color: var(--mb-blue);
+  text-decoration: none;
+  border-bottom: 2px solid var(--mb-blue-sky);
+  padding-bottom: 0.1rem;
+  transition: all 0.2s;
+}
+.vr360-body .b2b-link:hover { color: var(--mb-blue-sky); border-color: var(--mb-blue); gap: 0.6rem; }
+.vr360-body .b2b-link svg { width: 15px; }
+
+/* ══════════════════════════════════════
+   FOOTER
+ ══════════════════════════════════════ */
+.vr360-body footer {
+  background: var(--ink);
+  padding: 3rem 2rem 2rem;
+}
+.vr360-body .footer-inner {
+  max-width: 1120px; margin: 0 auto;
+  display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.vr360-body .footer-brand { display: flex; flex-direction: column; gap: 0.4rem; }
+.vr360-body .footer-logo-img {
+  height: 28px;
+  width: auto;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+.vr360-body .footer-tagline {
+  font-size: 0.78rem; color: rgba(255,255,255,0.3);
+  line-height: 1.5;
+}
+.vr360-body .footer-links {
+  display: flex; gap: 1.8rem; flex-wrap: wrap;
+}
+.vr360-body .footer-links a {
+  font-size: 0.8rem; font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  text-decoration: none; transition: color 0.2s;
+}
+.vr360-body .footer-links a:hover { color: var(--mb-blue-sky); }
+.vr360-body .footer-right { text-align: right; }
+.vr360-body .footer-right-lbl {
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  display: block; margin-bottom: 0.25rem;
+}
+.vr360-body .footer-hotline {
+  font-family: var(--display);
+  font-size: 1.6rem; font-weight: 900;
+  color: var(--mb-blue-sky);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+.vr360-body .footer-bottom {
+  max-width: 1120px; margin: 0 auto;
+  padding-top: 1.5rem;
+  font-size: 0.72rem; color: rgba(255,255,255,0.2);
+  text-align: center;
+}
+
+/* ══════════════════════════════════════
+   REVEAL ANIMATION
+ ══════════════════════════════════════ */
+.vr360-body .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
+.vr360-body .reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+ ══════════════════════════════════════ */
+@media (max-width: 800px) {
+  .vr360-body nav { padding: 0.7rem 1rem; }
+  .vr360-body .nav-links { display: none; }
+  .vr360-body .gem-card, .vr360-body .gem-card:nth-child(even) {
+    grid-template-columns: 1fr;
+  }
+  .vr360-body .gem-card:nth-child(even) .gem-visual { order: 0; }
+  .vr360-body .gem-card:nth-child(even) .gem-body-wrap { order: 0; }
+  .vr360-body .gem-visual { min-height: 260px; }
+  .vr360-body .gem-body-wrap { padding: 1.75rem 1.5rem; }
+  .vr360-body .nights-grid { grid-template-columns: repeat(2, 1fr); }
+  .vr360-body .b2b-inner { grid-template-columns: 1fr; text-align: center; }
+  .vr360-body .b2b-icon-box { margin: 0 auto; }
+  .vr360-body .footer-inner { flex-direction: column; }
+  .vr360-body .footer-right { text-align: left; }
+}
+
+/* ══════════════════════════════════════
+   PASSPORT FORM & CARD GENERATOR
+ ══════════════════════════════════════ */
+.vr360-body .passport-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  width: 100%;
+  text-align: left;
+  margin-top: 1.5rem;
+  animation: fadeUp 0.4s ease both;
+}
+.vr360-body .passport-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.vr360-body .passport-form-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+.vr360-body .passport-form-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: #fff;
+  font-family: var(--body);
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.2s;
+}
+.vr360-body .passport-form-input:focus {
+  border-color: var(--yellow);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.2);
+}
+.vr360-body .passport-form-file-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.vr360-body .passport-form-file-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1.5px dashed rgba(255, 255, 255, 0.35);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+}
+.vr360-body .passport-form-file-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #fff;
+}
+.vr360-body .passport-form-file-input {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.vr360-body .passport-form-file-name {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vr360-body .btn-passport-submit {
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--body);
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.85rem 1.8rem;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(255, 204, 0, 0.3);
+  transition: all 0.2s;
+  width: 100%;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.vr360-body .btn-passport-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(255, 204, 0, 0.45);
+}
+.vr360-body .btn-passport-submit:disabled {
+  background: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Passport Card Live Preview & Capture */
+.vr360-body .passport-card-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 2.5rem;
+  animation: fadeUp 0.5s ease both;
+  max-width: 100%;
+  overflow-x: auto;
+  width: 100%;
+  padding: 1rem;
+}
+.vr360-body .passport-card-preview-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.8rem;
+}
+.vr360-body .passport-card-capture {
+  width: 380px;
+  height: 570px;
+  min-width: 380px;
+  min-height: 570px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #003d82 0%, #0077cc 40%, #00c2e0 75%, #00e5d0 100%);
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 20px 60px rgba(0, 85, 165, 0.18);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.vr360-body .passport-card-capture::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
+}
+.vr360-body .passport-card-capture * {
+  position: relative;
+  z-index: 1;
+}
+.vr360-body .passport-card-top {
+  text-align: center;
+  width: 100%;
+}
+.vr360-body .passport-card-top-sub {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.25rem;
+}
+.vr360-body .passport-card-top-title {
+  display: block;
+  margin-top: 0.25rem;
+}
+.vr360-body .passport-card-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+.vr360-body .passport-card-avatar-frame {
+  width: 130px;
+  height: 130px;
+  min-width: 130px;
+  min-height: 130px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 4px solid #ffcc00;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  margin-bottom: 1.2rem;
+}
+.vr360-body .passport-card-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.vr360-body .passport-card-avatar-placeholder {
+  font-size: 2.5rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+.vr360-body .passport-card-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.7rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  max-width: 320px;
+  line-height: 1.4;
+  padding: 4px 0;
+  white-space: nowrap;
+  overflow: visible;
+}
+.vr360-body .passport-card-bottom {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+.vr360-body .passport-card-stamps-title {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.vr360-body .passport-card-stamps-container {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0;
+  margin-top: 0.5rem;
+}
+.vr360-body .passport-card-flight-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+.vr360-body .passport-card-stamp-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 56px;
+  position: relative;
+  z-index: 2;
+}
+.vr360-body .passport-card-stamp-name {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 0.52rem;
+  line-height: 1.2;
+  font-weight: 700;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 4px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  word-break: break-word;
+}
+.vr360-body .passport-card-stamp {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: transparent;
+  border: 1.5px solid #ffcc00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
+}
+.vr360-body .passport-card-footer {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 1rem;
+}
+
+/* B2B Lead Form Trigger */
+.vr360-body .b2b-lead-trigger-wrap {
+  margin-top: 0.8rem;
+  text-align: left;
+}
+.vr360-body .b2b-lead-trigger {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--mb-blue-sky);
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.vr360-body .b2b-lead-trigger:hover {
+  color: var(--teal);
+}
+
+/* Consultation Modal Styles */
+.vr360-body .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 25, 41, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.vr360-body .modal-content {
+  background: #ffffff;
+  border-radius: 20px;
+  max-width: 480px;
+  width: 100%;
+  padding: 2.2rem 2.2rem;
+  box-shadow: 0 24px 60px rgba(0, 50, 100, 0.25);
+  border: 1px solid rgba(0, 119, 204, 0.1);
+  position: relative;
+  animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.vr360-body .modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.2rem;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: var(--ink-light);
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+.vr360-body .modal-close:hover {
+  color: var(--mb-red);
+}
+
+.vr360-body .modal-title {
+  font-family: var(--display);
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--ink);
+  margin-bottom: 0.4rem;
+  letter-spacing: -0.01em;
+}
+
+.vr360-body .modal-subtitle {
+  font-size: 0.85rem;
+  color: var(--ink-light);
+  margin-bottom: 1.8rem;
+  line-height: 1.5;
+}
+
+.vr360-body .modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  text-align: left;
+}
+
+.vr360-body .modal-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.vr360-body .modal-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-mid);
+  letter-spacing: 0.02em;
+}
+
+.vr360-body .modal-label .required-star {
+  color: var(--mb-red);
+}
+
+.vr360-body .modal-input,
+.vr360-body .modal-textarea {
+  font-family: var(--body);
+  font-size: 0.88rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  color: var(--ink);
+  background: var(--surface);
+  transition: all 0.2s;
+}
+.vr360-body .modal-input:focus,
+.vr360-body .modal-textarea:focus {
+  outline: none;
+  border-color: var(--mb-blue-sky);
+  box-shadow: 0 0 0 3px rgba(0, 170, 238, 0.15);
+}
+
+.vr360-body .modal-submit-btn {
+  background: var(--grad-hero);
+  color: #ffffff;
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.85rem 2rem;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 119, 204, 0.3);
+  transition: all 0.2s;
+  margin-top: 0.4rem;
+  text-align: center;
+}
+.vr360-body .modal-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 119, 204, 0.45);
+}
+.vr360-body .modal-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

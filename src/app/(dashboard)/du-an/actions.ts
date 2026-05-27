@@ -16,6 +16,7 @@ import { ablyServerClient } from "@/lib/realtime";
 import { getCurrentUser, requireRole } from "@/lib/auth-utils";
 import { checkPermission } from "@/lib/rbac-server";
 import { withCache, cacheInvalidate } from "@/lib/cache";
+import { syncRevenueDistribution } from "@/lib/utils/revenue-sync";
 import { sendTelegramAlert } from "@/lib/telegramService";
 
 // ── Schema for the NEW creation flow ────────────────────────────────
@@ -204,6 +205,9 @@ export async function createDuAn(data: any) {
       } as any,
     });
 
+    // Generate revenue distribution slices for this project
+    await syncRevenueDistribution(project.id);
+
     await cacheInvalidate("dashboard:overview", "options:khachhang", "options:sanpham", "options:sanpham-groups");
     revalidatePath("/du-an");
     revalidatePath("/quan-ly-am");
@@ -212,6 +216,7 @@ export async function createDuAn(data: any) {
     revalidatePath("/dia-ban");
     revalidatePath("/admin/khach-hang");
     revalidatePath("/admin/san-pham");
+    revalidatePath("/quan-tri-doanh-thu");
     await syncReplica();
     return { success: true, id: project.id };
   } catch (error) {
@@ -251,6 +256,9 @@ export async function updateDuAn(id: number, data: any) {
             } as any,
         });
 
+        // Re-generate revenue distribution slices after update
+        await syncRevenueDistribution(id);
+
         await cacheInvalidate("dashboard:overview");
         revalidatePath("/du-an");
         revalidatePath("/quan-ly-am");
@@ -258,6 +266,7 @@ export async function updateDuAn(id: number, data: any) {
         revalidatePath("/kpi");
         revalidatePath("/dia-ban");
         revalidatePath(`/du-an/${id}`);
+        revalidatePath("/quan-tri-doanh-thu");
         await syncReplica();
         return { success: true };
     } catch (error) {

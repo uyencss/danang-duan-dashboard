@@ -163,6 +163,7 @@ model DuAn {
   nhatKy              NhatKyCongViec[]
   notifications       Notification[]
   tinNhan             TinNhan[]
+  revenueSlices       RevenueDistribution[]
 
   @@index([customerId])
   @@index([productId])
@@ -386,6 +387,32 @@ enum LinhVuc {
 enum LoaiTinNhan {
   TEXT
   SYSTEM
+}
+
+enum LoaiDoanhThu {
+  KY_MOI
+  DUY_TRI
+}
+
+model RevenueDistribution {
+  id             String        @id @default(uuid())
+  projectId      Int
+  amId           String?
+  chuyenVienId   String?
+  thangBaoCao    Int
+  namBaoCao      Int
+  soNgayActive   Int
+  doanhThuPhanBo Float
+  loaiDoanhThu   LoaiDoanhThu
+  createdAt      DateTime      @default(now())
+  duAn           DuAn          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, thangBaoCao, namBaoCao])
+  @@index([namBaoCao, thangBaoCao])
+  @@index([projectId])
+  @@index([loaiDoanhThu])
+  @@index([amId])
+  @@index([chuyenVienId])
 }
 
 enum FiveMCategory {
