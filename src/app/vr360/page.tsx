@@ -638,7 +638,7 @@ export default function VR360Page() {
         <>Sau những giây phút ngắm pháo hoa rực rỡ, bạn có thể dành thời gian tận hưởng sự bình yên tại The Pearl Hội An — <strong>nơi mặt nước phản chiếu bầu trời trong.</strong></>,
       ],
       tags: ["Ven sông Thu Bồn", "Hội An, Quảng Nam", "Resort boutique", "30 phút từ Đà Nẵng"],
-      cta: "Ngắm Hội An góc chưa ai đăng",
+      cta: "Ngắm nhìn The Pearl Hội An",
     },
     {
       chip: "Kháng chiến · Di tích cách mạng · Quảng Nam",

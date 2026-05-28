@@ -386,9 +386,20 @@
   position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
   z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
   color: rgba(255,255,255,0.5);
-  animation: bounce 2.5s ease-in-out infinite;
+  animation: bounce 2.2s ease-in-out infinite;
+  width: max-content;
 }
-.vr360-body .scroll-cue span { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
+.vr360-body .scroll-cue span {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-right: -0.2em;
+}
+@keyframes bounce {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, 6px); }
+}
 @keyframes fadeUp { from{opacity:0;transform:translateY(22px);} to{opacity:1;transform:translateY(0);} }
 
 /* ── Redesigned 50/50 Split Hero Section ── */
@@ -1276,6 +1287,10 @@
   .vr360-body #hero {
     min-height: auto;
     padding: 5rem 1rem 3.5rem;
+    max-width: 100vw;
+    width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
   }
   .vr360-body .hero-badge {
     font-size: 0.65rem;
