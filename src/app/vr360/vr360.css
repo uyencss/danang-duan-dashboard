@@ -1252,8 +1252,12 @@
    RESPONSIVE
  ══════════════════════════════════════ */
 @media (max-width: 800px) {
-  .vr360-body nav { padding: 0.7rem 1rem; }
+  .vr360-body nav { padding: 0.7rem 0.5rem; gap: 0.4rem; }
   .vr360-body .nav-links { display: none; }
+  .vr360-body .nav-title { display: none; }
+  .vr360-body .nav-logo-img { height: 18px; max-width: 100%; object-fit: contain; }
+  .vr360-body .nav-cta { font-size: 0.7rem; padding: 0.4rem 0.8rem; }
+  .vr360-body .br-desktop { display: none; }
   .vr360-body .gem-card, .vr360-body .gem-card:nth-child(even) {
     grid-template-columns: 1fr;
   }

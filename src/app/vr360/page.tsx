@@ -348,8 +348,8 @@ function BridgeSection() {
     <section id="bridge" ref={ref}>
       <p className="bridge-eyebrow">✦ &nbsp; Hệ sinh thái số MobiFone · Đà Nẵng thông minh &nbsp; ✦</p>
       <h2 className="bridge-h2">
-        VR360 chỉ là điểm khởi đầu.<br />
-        <em>Hạ tầng số MobiFone</em> đang<br />kiến tạo Đà Nẵng thông minh.
+        VR360 chỉ là điểm khởi&nbsp;đầu.<br className="br-desktop" />
+        <em>Hạ tầng số MobiFone</em> đang<br className="br-desktop" /> kiến tạo Đà Nẵng thông&nbsp;minh.
       </h2>
       <p className="bridge-sub">
         Công nghệ số hóa di sản văn hóa và du lịch cũng chính là nền tảng đang vận hành hạ tầng chính phủ, y tế, giáo dục và kinh tế số tại Đà Nẵng. Một hệ sinh thái toàn diện — từ Cloud đến Camera AI, từ hóa đơn điện tử đến truyền thanh thông minh.
@@ -464,6 +464,7 @@ export default function VR360Page() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarName, setAvatarName] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImageUri, setGeneratedImageUri] = useState("");
   const [isConsultModalOpen, setIsConsultModalOpen] = useState(false);
   const [leadName, setLeadName] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
@@ -525,8 +526,11 @@ export default function VR360Page() {
           }
         },
       });
+      const imgData = canvas.toDataURL("image/png");
+      setGeneratedImageUri(imgData);
+
       const link = document.createElement("a");
-      link.href = canvas.toDataURL("image/png");
+      link.href = imgData;
       link.download = "Hidden_Horizons_Passport.png";
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
     } catch { alert("Lỗi khi tạo ảnh. Vui lòng thử lại!"); }
@@ -720,7 +724,7 @@ export default function VR360Page() {
               </div>
 
               <h1 className="hero-title">
-                <span className="highlight">Hidden</span><br />Horizons
+                <span className="highlight">Hidden</span><br className="br-desktop" /> Horizons
               </h1>
               <p className="hero-sub">
                 Khám phá Đà Nẵng chưa ai thấy — ngay trên điện thoại của bạn
@@ -783,7 +787,7 @@ export default function VR360Page() {
       {/* ══ SECTION HEADER ══ */}
       <div className="section-header" id="gems">
         <span className="section-eyebrow">5 địa điểm được số hóa bởi MobiFone VR360</span>
-        <h2 className="section-h2">Những <span className="grad-text">chân trời ẩn</span><br />ngay giữa lòng Đà Nẵng</h2>
+        <h2 className="section-h2">Những <span className="grad-text">chân trời ẩn</span><br className="br-desktop" /> ngay giữa lòng Đà Nẵng</h2>
         <p className="section-p">MobiFone đã số hóa những không gian này bằng công nghệ VR360. Bạn không cần đến tận nơi để cảm nhận — nhưng sau chuyến phiêu lưu VR360 này chúng tôi cược rằng bạn sẽ rất muốn đi khám phá đấy.</p>
       </div>
 
@@ -925,7 +929,7 @@ export default function VR360Page() {
       {/* ══ DIFF TIE-IN ══ */}
       <section id="diff-section">
         <p className="diff-eyebrow">✦ &nbsp; DIFF 2026 · 30/5 – 11/7 · Sông Hàn · Đà Nẵng &nbsp; ✦</p>
-        <h2 className="diff-h2">Khám phá ban ngày.<br />Ngước nhìn <span className="grad-text">pháo hoa</span> ban đêm.</h2>
+        <h2 className="diff-h2">Khám phá ban ngày.<br className="br-desktop" /> Ngước nhìn <span className="grad-text">pháo hoa</span> ban&nbsp;đêm.</h2>
         <p className="diff-body">DIFF 2026 — "Da Nang United Horizons" — quy tụ 10 đội pháo hoa từ 9 quốc gia, 6 đêm tranh tài. Mỗi đêm là một câu chuyện được kể bằng ánh sáng trên bầu trời sông Hàn.</p>
         <div className="nights-grid">
           {NIGHT_TILES.map((tile, idx) => (
@@ -952,7 +956,7 @@ export default function VR360Page() {
           </div>
           <div>
             <p className="b2b-eyebrow">Dành cho doanh nghiệp tại Đà Nẵng</p>
-            <h3 className="b2b-h3">Địa điểm của bạn chưa có VR360?<br />MobiFone Đà Nẵng số hóa trong 7 ngày.</h3>
+            <h3 className="b2b-h3">Địa điểm của bạn chưa có VR360?<br className="br-desktop" /> MobiFone Đà Nẵng số hóa trong 7&nbsp;ngày.</h3>
             <p className="b2b-p">Khách sạn, bảo tàng, khu du lịch, nhà hàng, showroom, trường học — bất kỳ không gian nào cũng có thể trở thành trải nghiệm ảo 360°. Tư vấn miễn phí, triển khai nhanh.</p>
             <a href="tel:+84935058458" className="b2b-link">
               Tư vấn miễn phí ngay: 0935.058.458
@@ -1012,6 +1016,38 @@ export default function VR360Page() {
                 {isSubmittingLead ? "Đang gửi..." : "Gửi yêu cầu"}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ PASSPORT MODAL FOR MOBILE ══ */}
+      {generatedImageUri && (
+        <div className="modal-overlay" onClick={() => setGeneratedImageUri("")}>
+          <div className="modal-content text-center" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "390px", textAlign: "center" }}>
+            <button className="modal-close" onClick={() => setGeneratedImageUri("")}>&times;</button>
+            <h3 className="modal-title" style={{ fontSize: "1.2rem", marginBottom: "0.5rem" }}>Hộ chiếu của bạn đã sẵn sàng!</h3>
+            <p className="modal-subtitle" style={{ marginBottom: "1rem", fontSize: "0.8rem", lineHeight: "1.4" }}>
+              Vui lòng <strong>chạm và giữ ảnh</strong> bên dưới, sau đó chọn <strong>"Lưu hình ảnh"</strong> (Save Image) để tải về điện thoại.
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.2rem" }}>
+              <img
+                src={generatedImageUri}
+                alt="Hidden Horizons Passport"
+                style={{ width: "100%", maxWidth: "280px", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.25)", border: "1px solid rgba(0,119,204,0.15)" }}
+              />
+            </div>
+            <button
+              className="modal-submit-btn"
+              onClick={() => {
+                const link = document.createElement("a");
+                link.href = generatedImageUri;
+                link.download = "Hidden_Horizons_Passport.png";
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+              }}
+              style={{ width: "100%", marginTop: "0" }}
+            >
+              Tải trực tiếp (Nếu trình duyệt hỗ trợ)
+            </button>
           </div>
         </div>
       )}
