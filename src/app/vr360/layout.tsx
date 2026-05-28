@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
 export const metadata = {
-  title: "Hidden Horizons — Khám phá Đà Nẵng chưa ai thấy | MobiFone VR360",
+  title: "Hidden Horizons — Khám phá một Đà Nẵng thật khác | MobiFone VR360",
   description: "5 địa điểm số hóa độc đáo tại Đà Nẵng — trải nghiệm thực tế ảo 360° miễn phí ngay trên điện thoại của bạn. Sự kiện đặc biệt mùa DIFF 2026.",
 };
 
