@@ -646,7 +646,7 @@ export default function VR360Page() {
       title: ["Di tích Lịch Sử", "Phường Bàn Thạch"],
       tagline: '"Ngôi làng đã chiến đấu để bạn có những mùa hè rực rỡ ngày sau"',
       texts: [
-        <>Tối nay bạn đứng bên sông Hàn xem pháo hoa rực sáng. Hãy dành <strong>3 phút trước đó</strong> để nhớ vùng đất miền Trung này đã từng là chiến trường.</>,
+        <>Hãy dành <strong>ít phút</strong> để nhớ vùng đất miền Trung này đã từng là chiến trường.</>,
         <>Phường Bàn Thạch thuộc vùng đất Quảng Nam anh hùng — nơi người dân bảo vệ quê hương qua những năm gian khổ. <strong>Di tích cách mạng</strong> kể câu chuyện mà không sách giáo khoa nào kể đủ.</>,
         <>Lịch sử sống động qua những trải nghiệm ảo <strong>VR360.</strong></>,
       ],
@@ -662,400 +662,400 @@ export default function VR360Page() {
         <>Điểm đến quen thuộc để <strong>săn mây</strong> của khách du lịch khi ghé thăm Đà Nẵng. Hải Vân Quan ở độ cao gần 500m là một trong những di tích lịch sử hùng vĩ nhất Việt Nam.</>,
         <><strong>Hải Vân Quan</strong> — xây năm 1826 dưới triều Minh Mạng — ranh giới tự nhiên hai vùng khí hậu. Còn lưu dấu <strong>lô cốt Pháp, công sự chiến tranh</strong> và tầm nhìn panorama ra Biển Đông.</>,
         <><strong>Cùng ngắm Di tích Quốc gia này qua lăng kính của MobiFone VR360 nhé.</strong></>,
-          ],
-          tags: ["Di tích Quốc gia 2017", "496m so với mực biển", "Xây dựng 1826", "Liên Chiểu, Đà Nẵng"],
-          cta: "Đứng trên đỉnh Hải Vân bằng VR360",
+      ],
+      tags: ["Di tích Quốc gia 2017", "496m so với mực biển", "Xây dựng 1826", "Liên Chiểu, Đà Nẵng"],
+      cta: "Đứng trên đỉnh Hải Vân bằng VR360",
     },
-          ];
+  ];
 
-          return (
-          <div className="vr360-body">
+  return (
+    <div className="vr360-body">
 
-            {/* ══ NAV ══ */}
-            <nav>
-              <a className="nav-logo" href="#">
-                <img src="/mobifone-logo.png" alt="MobiFone" className="nav-logo-img" />
-                <span className="nav-title">Hidden Horizons</span>
-              </a>
-              <div className="nav-links">
-                <a href="#gems">VR360</a>
-                <a href="#passport">Hộ chiếu số</a>
-                <a href="#diff-section">DIFF 2026</a>
-                <NavDropdown />
-              </div>
-              <a href="tel:+84935058458" className="nav-cta">📞 0935.058.458</a>
-            </nav>
+      {/* ══ NAV ══ */}
+      <nav>
+        <a className="nav-logo" href="#">
+          <img src="/mobifone-logo.png" alt="MobiFone" className="nav-logo-img" />
+          <span className="nav-title">Hidden Horizons</span>
+        </a>
+        <div className="nav-links">
+          <a href="#gems">VR360</a>
+          <a href="#passport">Hộ chiếu số</a>
+          <a href="#diff-section">DIFF 2026</a>
+          <NavDropdown />
+        </div>
+        <a href="tel:+84935058458" className="nav-cta">📞 0935.058.458</a>
+      </nav>
 
-            {/* ══ HERO ══ */}
-            <section id="hero">
-              {/* Video pháo hoa DIFF — đặt file vào /public/diff-fireworks.mp4 */}
-              <video
-                className="hero-video"
-                autoPlay
-                muted
-                loop
-                playsInline
-                poster="/diff-poster.jpg"
-              >
-                <source src="/diff-fireworks.mp4" type="video/mp4" />
-              </video>
-              <div className="hero-video-overlay" />
-              <div className="hero-blob blob1" />
-              <div className="hero-blob blob2" />
+      {/* ══ HERO ══ */}
+      <section id="hero">
+        {/* Video pháo hoa DIFF — đặt file vào /public/diff-fireworks.mp4 */}
+        <video
+          className="hero-video"
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster="/diff-poster.jpg"
+        >
+          <source src="/diff-fireworks.mp4" type="video/mp4" />
+        </video>
+        <div className="hero-video-overlay" />
+        <div className="hero-blob blob1" />
+        <div className="hero-blob blob2" />
 
-              <div className="skyline-wrap">
-                <img src="/skyline-left.png" alt="Da Nang Left Skyline" className="skyline-img-left" />
-                <img src="/skyline-right.png" alt="Da Nang Right Skyline" className="skyline-img-right" />
-              </div>
+        <div className="skyline-wrap">
+          <img src="/skyline-left.png" alt="Da Nang Left Skyline" className="skyline-img-left" />
+          <img src="/skyline-right.png" alt="Da Nang Right Skyline" className="skyline-img-right" />
+        </div>
 
-              <div className="hero-wave">
-                <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M0,30 C200,60 400,0 600,30 C800,60 1000,0 1200,30 C1320,45 1400,25 1440,30 L1440,60 L0,60 Z" fill="#f0f9ff" />
-                </svg>
-              </div>
+        <div className="hero-wave">
+          <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,30 C200,60 400,0 600,30 C800,60 1000,0 1200,30 C1320,45 1400,25 1440,30 L1440,60 L0,60 Z" fill="#f0f9ff" />
+          </svg>
+        </div>
 
-              <div className="hero-content">
-                <div className="hero-split-wrap">
-                  <div className="hero-left-col">
-                    <div className="hero-badge">
-                      <span className="live-dot" />
-                      DIFF 2026 · MobiFone Đà Nẵng · Đang diễn ra
-                    </div>
-
-                    <h1 className="hero-title">
-                      <span className="highlight">Hidden</span><br className="br-desktop" /> Horizons
-                    </h1>
-                    <p className="hero-sub">
-                      Khám phá một Đà Nẵng thật khác
-                    </p>
-                    <p className="hero-desc">
-                      Bạn đã thấy Đà Nẵng rực rỡ. Nhưng ít ai biết rằng thành phố còn giữ những góc khác — lặng hơn, sâu hơn, và đẹp theo cách khó gọi tên.
-                      MobiFone sẽ đưa bạn chu du đến 5 điểm đến ấn tượng bằng công nghệ VR360 ngay trên điện thoại của bạn.
-                    </p>
-
-                    <div className="hero-btns">
-                      <a href="#gems" className="btn-primary">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" /></svg>
-                        Bắt đầu khám phá
-                      </a>
-                      <a href="#solutions" className="btn-outline">Giải pháp số MobiFone →</a>
-                    </div>
-
-                    <div className="countdown-wrap">
-                      <p className="cd-label">Đêm pháo hoa DIFF tiếp theo</p>
-                      <p className="cd-next-name">{nextLabel}</p>
-                      <div className="cd-timer">
-                        <div className="cd-unit"><span className="cd-box">{countdown.days}</span><span className="cd-unit-lbl">ngày</span></div>
-                        <span className="cd-colon">:</span>
-                        <div className="cd-unit"><span className="cd-box">{countdown.hours}</span><span className="cd-unit-lbl">giờ</span></div>
-                        <span className="cd-colon">:</span>
-                        <div className="cd-unit"><span className="cd-box">{countdown.minutes}</span><span className="cd-unit-lbl">phút</span></div>
-                        <span className="cd-colon">:</span>
-                        <div className="cd-unit"><span className="cd-box">{countdown.seconds}</span><span className="cd-unit-lbl">giây</span></div>
-                      </div>
-                      <div className="diff-pills">
-                        <span className={getPillClass(0)}>30/5 Khai mạc</span>
-                        <span className={getPillClass(1)}>06/6</span>
-                        <span className={getPillClass(2)}>13/6</span>
-                        <span className={getPillClass(3)}>20/6</span>
-                        <span className={getPillClass(4)}>27/6</span>
-                        <span className={`${getPillClass(5)} final`}>11/7 ★ Chung kết</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="hero-3d-right">
-                    <div className="hero-3d-label">
-                      <span className="hero-3d-sublabel">✦ Trải nghiệm được kiến tạo bởi ✦</span>
-                      <span className="hero-3d-mainlabel">Hệ sinh thái chuyển đổi số MobiFone Đà Nẵng</span>
-                    </div>
-                    <a href="#solutions" className="floating-card fc-1"><span className="text-2xl">☁️</span><div><div className="font-bold text-sm">Hạ tầng số</div><div className="text-xs opacity-70">MobiFone Cloud & DC</div></div></a>
-                    <a href="#solutions" className="floating-card fc-2"><span className="text-2xl">🛡️</span><div><div className="font-bold text-sm">An toàn mạng</div><div className="text-xs opacity-70">Bảo mật đa lớp</div></div></a>
-                    <a href="#solutions" className="floating-card fc-3"><span className="text-2xl">🏛️</span><div><div className="font-bold text-base text-yellow-400">Chính phủ số</div><div className="text-xs opacity-80">Chuyển đổi số toàn diện</div></div></a>
-                    <a href="#solutions" className="floating-card fc-4"><span className="text-2xl">💳</span><div><div className="font-bold text-sm">Kinh tế số</div><div className="text-xs opacity-70">Hệ sinh thái B2B</div></div></a>
-                    <a href="#solutions" className="floating-card fc-5"><span className="text-2xl">🌐</span><div><div className="font-bold text-sm">Xã hội số</div><div className="text-xs opacity-70">Du lịch, Y tế & GD số</div></div></a>
-                  </div>
-                </div>
+        <div className="hero-content">
+          <div className="hero-split-wrap">
+            <div className="hero-left-col">
+              <div className="hero-badge">
+                <span className="live-dot" />
+                DIFF 2026 · MobiFone Đà Nẵng · Đang diễn ra
               </div>
 
-              <div className="scroll-cue">
-                <span>Cuộn xuống</span>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-              </div>
-            </section>
+              <h1 className="hero-title">
+                <span className="highlight">Hidden</span><br className="br-desktop" /> Horizons
+              </h1>
+              <p className="hero-sub">
+                Khám phá một Đà Nẵng thật khác
+              </p>
+              <p className="hero-desc">
+                Bạn đã thấy Đà Nẵng rực rỡ. Nhưng ít ai biết rằng thành phố còn giữ những góc khác — lặng hơn, sâu hơn, và đẹp theo cách khó gọi tên.
+                MobiFone sẽ đưa bạn chu du đến 5 điểm đến ấn tượng bằng công nghệ VR360 ngay trên điện thoại của bạn.
+              </p>
 
-            {/* ══ SECTION HEADER ══ */}
-            <div className="section-header" id="gems">
-              <span className="section-eyebrow">5 địa điểm được số hóa bởi MobiFone VR360</span>
-              <h2 className="section-h2">Những <span className="grad-text">chân trời ẩn</span><br className="br-desktop" /> ngay giữa lòng Đà Nẵng</h2>
-              <p className="section-p">5 điểm đến "Hidden Gems" được số hóa bằng công nghệ VR360, đưa bạn đến với những câu chuyện lịch sử, văn hóa và vẻ đẹp chưa ai kể, ngay trên điện thoại của bạn.</p>
-            </div>
-
-            {/* ══ GEM CARDS ══ */}
-            <div className="gems-wrap">
-              <div className="gems-grid">
-                {gemData.map((gem, i) => (
-                  <div key={i} className="gem-card reveal">
-                    {/* Visual panel with slideshow */}
-                    <a className="gem-visual" href={gemLinks[i]} target="_blank" rel="noopener noreferrer" aria-label={`Xem VR360 ${gem.title.join(" ")}`} onClick={() => stampIt(i)}>
-                      <GemSlideshow slides={GEM_SLIDES[i]} gemIdx={i} />
-                      <div className="gem-visual-overlay" />
-                      <div className="gem-number-bg">{String(i + 1).padStart(2, "0")}</div>
-                      <div className="gem-num-badge">{String(i + 1).padStart(2, "0")}</div>
-                      <div className="gem-vr-btn">
-                        <div className="vr-ring">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /></svg>
-                        </div>
-                        <span className="vr-ring-label">Xem VR 360°</span>
-                      </div>
-                      <span className="gem-chip">{gem.chip}</span>
-                    </a>
-                    {/* Content panel */}
-                    <div className="gem-body-wrap">
-                      <span className="gem-label"><span className="gem-label-dot" />{gem.label}</span>
-                      <h3 className="gem-h3">{gem.title[0]}<br />{gem.title[1]}</h3>
-                      <p className="gem-tagline">{gem.tagline}</p>
-                      {gem.texts.map((t, ti) => <p key={ti} className="gem-text">{t}</p>)}
-                      <div className="gem-tags">{gem.tags.map((tag) => <span key={tag} className="gem-tag-pill">{tag}</span>)}</div>
-                      <a href={gemLinks[i]} target="_blank" rel="noopener noreferrer" className="gem-cta-link" onClick={() => stampIt(i)}>
-                        {gem.cta}
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ══ PASSPORT ══ */}
-            <section id="passport">
-              <p className="passport-eyebrow">Sưu tập thành tích</p>
-              <h2 className="passport-h2">Hộ Chiếu Số <span className="hl">Hidden Horizons</span></h2>
-              <p className="passport-sub">Xem đủ 5 địa điểm VR360 và nhận hộ chiếu số — ảnh card cá nhân hóa để share lên Facebook, Zalo mùa DIFF 2026.</p>
-
-              <div className="passport-card-ui">
-                <div className="pass-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" /><path d="M8 12h8M12 8v8" /></svg>
-                </div>
-                <p className="pass-title">Hộ Chiếu Số</p>
-                <p className="pass-subtitle">Hidden Horizons · DIFF 2026 · MobiFone Đà Nẵng</p>
-                <div className="stamps-row">
-                  {stampData.map((stamp, idx) => (
-                    <div key={idx} className={`stamp-circle ${stamps[idx] ? "lit" : ""}`} onClick={() => stampIt(idx)} title={stamp.title}>
-                      {stamp.emoji}<span className="stamp-lbl">{stamp.label}</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="pass-progress">Đã khám phá <span>{count}</span> / 5 địa điểm</p>
-                {count >= 3 ? (
-                  <div className="passport-form">
-                    <div className="passport-form-group">
-                      <label className="passport-form-label" htmlFor="userNameInput">Nhập tên của bạn</label>
-                      <input id="userNameInput" type="text" className="passport-form-input" placeholder="Tên (tối đa 20 ký tự)" maxLength={20} value={userName} onChange={(e) => setUserName(e.target.value)} />
-                    </div>
-                    <div className="passport-form-group">
-                      <label className="passport-form-label" htmlFor="avatarInput">Tải ảnh đại diện</label>
-                      <div className="passport-form-file-wrap">
-                        <div className="passport-form-file-btn">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
-                          <span>{avatarName || "Chọn ảnh từ thiết bị"}</span>
-                        </div>
-                        <input id="avatarInput" type="file" accept="image/*" className="passport-form-file-input" onChange={handleAvatarChange} />
-                      </div>
-                    </div>
-                    <button className="btn-passport-submit" onClick={handleDownloadPassport} disabled={isGenerating}>
-                      {isGenerating ? "Đang tạo hộ chiếu..." : "Tạo Hộ Chiếu & Tải Về"}
-                    </button>
-                  </div>
-                ) : (
-                  <button className="btn-passport" onClick={() => alert("Hãy trải nghiệm ít nhất 3 địa điểm VR360 bằng cách click vào link xem VR360!")}>
-                    Trải nghiệm thêm {3 - count} địa điểm để nhận Hộ Chiếu →
-                  </button>
-                )}
-              </div>
-
-              {count >= 3 && (
-                <div className="passport-card-preview-container">
-                  <p className="passport-card-preview-title">Xem trước hộ chiếu của bạn</p>
-                  <div className="passport-card-capture" ref={passportRef}>
-                    <style dangerouslySetInnerHTML={{ __html: `@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,900&family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');.passport-card-capture,.passport-card-capture *{font-family:'Be Vietnam Pro',sans-serif!important;}.passport-card-name{font-family:'Playfair Display',Georgia,serif!important;}` }} />
-                    <div className="passport-card-top">
-                      <div className="passport-card-top-sub">MobiFone Đà Nẵng | DIFF 2026</div>
-                      <div className="passport-card-top-title">
-                        <svg viewBox="0 0 316 64" width="316" height="64" style={{ display: "block", margin: "0 auto" }}>
-                          <defs><linearGradient id="tg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#ffe066" /><stop offset="100%" stopColor="#00ffea" /></linearGradient></defs>
-                          <text x="50%" y="22" textAnchor="middle" fill="url(#tg)" fontFamily="'Playfair Display',Georgia,serif" fontSize="20" fontWeight="900" letterSpacing="1">HIDDEN HORIZONS</text>
-                          <text x="50%" y="52" textAnchor="middle" fill="url(#tg)" fontFamily="'Playfair Display',Georgia,serif" fontSize="20" fontWeight="900" letterSpacing="1">PASSPORT</text>
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="passport-card-mid">
-                      <div className="passport-card-avatar-frame">
-                        {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="passport-card-avatar" /> : <span className="passport-card-avatar-placeholder">👤</span>}
-                      </div>
-                      <div className="passport-card-name">{userName || "Tên của bạn"}</div>
-                    </div>
-                    <div className="passport-card-bottom">
-                      <div className="passport-card-stamps-title">Đã thu thập {count}/5 stamps</div>
-                      <div className="passport-card-stamps-container">
-                        <svg className="passport-card-flight-svg" viewBox="0 0 316 120" width="316" height="120">
-                          <path d="M 28 85 Q 60.5 60, 93 65 T 158 80 T 223 60 T 288 75" fill="none" stroke="#ffcc00" strokeWidth="2" strokeDasharray="4,4" />
-                          <text x="294" y="71" fontSize="12" fill="#ffcc00">✈️</text>
-                        </svg>
-                        {stampData.map((stamp, idx) => {
-                          const shortNames = ["Phòng truyền thống", "Phường Cẩm Lệ", "The Pearl Hội An", "Phường Bàn Thạch", "Phường Hải Vân"];
-                          const offsets = [15, -5, 10, -10, 5];
-                          return (
-                            <div key={idx} className="passport-card-stamp-item" style={{ transform: `translateY(${offsets[idx]}px)` }}>
-                              <span className="passport-card-stamp-name">{shortNames[idx]}</span>
-                              <div className="passport-card-stamp" style={{ opacity: stamps[idx] ? 1 : 0.15, filter: stamps[idx] ? "none" : "grayscale(1)" }}>{stamp.emoji}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="passport-card-footer">#DiffHiddenHorizons #MobiFoneVR360</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </section>
-
-            {/* ══ BRIDGE ══ */}
-            <BridgeSection />
-
-            {/* ══ INDUSTRY TABS ══ */}
-            <SolutionTabs />
-
-            {/* ══ DIFF TIE-IN ══ */}
-            <section id="diff-section">
-              <p className="diff-eyebrow">✦ &nbsp; DIFF 2026 · 30/5 – 11/7 · Sông Hàn · Đà Nẵng &nbsp; ✦</p>
-              <h2 className="diff-h2">Khám phá ban ngày.<br className="br-desktop" /> Ngước nhìn <span className="grad-text">pháo hoa</span> ban&nbsp;đêm.</h2>
-              <p className="diff-body">DIFF 2026 — "Da Nang United Horizons" — quy tụ 10 đội pháo hoa từ 9 quốc gia, 6 đêm tranh tài. Mỗi đêm là một câu chuyện được kể bằng ánh sáng trên bầu trời sông Hàn.</p>
-              <div className="nights-grid">
-                {NIGHT_TILES.map((tile, idx) => (
-                  <div key={idx} className={getTileClass(tile)}>
-                    <span className="night-date">{tile.dateStr}</span>
-                    <span className="night-name">{tile.name}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="diff-btns">
-                <a href="https://danangfantasticity.com/en/kham-pha/gia-ve-va-lich-thi-dau-le-hoi-phao-hoa-diff-2026" target="_blank" rel="noopener noreferrer" className="btn-blue">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-                  Đặt vé DIFF 2026
+              <div className="hero-btns">
+                <a href="#gems" className="btn-primary">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" /></svg>
+                  Bắt đầu khám phá
                 </a>
-                <a href="#gems" className="btn-border">Xem thêm VR360</a>
+                <a href="#solutions" className="btn-outline">Giải pháp số MobiFone →</a>
               </div>
-            </section>
 
-            {/* ══ B2B ══ */}
-            <section id="b2b">
-              <div className="b2b-inner">
-                <div className="b2b-icon-box">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /><circle cx="9" cy="10" r="2" /><path d="M15 8h2M15 12h2" /></svg>
+              <div className="countdown-wrap">
+                <p className="cd-label">Đêm pháo hoa DIFF tiếp theo</p>
+                <p className="cd-next-name">{nextLabel}</p>
+                <div className="cd-timer">
+                  <div className="cd-unit"><span className="cd-box">{countdown.days}</span><span className="cd-unit-lbl">ngày</span></div>
+                  <span className="cd-colon">:</span>
+                  <div className="cd-unit"><span className="cd-box">{countdown.hours}</span><span className="cd-unit-lbl">giờ</span></div>
+                  <span className="cd-colon">:</span>
+                  <div className="cd-unit"><span className="cd-box">{countdown.minutes}</span><span className="cd-unit-lbl">phút</span></div>
+                  <span className="cd-colon">:</span>
+                  <div className="cd-unit"><span className="cd-box">{countdown.seconds}</span><span className="cd-unit-lbl">giây</span></div>
                 </div>
-                <div>
-                  <p className="b2b-eyebrow">Dành cho doanh nghiệp tại Đà Nẵng</p>
-                  <h3 className="b2b-h3">Địa điểm của bạn chưa có VR360?<br className="br-desktop" /> MobiFone Đà Nẵng số hóa trong 7&nbsp;ngày.</h3>
-                  <p className="b2b-p">Khách sạn, bảo tàng, khu du lịch, nhà hàng, showroom, trường học — bất kỳ không gian nào cũng có thể trở thành trải nghiệm ảo 360°. Tư vấn miễn phí, triển khai nhanh.</p>
-                  <a href="tel:+84935058458" className="b2b-link">
-                    Tư vấn miễn phí ngay: 0935.058.458
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                  </a>
-                  <div className="b2b-lead-trigger-wrap">
-                    <a href="#" className="b2b-lead-trigger" onClick={(e) => { e.preventDefault(); setIsConsultModalOpen(true); }}>
-                      ✍️ Hoặc đăng ký thông tin nhận tư vấn tại đây
-                    </a>
-                  </div>
+                <div className="diff-pills">
+                  <span className={getPillClass(0)}>30/5 Khai mạc</span>
+                  <span className={getPillClass(1)}>06/6</span>
+                  <span className={getPillClass(2)}>13/6</span>
+                  <span className={getPillClass(3)}>20/6</span>
+                  <span className={getPillClass(4)}>27/6</span>
+                  <span className={`${getPillClass(5)} final`}>11/7 ★ Chung kết</span>
                 </div>
               </div>
-            </section>
+            </div>
 
-            {/* ══ FOOTER ══ */}
-            <footer>
-              <div className="footer-inner">
-                <div className="footer-brand">
-                  <img src="/mobifone-logo.png" alt="MobiFone" className="footer-logo-img" />
-                  <p className="footer-tagline">Trung tâm Kinh doanh Giải pháp số</p>
-                  <p className="footer-address">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" className="location-svg">
-                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                    </svg>
-                    <span>586 Nguyễn Hữu Thọ, P. Cẩm Lệ, TP. Đà Nẵng</span>
-                  </p>
-                </div>
-                <div className="footer-links">
-                  <a href="https://it.mobifone.vn" target="_blank" rel="noopener noreferrer">Giải pháp số</a>
-                  <a href="https://it.mobifone.vn" target="_blank" rel="noopener noreferrer">Hạ tầng số</a>
-                  <a href="https://smarttravel-vr.mobifone.vn" target="_blank" rel="noopener noreferrer">Smart Travel VR</a>
-                </div>
-                <div className="footer-right">
-                  <span className="footer-right-lbl">Tư vấn miễn phí</span>
-                  <a href="tel:+84935058458" className="footer-hotline">0935.058.458</a>
-                </div>
+            <div className="hero-3d-right">
+              <div className="hero-3d-label">
+                <span className="hero-3d-sublabel">✦ Trải nghiệm được kiến tạo bởi ✦</span>
+                <span className="hero-3d-mainlabel">Hệ sinh thái chuyển đổi số MobiFone Đà Nẵng</span>
               </div>
-              <p className="footer-bottom">© 2026 MobiFone Đà Nẵng · Hidden Horizons VR360 · Mùa DIFF 2026 · #DiffHiddenHorizons</p>
-            </footer>
-
-            {/* ══ B2B MODAL ══ */}
-            {isConsultModalOpen && (
-              <div className="modal-overlay" onClick={() => setIsConsultModalOpen(false)}>
-                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                  <button className="modal-close" onClick={() => setIsConsultModalOpen(false)}>&times;</button>
-                  <h3 className="modal-title">Đăng ký nhận tư vấn</h3>
-                  <p className="modal-subtitle">MobiFone Đà Nẵng sẽ liên hệ hỗ trợ bạn sớm nhất!</p>
-                  <form onSubmit={handleSubmitLead} className="modal-form">
-                    <div className="modal-form-group">
-                      <label className="modal-label" htmlFor="leadNameInput">Họ và tên</label>
-                      <input id="leadNameInput" type="text" className="modal-input" placeholder="Nhập họ và tên (không bắt buộc)" value={leadName} onChange={(e) => setLeadName(e.target.value)} />
-                    </div>
-                    <div className="modal-form-group">
-                      <label className="modal-label" htmlFor="leadPhoneInput">Số điện thoại <span className="required-star">*</span></label>
-                      <input id="leadPhoneInput" type="tel" required className="modal-input" placeholder="Số điện thoại (bắt buộc)" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} />
-                    </div>
-                    <div className="modal-form-group">
-                      <label className="modal-label" htmlFor="leadDemandInput">Nhu cầu tư vấn</label>
-                      <textarea id="leadDemandInput" className="modal-textarea" placeholder="Ví dụ: Số hóa khách sạn, showroom, resort..." value={leadDemand} onChange={(e) => setLeadDemand(e.target.value)} rows={3} />
-                    </div>
-                    <button type="submit" className="modal-submit-btn" disabled={isSubmittingLead}>
-                      {isSubmittingLead ? "Đang gửi..." : "Gửi yêu cầu"}
-                    </button>
-                  </form>
-                </div>
-              </div>
-            )}
-
-            {/* ══ PASSPORT MODAL FOR MOBILE ══ */}
-            {generatedImageUri && (
-              <div className="modal-overlay" onClick={() => setGeneratedImageUri("")}>
-                <div className="modal-content text-center" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "390px", textAlign: "center" }}>
-                  <button className="modal-close" onClick={() => setGeneratedImageUri("")}>&times;</button>
-                  <h3 className="modal-title" style={{ fontSize: "1.2rem", marginBottom: "0.5rem" }}>Hộ chiếu của bạn đã sẵn sàng!</h3>
-                  <p className="modal-subtitle" style={{ marginBottom: "1rem", fontSize: "0.8rem", lineHeight: "1.4" }}>
-                    Vui lòng <strong>chạm và giữ ảnh</strong> bên dưới, sau đó chọn <strong>"Lưu hình ảnh"</strong> (Save Image) để tải về điện thoại.
-                  </p>
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.2rem" }}>
-                    <img
-                      src={generatedImageUri}
-                      alt="Hidden Horizons Passport"
-                      style={{ width: "100%", maxWidth: "280px", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.25)", border: "1px solid rgba(0,119,204,0.15)" }}
-                    />
-                  </div>
-                  <button
-                    className="modal-submit-btn"
-                    onClick={() => {
-                      const link = document.createElement("a");
-                      link.href = generatedImageUri;
-                      link.download = "Hidden_Horizons_Passport.png";
-                      document.body.appendChild(link); link.click(); document.body.removeChild(link);
-                    }}
-                    style={{ width: "100%", marginTop: "0" }}
-                  >
-                    Tải trực tiếp (Nếu trình duyệt hỗ trợ)
-                  </button>
-                </div>
-              </div>
-            )}
+              <a href="#solutions" className="floating-card fc-1"><span className="text-2xl">☁️</span><div><div className="font-bold text-sm">Hạ tầng số</div><div className="text-xs opacity-70">MobiFone Cloud & DC</div></div></a>
+              <a href="#solutions" className="floating-card fc-2"><span className="text-2xl">🛡️</span><div><div className="font-bold text-sm">An toàn mạng</div><div className="text-xs opacity-70">Bảo mật đa lớp</div></div></a>
+              <a href="#solutions" className="floating-card fc-3"><span className="text-2xl">🏛️</span><div><div className="font-bold text-base text-yellow-400">Chính phủ số</div><div className="text-xs opacity-80">Chuyển đổi số toàn diện</div></div></a>
+              <a href="#solutions" className="floating-card fc-4"><span className="text-2xl">💳</span><div><div className="font-bold text-sm">Kinh tế số</div><div className="text-xs opacity-70">Hệ sinh thái B2B</div></div></a>
+              <a href="#solutions" className="floating-card fc-5"><span className="text-2xl">🌐</span><div><div className="font-bold text-sm">Xã hội số</div><div className="text-xs opacity-70">Du lịch, Y tế & GD số</div></div></a>
+            </div>
           </div>
-          );
+        </div>
+
+        <div className="scroll-cue">
+          <span>Cuộn xuống</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+        </div>
+      </section>
+
+      {/* ══ SECTION HEADER ══ */}
+      <div className="section-header" id="gems">
+        <span className="section-eyebrow">5 địa điểm được số hóa bởi MobiFone VR360</span>
+        <h2 className="section-h2">Những <span className="grad-text">chân trời ẩn</span><br className="br-desktop" /> ngay giữa lòng Đà Nẵng</h2>
+        <p className="section-p">5 điểm đến "Hidden Gems" được số hóa bằng công nghệ VR360, đưa bạn đến với những câu chuyện lịch sử, văn hóa và vẻ đẹp chưa ai kể, ngay trên điện thoại của bạn.</p>
+      </div>
+
+      {/* ══ GEM CARDS ══ */}
+      <div className="gems-wrap">
+        <div className="gems-grid">
+          {gemData.map((gem, i) => (
+            <div key={i} className="gem-card reveal">
+              {/* Visual panel with slideshow */}
+              <a className="gem-visual" href={gemLinks[i]} target="_blank" rel="noopener noreferrer" aria-label={`Xem VR360 ${gem.title.join(" ")}`} onClick={() => stampIt(i)}>
+                <GemSlideshow slides={GEM_SLIDES[i]} gemIdx={i} />
+                <div className="gem-visual-overlay" />
+                <div className="gem-number-bg">{String(i + 1).padStart(2, "0")}</div>
+                <div className="gem-num-badge">{String(i + 1).padStart(2, "0")}</div>
+                <div className="gem-vr-btn">
+                  <div className="vr-ring">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /></svg>
+                  </div>
+                  <span className="vr-ring-label">Xem VR 360°</span>
+                </div>
+                <span className="gem-chip">{gem.chip}</span>
+              </a>
+              {/* Content panel */}
+              <div className="gem-body-wrap">
+                <span className="gem-label"><span className="gem-label-dot" />{gem.label}</span>
+                <h3 className="gem-h3">{gem.title[0]}<br />{gem.title[1]}</h3>
+                <p className="gem-tagline">{gem.tagline}</p>
+                {gem.texts.map((t, ti) => <p key={ti} className="gem-text">{t}</p>)}
+                <div className="gem-tags">{gem.tags.map((tag) => <span key={tag} className="gem-tag-pill">{tag}</span>)}</div>
+                <a href={gemLinks[i]} target="_blank" rel="noopener noreferrer" className="gem-cta-link" onClick={() => stampIt(i)}>
+                  {gem.cta}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ══ PASSPORT ══ */}
+      <section id="passport">
+        <p className="passport-eyebrow">Sưu tập thành tích</p>
+        <h2 className="passport-h2">Hộ Chiếu Số <span className="hl">Hidden Horizons</span></h2>
+        <p className="passport-sub">Xem đủ 5 địa điểm VR360 và nhận hộ chiếu số — ảnh card cá nhân hóa để share lên Facebook, Zalo mùa DIFF 2026.</p>
+
+        <div className="passport-card-ui">
+          <div className="pass-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" /><path d="M8 12h8M12 8v8" /></svg>
+          </div>
+          <p className="pass-title">Hộ Chiếu Số</p>
+          <p className="pass-subtitle">Hidden Horizons · DIFF 2026 · MobiFone Đà Nẵng</p>
+          <div className="stamps-row">
+            {stampData.map((stamp, idx) => (
+              <div key={idx} className={`stamp-circle ${stamps[idx] ? "lit" : ""}`} onClick={() => stampIt(idx)} title={stamp.title}>
+                {stamp.emoji}<span className="stamp-lbl">{stamp.label}</span>
+              </div>
+            ))}
+          </div>
+          <p className="pass-progress">Đã khám phá <span>{count}</span> / 5 địa điểm</p>
+          {count >= 3 ? (
+            <div className="passport-form">
+              <div className="passport-form-group">
+                <label className="passport-form-label" htmlFor="userNameInput">Nhập tên của bạn</label>
+                <input id="userNameInput" type="text" className="passport-form-input" placeholder="Tên (tối đa 20 ký tự)" maxLength={20} value={userName} onChange={(e) => setUserName(e.target.value)} />
+              </div>
+              <div className="passport-form-group">
+                <label className="passport-form-label" htmlFor="avatarInput">Tải ảnh đại diện</label>
+                <div className="passport-form-file-wrap">
+                  <div className="passport-form-file-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
+                    <span>{avatarName || "Chọn ảnh từ thiết bị"}</span>
+                  </div>
+                  <input id="avatarInput" type="file" accept="image/*" className="passport-form-file-input" onChange={handleAvatarChange} />
+                </div>
+              </div>
+              <button className="btn-passport-submit" onClick={handleDownloadPassport} disabled={isGenerating}>
+                {isGenerating ? "Đang tạo hộ chiếu..." : "Tạo Hộ Chiếu & Tải Về"}
+              </button>
+            </div>
+          ) : (
+            <button className="btn-passport" onClick={() => alert("Hãy trải nghiệm ít nhất 3 địa điểm VR360 bằng cách click vào link xem VR360!")}>
+              Trải nghiệm thêm {3 - count} địa điểm để nhận Hộ Chiếu →
+            </button>
+          )}
+        </div>
+
+        {count >= 3 && (
+          <div className="passport-card-preview-container">
+            <p className="passport-card-preview-title">Xem trước hộ chiếu của bạn</p>
+            <div className="passport-card-capture" ref={passportRef}>
+              <style dangerouslySetInnerHTML={{ __html: `@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,900&family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');.passport-card-capture,.passport-card-capture *{font-family:'Be Vietnam Pro',sans-serif!important;}.passport-card-name{font-family:'Playfair Display',Georgia,serif!important;}` }} />
+              <div className="passport-card-top">
+                <div className="passport-card-top-sub">MobiFone Đà Nẵng | DIFF 2026</div>
+                <div className="passport-card-top-title">
+                  <svg viewBox="0 0 316 64" width="316" height="64" style={{ display: "block", margin: "0 auto" }}>
+                    <defs><linearGradient id="tg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#ffe066" /><stop offset="100%" stopColor="#00ffea" /></linearGradient></defs>
+                    <text x="50%" y="22" textAnchor="middle" fill="url(#tg)" fontFamily="'Playfair Display',Georgia,serif" fontSize="20" fontWeight="900" letterSpacing="1">HIDDEN HORIZONS</text>
+                    <text x="50%" y="52" textAnchor="middle" fill="url(#tg)" fontFamily="'Playfair Display',Georgia,serif" fontSize="20" fontWeight="900" letterSpacing="1">PASSPORT</text>
+                  </svg>
+                </div>
+              </div>
+              <div className="passport-card-mid">
+                <div className="passport-card-avatar-frame">
+                  {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="passport-card-avatar" /> : <span className="passport-card-avatar-placeholder">👤</span>}
+                </div>
+                <div className="passport-card-name">{userName || "Tên của bạn"}</div>
+              </div>
+              <div className="passport-card-bottom">
+                <div className="passport-card-stamps-title">Đã thu thập {count}/5 stamps</div>
+                <div className="passport-card-stamps-container">
+                  <svg className="passport-card-flight-svg" viewBox="0 0 316 120" width="316" height="120">
+                    <path d="M 28 85 Q 60.5 60, 93 65 T 158 80 T 223 60 T 288 75" fill="none" stroke="#ffcc00" strokeWidth="2" strokeDasharray="4,4" />
+                    <text x="294" y="71" fontSize="12" fill="#ffcc00">✈️</text>
+                  </svg>
+                  {stampData.map((stamp, idx) => {
+                    const shortNames = ["Phòng truyền thống", "Phường Cẩm Lệ", "The Pearl Hội An", "Phường Bàn Thạch", "Phường Hải Vân"];
+                    const offsets = [15, -5, 10, -10, 5];
+                    return (
+                      <div key={idx} className="passport-card-stamp-item" style={{ transform: `translateY(${offsets[idx]}px)` }}>
+                        <span className="passport-card-stamp-name">{shortNames[idx]}</span>
+                        <div className="passport-card-stamp" style={{ opacity: stamps[idx] ? 1 : 0.15, filter: stamps[idx] ? "none" : "grayscale(1)" }}>{stamp.emoji}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="passport-card-footer">#DiffHiddenHorizons #MobiFoneVR360</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ══ BRIDGE ══ */}
+      <BridgeSection />
+
+      {/* ══ INDUSTRY TABS ══ */}
+      <SolutionTabs />
+
+      {/* ══ DIFF TIE-IN ══ */}
+      <section id="diff-section">
+        <p className="diff-eyebrow">✦ &nbsp; DIFF 2026 · 30/5 – 11/7 · Sông Hàn · Đà Nẵng &nbsp; ✦</p>
+        <h2 className="diff-h2">Khám phá ban ngày.<br className="br-desktop" /> Ngước nhìn <span className="grad-text">pháo hoa</span> ban&nbsp;đêm.</h2>
+        <p className="diff-body">DIFF 2026 — "Da Nang United Horizons" — quy tụ 10 đội pháo hoa từ 9 quốc gia, 6 đêm tranh tài. Mỗi đêm là một câu chuyện được kể bằng ánh sáng trên bầu trời sông Hàn.</p>
+        <div className="nights-grid">
+          {NIGHT_TILES.map((tile, idx) => (
+            <div key={idx} className={getTileClass(tile)}>
+              <span className="night-date">{tile.dateStr}</span>
+              <span className="night-name">{tile.name}</span>
+            </div>
+          ))}
+        </div>
+        <div className="diff-btns">
+          <a href="https://danangfantasticity.com/en/kham-pha/gia-ve-va-lich-thi-dau-le-hoi-phao-hoa-diff-2026" target="_blank" rel="noopener noreferrer" className="btn-blue">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+            Đặt vé DIFF 2026
+          </a>
+          <a href="#gems" className="btn-border">Xem thêm VR360</a>
+        </div>
+      </section>
+
+      {/* ══ B2B ══ */}
+      <section id="b2b">
+        <div className="b2b-inner">
+          <div className="b2b-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /><circle cx="9" cy="10" r="2" /><path d="M15 8h2M15 12h2" /></svg>
+          </div>
+          <div>
+            <p className="b2b-eyebrow">Dành cho doanh nghiệp tại Đà Nẵng</p>
+            <h3 className="b2b-h3">Địa điểm của bạn chưa có VR360?<br className="br-desktop" /> MobiFone Đà Nẵng số hóa trong 7&nbsp;ngày.</h3>
+            <p className="b2b-p">Khách sạn, bảo tàng, khu du lịch, nhà hàng, showroom, trường học — bất kỳ không gian nào cũng có thể trở thành trải nghiệm ảo 360°. Tư vấn miễn phí, triển khai nhanh.</p>
+            <a href="tel:+84935058458" className="b2b-link">
+              Tư vấn miễn phí ngay: 0935.058.458
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+            </a>
+            <div className="b2b-lead-trigger-wrap">
+              <a href="#" className="b2b-lead-trigger" onClick={(e) => { e.preventDefault(); setIsConsultModalOpen(true); }}>
+                ✍️ Hoặc đăng ký thông tin nhận tư vấn tại đây
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ FOOTER ══ */}
+      <footer>
+        <div className="footer-inner">
+          <div className="footer-brand">
+            <img src="/mobifone-logo.png" alt="MobiFone" className="footer-logo-img" />
+            <p className="footer-tagline">Trung tâm Kinh doanh Giải pháp số</p>
+            <p className="footer-address">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" className="location-svg">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+              </svg>
+              <span>586 Nguyễn Hữu Thọ, P. Cẩm Lệ, TP. Đà Nẵng</span>
+            </p>
+          </div>
+          <div className="footer-links">
+            <a href="https://it.mobifone.vn" target="_blank" rel="noopener noreferrer">Giải pháp số</a>
+            <a href="https://it.mobifone.vn" target="_blank" rel="noopener noreferrer">Hạ tầng số</a>
+            <a href="https://smarttravel-vr.mobifone.vn" target="_blank" rel="noopener noreferrer">Smart Travel VR</a>
+          </div>
+          <div className="footer-right">
+            <span className="footer-right-lbl">Tư vấn miễn phí</span>
+            <a href="tel:+84935058458" className="footer-hotline">0935.058.458</a>
+          </div>
+        </div>
+        <p className="footer-bottom">© 2026 MobiFone Đà Nẵng · Hidden Horizons VR360 · Mùa DIFF 2026 · #DiffHiddenHorizons</p>
+      </footer>
+
+      {/* ══ B2B MODAL ══ */}
+      {isConsultModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsConsultModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setIsConsultModalOpen(false)}>&times;</button>
+            <h3 className="modal-title">Đăng ký nhận tư vấn</h3>
+            <p className="modal-subtitle">MobiFone Đà Nẵng sẽ liên hệ hỗ trợ bạn sớm nhất!</p>
+            <form onSubmit={handleSubmitLead} className="modal-form">
+              <div className="modal-form-group">
+                <label className="modal-label" htmlFor="leadNameInput">Họ và tên</label>
+                <input id="leadNameInput" type="text" className="modal-input" placeholder="Nhập họ và tên (không bắt buộc)" value={leadName} onChange={(e) => setLeadName(e.target.value)} />
+              </div>
+              <div className="modal-form-group">
+                <label className="modal-label" htmlFor="leadPhoneInput">Số điện thoại <span className="required-star">*</span></label>
+                <input id="leadPhoneInput" type="tel" required className="modal-input" placeholder="Số điện thoại (bắt buộc)" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} />
+              </div>
+              <div className="modal-form-group">
+                <label className="modal-label" htmlFor="leadDemandInput">Nhu cầu tư vấn</label>
+                <textarea id="leadDemandInput" className="modal-textarea" placeholder="Ví dụ: Số hóa khách sạn, showroom, resort..." value={leadDemand} onChange={(e) => setLeadDemand(e.target.value)} rows={3} />
+              </div>
+              <button type="submit" className="modal-submit-btn" disabled={isSubmittingLead}>
+                {isSubmittingLead ? "Đang gửi..." : "Gửi yêu cầu"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ PASSPORT MODAL FOR MOBILE ══ */}
+      {generatedImageUri && (
+        <div className="modal-overlay" onClick={() => setGeneratedImageUri("")}>
+          <div className="modal-content text-center" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "390px", textAlign: "center" }}>
+            <button className="modal-close" onClick={() => setGeneratedImageUri("")}>&times;</button>
+            <h3 className="modal-title" style={{ fontSize: "1.2rem", marginBottom: "0.5rem" }}>Hộ chiếu của bạn đã sẵn sàng!</h3>
+            <p className="modal-subtitle" style={{ marginBottom: "1rem", fontSize: "0.8rem", lineHeight: "1.4" }}>
+              Vui lòng <strong>chạm và giữ ảnh</strong> bên dưới, sau đó chọn <strong>"Lưu hình ảnh"</strong> (Save Image) để tải về điện thoại.
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.2rem" }}>
+              <img
+                src={generatedImageUri}
+                alt="Hidden Horizons Passport"
+                style={{ width: "100%", maxWidth: "280px", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.25)", border: "1px solid rgba(0,119,204,0.15)" }}
+              />
+            </div>
+            <button
+              className="modal-submit-btn"
+              onClick={() => {
+                const link = document.createElement("a");
+                link.href = generatedImageUri;
+                link.download = "Hidden_Horizons_Passport.png";
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+              }}
+              style={{ width: "100%", marginTop: "0" }}
+            >
+              Tải trực tiếp (Nếu trình duyệt hỗ trợ)
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
