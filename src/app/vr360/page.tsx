@@ -158,24 +158,11 @@ const SOLUTION_TABS = [
   },
 ];
 
-// ── GemSlideshow component
+// ── GemSlideshow component (Optimized: Renders only 1 image with CSS Ken Burns animation)
 function GemSlideshow({ slides, gemIdx }: { slides: typeof GEM_SLIDES[0]; gemIdx: number }) {
-  const [current, setCurrent] = useState(0);
-  const [loaded, setLoaded] = useState<boolean[]>(slides.map(() => false));
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const slide = slides[0]; // Render only the first slide to speed up page load
 
-  useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % slides.length);
-    }, 4000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [slides.length]);
-
-  const handleLoad = (idx: number) => {
-    setLoaded((prev) => { const n = [...prev]; n[idx] = true; return n; });
-  };
-
-  // Fallback gradient colors matching CSS
   const fallbackGrads = [
     "linear-gradient(135deg,#1a3a5c,#1e5fa8,#0fa8d6,#0dd8b8)",
     "linear-gradient(135deg,#7b3f00,#c46200,#f09000,#ffd060)",
@@ -185,32 +172,18 @@ function GemSlideshow({ slides, gemIdx }: { slides: typeof GEM_SLIDES[0]; gemIdx
   ];
 
   return (
-    <div className="gem-slideshow" aria-label={`Ảnh minh họa địa điểm ${gemIdx + 1}`}>
-      {slides.map((slide, idx) => (
-        <div
-          key={idx}
-          className={`gem-slide ${idx === current ? "active" : ""}`}
-          style={{ background: loaded[idx] ? undefined : fallbackGrads[gemIdx] }}
-        >
-          <img
-            src={slide.src}
-            alt={slide.alt}
-            className={`gem-slide-img ${loaded[idx] ? "loaded" : ""}`}
-            onLoad={() => handleLoad(idx)}
-            loading="lazy"
-          />
-        </div>
-      ))}
-      {/* Dot indicators */}
-      <div className="gem-dots" aria-hidden="true">
-        {slides.map((_, idx) => (
-          <button
-            key={idx}
-            className={`gem-dot ${idx === current ? "active" : ""}`}
-            onClick={(e) => { e.preventDefault(); setCurrent(idx); }}
-            aria-label={`Ảnh ${idx + 1}`}
-          />
-        ))}
+    <div className="gem-single-image-wrap" aria-label={`Ảnh minh họa địa điểm ${gemIdx + 1}`}>
+      <div
+        className="gem-single-slide"
+        style={{ background: loaded ? undefined : fallbackGrads[gemIdx] }}
+      >
+        <img
+          src={slide.src}
+          alt={slide.alt}
+          className={`gem-single-img ${loaded ? "loaded" : ""}`}
+          onLoad={() => setLoaded(true)}
+          loading="lazy"
+        />
       </div>
     </div>
   );
@@ -739,48 +712,64 @@ export default function VR360Page() {
         </div>
 
         <div className="hero-content">
-          <div className="hero-badge">
-            <span className="live-dot" />
-            DIFF 2026 · MobiFone Đà Nẵng · Đang diễn ra
-          </div>
+          <div className="hero-split-wrap">
+            <div className="hero-left-col">
+              <div className="hero-badge">
+                <span className="live-dot" />
+                DIFF 2026 · MobiFone Đà Nẵng · Đang diễn ra
+              </div>
 
-          <h1 className="hero-title">
-            <span className="highlight">Hidden</span><br />Horizons
-          </h1>
-          <p className="hero-sub">
-            Khám phá Đà Nẵng chưa ai thấy — ngay trên điện thoại của bạn
-          </p>
-          <p className="hero-desc">
-            Trong mùa pháo hoa DIFF rực rỡ nhất năm, MobiFone mang đến trải nghiệm khác biệt: <strong>5 điểm đến ẩn giấu được số hóa bằng VR360</strong> — khám phá lịch sử, văn hóa và vẻ đẹp chưa ai kể, ngay trên điện thoại của bạn.
-          </p>
+              <h1 className="hero-title">
+                <span className="highlight">Hidden</span><br />Horizons
+              </h1>
+              <p className="hero-sub">
+                Khám phá Đà Nẵng chưa ai thấy — ngay trên điện thoại của bạn
+              </p>
+              <p className="hero-desc">
+                Trong mùa pháo hoa DIFF rực rỡ nhất năm, MobiFone mang đến trải nghiệm khác biệt: <strong>5 điểm đến ẩn giấu được số hóa bằng VR360</strong> — khám phá lịch sử, văn hóa và vẻ đẹp chưa ai kể, ngay trên điện thoại của bạn.
+              </p>
 
-          <div className="hero-btns">
-            <a href="#gems" className="btn-primary">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" /></svg>
-              Bắt đầu khám phá
-            </a>
-            <a href="#solutions" className="btn-outline">Giải pháp số MobiFone →</a>
-          </div>
+              <div className="hero-btns">
+                <a href="#gems" className="btn-primary">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" /></svg>
+                  Bắt đầu khám phá
+                </a>
+                <a href="#solutions" className="btn-outline">Giải pháp số MobiFone →</a>
+              </div>
 
-          <div className="countdown-wrap">
-            <p className="cd-label">Đêm pháo hoa DIFF tiếp theo</p>
-            <p className="cd-next-name">{nextLabel}</p>
-            <div className="cd-timer">
-              <div className="cd-unit"><span className="cd-box">{countdown.days}</span><span className="cd-unit-lbl">ngày</span></div>
-              <span className="cd-colon">:</span>
-              <div className="cd-unit"><span className="cd-box">{countdown.hours}</span><span className="cd-unit-lbl">giờ</span></div>
-              <span className="cd-colon">:</span>
-              <div className="cd-unit"><span className="cd-box">{countdown.minutes}</span><span className="cd-unit-lbl">phút</span></div>
-              <span className="cd-colon">:</span>
-              <div className="cd-unit"><span className="cd-box">{countdown.seconds}</span><span className="cd-unit-lbl">giây</span></div>
+              <div className="countdown-wrap">
+                <p className="cd-label">Đêm pháo hoa DIFF tiếp theo</p>
+                <p className="cd-next-name">{nextLabel}</p>
+                <div className="cd-timer">
+                  <div className="cd-unit"><span className="cd-box">{countdown.days}</span><span className="cd-unit-lbl">ngày</span></div>
+                  <span className="cd-colon">:</span>
+                  <div className="cd-unit"><span className="cd-box">{countdown.hours}</span><span className="cd-unit-lbl">giờ</span></div>
+                  <span className="cd-colon">:</span>
+                  <div className="cd-unit"><span className="cd-box">{countdown.minutes}</span><span className="cd-unit-lbl">phút</span></div>
+                  <span className="cd-colon">:</span>
+                  <div className="cd-unit"><span className="cd-box">{countdown.seconds}</span><span className="cd-unit-lbl">giây</span></div>
+                </div>
+                <div className="diff-pills">
+                  <span className={getPillClass(0)}>30/5 Khai mạc</span>
+                  <span className={getPillClass(1)}>06/6</span>
+                  <span className={getPillClass(2)}>13/6</span>
+                  <span className={getPillClass(3)}>20/6</span>
+                  <span className={getPillClass(4)}>27/6</span>
+                  <span className={`${getPillClass(5)} final`}>11/7 ★ Chung kết</span>
+                </div>
+              </div>
             </div>
-            <div className="diff-pills">
-              <span className={getPillClass(0)}>30/5 Khai mạc</span>
-              <span className={getPillClass(1)}>06/6</span>
-              <span className={getPillClass(2)}>13/6</span>
-              <span className={getPillClass(3)}>20/6</span>
-              <span className={getPillClass(4)}>27/6</span>
-              <span className={`${getPillClass(5)} final`}>11/7 ★ Chung kết</span>
+
+            <div className="hero-3d-right">
+              <div className="hero-3d-label">
+                <span className="hero-3d-sublabel">✦ Trải nghiệm được kiến tạo bởi ✦</span>
+                <span className="hero-3d-mainlabel">Hệ sinh thái chuyển đổi số MobiFone Đà Nẵng</span>
+              </div>
+              <a href="#solutions" className="floating-card fc-1"><span className="text-2xl">☁️</span><div><div className="font-bold text-sm">Hạ tầng số</div><div className="text-xs opacity-70">MobiFone Cloud & DC</div></div></a>
+              <a href="#solutions" className="floating-card fc-2"><span className="text-2xl">🛡️</span><div><div className="font-bold text-sm">An toàn mạng</div><div className="text-xs opacity-70">Bảo mật đa lớp</div></div></a>
+              <a href="#solutions" className="floating-card fc-3"><span className="text-2xl">🏛️</span><div><div className="font-bold text-base text-yellow-400">Chính phủ số</div><div className="text-xs opacity-80">Chuyển đổi số toàn diện</div></div></a>
+              <a href="#solutions" className="floating-card fc-4"><span className="text-2xl">💳</span><div><div className="font-bold text-sm">Kinh tế số</div><div className="text-xs opacity-70">Hệ sinh thái B2B</div></div></a>
+              <a href="#solutions" className="floating-card fc-5"><span className="text-2xl">🌐</span><div><div className="font-bold text-sm">Xã hội số</div><div className="text-xs opacity-70">Du lịch, Y tế & GD số</div></div></a>
             </div>
           </div>
         </div>
