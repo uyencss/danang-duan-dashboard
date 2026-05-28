@@ -46,6 +46,10 @@
   min-height: 100vh;
 }
 
+.vr360-body .br-mobile { display: none; }
+.vr360-body .show-mobile { display: none; }
+.vr360-body .hide-mobile { display: inline; }
+
 /* ══════════════════════════════════════
    NAV
  ══════════════════════════════════════ */
@@ -1364,6 +1368,14 @@
   .vr360-body .fc-3 { top: 38%; left: 16%; }
   .vr360-body .fc-4 { bottom: 10%; left: 2%; }
   .vr360-body .fc-2 { bottom: 6%; right: 2%; }
+  
+  .vr360-body .br-mobile { display: block; }
+  .vr360-body .show-mobile { display: inline; }
+  .vr360-body .hide-mobile { display: none; }
+  .vr360-body .bridge-h2 {
+    font-size: clamp(1.2rem, 5.5vw, 1.6rem);
+    line-height: 1.25;
+  }
 }
 
 @media (max-width: 600px) {

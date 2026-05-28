@@ -161,7 +161,15 @@ const SOLUTION_TABS = [
 // ── GemSlideshow component (Optimized: Renders only 1 image with CSS Ken Burns animation)
 function GemSlideshow({ slides, gemIdx }: { slides: typeof GEM_SLIDES[0]; gemIdx: number }) {
   const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
   const slide = slides[0]; // Render only the first slide to speed up page load
+
+  useEffect(() => {
+    // If the image was already loaded from cache before React attached the onLoad event, set loaded: true manually
+    if (imgRef.current && imgRef.current.complete) {
+      setLoaded(true);
+    }
+  }, []);
 
   const fallbackGrads = [
     "linear-gradient(135deg,#1a3a5c,#1e5fa8,#0fa8d6,#0dd8b8)",
@@ -178,6 +186,7 @@ function GemSlideshow({ slides, gemIdx }: { slides: typeof GEM_SLIDES[0]; gemIdx
         style={{ background: loaded ? undefined : fallbackGrads[gemIdx] }}
       >
         <img
+          ref={imgRef}
           src={slide.src}
           alt={slide.alt}
           className={`gem-single-img ${loaded ? "loaded" : ""}`}
@@ -348,8 +357,15 @@ function BridgeSection() {
     <section id="bridge" ref={ref}>
       <p className="bridge-eyebrow">✦ &nbsp; Hệ sinh thái số MobiFone · Đà Nẵng thông minh &nbsp; ✦</p>
       <h2 className="bridge-h2">
-        VR360 chỉ là điểm khởi&nbsp;đầu.<br className="br-desktop" />
-        <em>Hạ tầng số MobiFone</em> đang<br className="br-desktop" /> kiến tạo Đà Nẵng thông&nbsp;minh.
+        VR360 chỉ là điểm khởi đầu.
+        <br className="br-desktop" />
+        <br className="br-mobile" />
+        <em>Hạ tầng số MobiFone</em>
+        <span className="hide-mobile">&nbsp;đang</span>
+        <br className="br-mobile" />
+        <span className="show-mobile">đang&nbsp;</span>
+        <br className="br-desktop" />
+        kiến tạo Đà Nẵng thông minh.
       </h2>
       <p className="bridge-sub">
         Công nghệ số hóa di sản văn hóa và du lịch cũng chính là nền tảng đang vận hành hạ tầng chính phủ, y tế, giáo dục và kinh tế số tại Đà Nẵng. Một hệ sinh thái toàn diện — từ Cloud đến Camera AI, từ hóa đơn điện tử đến truyền thanh thông minh.
