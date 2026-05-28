@@ -797,7 +797,7 @@ export default function VR360Page() {
                 {gemData.map((gem, i) => (
                   <div key={i} className="gem-card reveal">
                     {/* Visual panel with slideshow */}
-                    <a className="gem-visual" href={gemLinks[i]} target="_blank" rel="noopener noreferrer" aria-label={`Xem VR360 ${gem.title.join(" ")}`}>
+                    <a className="gem-visual" href={gemLinks[i]} target="_blank" rel="noopener noreferrer" aria-label={`Xem VR360 ${gem.title.join(" ")}`} onClick={() => stampIt(i)}>
                       <GemSlideshow slides={GEM_SLIDES[i]} gemIdx={i} />
                       <div className="gem-visual-overlay" />
                       <div className="gem-number-bg">{String(i + 1).padStart(2, "0")}</div>
@@ -817,7 +817,7 @@ export default function VR360Page() {
                       <p className="gem-tagline">{gem.tagline}</p>
                       {gem.texts.map((t, ti) => <p key={ti} className="gem-text">{t}</p>)}
                       <div className="gem-tags">{gem.tags.map((tag) => <span key={tag} className="gem-tag-pill">{tag}</span>)}</div>
-                      <a href={gemLinks[i]} target="_blank" rel="noopener noreferrer" className="gem-cta-link">
+                      <a href={gemLinks[i]} target="_blank" rel="noopener noreferrer" className="gem-cta-link" onClick={() => stampIt(i)}>
                         {gem.cta}
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                       </a>
@@ -847,7 +847,7 @@ export default function VR360Page() {
                   ))}
                 </div>
                 <p className="pass-progress">Đã khám phá <span>{count}</span> / 5 địa điểm</p>
-                {count === 5 ? (
+                {count >= 3 ? (
                   <div className="passport-form">
                     <div className="passport-form-group">
                       <label className="passport-form-label" htmlFor="userNameInput">Nhập tên của bạn</label>
@@ -868,13 +868,13 @@ export default function VR360Page() {
                     </button>
                   </div>
                 ) : (
-                  <button className="btn-passport" onClick={() => alert("Hãy xem đủ 5 tour VR360 và click từng stamp!")}>
-                    Còn {5 - count} địa điểm nữa để hoàn thành →
+                  <button className="btn-passport" onClick={() => alert("Hãy trải nghiệm ít nhất 3 địa điểm VR360 bằng cách click vào link xem VR360!")}>
+                    Trải nghiệm thêm {3 - count} địa điểm để nhận Hộ Chiếu →
                   </button>
                 )}
               </div>
 
-              {count === 5 && (
+              {count >= 3 && (
                 <div className="passport-card-preview-container">
                   <p className="passport-card-preview-title">Xem trước hộ chiếu của bạn</p>
                   <div className="passport-card-capture" ref={passportRef}>
@@ -896,7 +896,7 @@ export default function VR360Page() {
                       <div className="passport-card-name">{userName || "Tên của bạn"}</div>
                     </div>
                     <div className="passport-card-bottom">
-                      <div className="passport-card-stamps-title">Đã thu thập 5/5 stamps</div>
+                      <div className="passport-card-stamps-title">Đã thu thập {count}/5 stamps</div>
                       <div className="passport-card-stamps-container">
                         <svg className="passport-card-flight-svg" viewBox="0 0 316 120" width="316" height="120">
                           <path d="M 28 85 Q 60.5 60, 93 65 T 158 80 T 223 60 T 288 75" fill="none" stroke="#ffcc00" strokeWidth="2" strokeDasharray="4,4" />
@@ -908,7 +908,7 @@ export default function VR360Page() {
                           return (
                             <div key={idx} className="passport-card-stamp-item" style={{ transform: `translateY(${offsets[idx]}px)` }}>
                               <span className="passport-card-stamp-name">{shortNames[idx]}</span>
-                              <div className="passport-card-stamp">{stamp.emoji}</div>
+                              <div className="passport-card-stamp" style={{ opacity: stamps[idx] ? 1 : 0.15, filter: stamps[idx] ? "none" : "grayscale(1)" }}>{stamp.emoji}</div>
                             </div>
                           );
                         })}
