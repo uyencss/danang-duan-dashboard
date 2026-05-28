@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     // Send email notifications
     const recipients = [
-      'my.nguyentra@mobifon.vn',
+      'my.nguyentra@mobifone.vn',
       'vuong.tuan@mobifone.vn',
       'uyen.bao@mobifone.vn',
       'uyencss1@gmail.com'

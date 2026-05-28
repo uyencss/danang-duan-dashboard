@@ -1206,15 +1206,18 @@
 }
 .vr360-body .footer-brand { display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-start; }
 .vr360-body .footer-address {
-  font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.4);
-  margin-top: 0.8rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 0.7rem;
   line-height: 1.6;
   text-align: left;
+  display: flex;
+  align-items: center;
 }
-.vr360-body .footer-address strong {
-  color: rgba(255, 255, 255, 0.65);
-  font-weight: 700;
+.vr360-body .footer-address .location-svg {
+  color: #00aaee;
+  margin-right: 6px;
+  flex-shrink: 0;
 }
 .vr360-body .footer-logo-img {
   height: 28px;
@@ -1226,7 +1229,9 @@
   display: block;
 }
 .vr360-body .footer-tagline {
-  font-size: 0.78rem; color: rgba(255,255,255,0.3);
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.55);
+  font-weight: 600;
   line-height: 1.5;
 }
 .vr360-body .footer-links {

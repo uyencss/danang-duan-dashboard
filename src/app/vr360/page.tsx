@@ -976,14 +976,17 @@ export default function VR360Page() {
         <div className="footer-inner">
           <div className="footer-brand">
             <img src="/mobifone-logo.png" alt="MobiFone" className="footer-logo-img" />
-            <p className="footer-tagline">VR360 · Giải pháp số · Hạ tầng Cloud<br />Nâng tầm trải nghiệm số tại miền Trung</p>
+            <p className="footer-tagline">Trung tâm Kinh doanh Giải pháp số</p>
             <p className="footer-address">
-              <strong>MobiFone Đà Nẵng:</strong> Trung tâm Kinh doanh Giải pháp số<br />
-              Địa chỉ: 585 Nguyễn Hữu Thọ, P. Cẩm Lệ, Tp. Đà Nẵng
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" className="location-svg">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <span>586 Nguyễn Hữu Thọ, P. Cẩm Lệ, TP. Đà Nẵng</span>
             </p>
           </div>
           <div className="footer-links">
             <a href="https://it.mobifone.vn" target="_blank" rel="noopener noreferrer">Giải pháp số</a>
+            <a href="https://it.mobifone.vn" target="_blank" rel="noopener noreferrer">Hạ tầng số</a>
             <a href="https://smarttravel-vr.mobifone.vn" target="_blank" rel="noopener noreferrer">Smart Travel VR</a>
           </div>
           <div className="footer-right">
