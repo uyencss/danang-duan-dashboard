@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h3 style="color: #0055a5; border-bottom: 2px solid #00aaee; padding-bottom: 8px;">📢 Yêu cầu tư vấn B2B mới từ trang VR360 (Hidden Horizons)</h3>
+        <h3 style="color: #0055a5; border-bottom: 2px solid #00aaee; padding-bottom: 8px;">📢 Yêu cầu tư vấn B2B mới từ trang VR360 (United Horizons)</h3>
         <p>Hệ thống nhận được yêu cầu đăng ký tư vấn mới với chi tiết như sau:</p>
         <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; max-width: 600px; border-color: #ddd;">
           <tr style="background-color: #f8fcff;">

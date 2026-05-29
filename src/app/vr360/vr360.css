@@ -254,14 +254,28 @@
   letter-spacing: -0.02em;
   margin-bottom: 0.25rem;
   text-shadow: 0 4px 24px rgba(0,30,80,0.25);
-  animation: fadeUp 0.7s 0.1s ease both;
+  
+  /* Shared moving gradient for the entire text */
+  background: linear-gradient(90deg, #ffffff 0%, #ffe066 25%, #00ffea 50%, #ffe066 75%, #ffffff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  
+  /* Animate fade-in and the shifting gradient */
+  animation: fadeUp 0.7s 0.1s ease both, dancingColors 6s linear infinite;
 }
+
 .vr360-body h1.hero-title .highlight {
   font-style: italic;
-  position: relative; display: inline-block;
-  background: linear-gradient(90deg, #fff 30%, #ffe066 60%, #00ffea 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
+  display: inline;
+  padding-right: 0.05em; /* Safe spacing to ensure slanted letter 'd' is never cut off */
+}
+
+@keyframes dancingColors {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 .vr360-body .hero-sub {
   font-family: var(--display);

@@ -547,7 +547,7 @@ export default function VR360Page() {
 
       const link = document.createElement("a");
       link.href = imgData;
-      link.download = "Hidden_Horizons_Passport.png";
+      link.download = "United_Horizons_Passport.png";
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
     } catch { alert("Lỗi khi tạo ảnh. Vui lòng thử lại!"); }
     finally { setIsGenerating(false); }
@@ -691,7 +691,7 @@ export default function VR360Page() {
       <nav>
         <a className="nav-logo" href="#">
           <img src="/mobifone-logo.png" alt="MobiFone" className="nav-logo-img" />
-          <span className="nav-title">Hidden Horizons</span>
+          <span className="nav-title">United Horizons</span>
         </a>
         <div className="nav-links">
           <a href="#gems">VR360</a>
@@ -739,10 +739,10 @@ export default function VR360Page() {
               </div>
 
               <h1 className="hero-title">
-                <span className="highlight">Hidden</span><br className="br-desktop" /> Horizons
+                <span className="highlight">United</span><br className="br-desktop" /> Horizons
               </h1>
               <p className="hero-sub">
-                Khám phá một Đà Nẵng thật khác
+                Đà Nẵng – Những chân trời kết nối
               </p>
               <p className="hero-desc">
                 Bạn đã thấy Đà Nẵng rực rỡ. Nhưng ít ai biết rằng thành phố còn giữ những góc khác — lặng hơn, sâu hơn, và đẹp theo cách khó gọi tên.
@@ -846,7 +846,7 @@ export default function VR360Page() {
       {/* ══ PASSPORT ══ */}
       <section id="passport">
         <p className="passport-eyebrow">Sưu tập thành tích</p>
-        <h2 className="passport-h2">Hộ Chiếu Số <span className="hl">Hidden Horizons</span></h2>
+        <h2 className="passport-h2">Hộ Chiếu Số <span className="hl">United Horizons</span></h2>
         <p className="passport-sub">Xem đủ 5 địa điểm VR360 và nhận hộ chiếu số — ảnh card cá nhân hóa để share lên Facebook, Zalo mùa DIFF 2026.</p>
 
         <div className="passport-card-ui">
@@ -854,7 +854,7 @@ export default function VR360Page() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" /><path d="M8 12h8M12 8v8" /></svg>
           </div>
           <p className="pass-title">Hộ Chiếu Số</p>
-          <p className="pass-subtitle">Hidden Horizons · DIFF 2026 · MobiFone Đà Nẵng</p>
+          <p className="pass-subtitle">United Horizons · DIFF 2026 · MobiFone Đà Nẵng</p>
           <div className="stamps-row">
             {stampData.map((stamp, idx) => (
               <div key={idx} className={`stamp-circle ${stamps[idx] ? "lit" : ""}`} onClick={() => stampIt(idx)} title={stamp.title}>
@@ -900,7 +900,7 @@ export default function VR360Page() {
                 <div className="passport-card-top-title">
                   <svg viewBox="0 0 316 64" width="316" height="64" style={{ display: "block", margin: "0 auto" }}>
                     <defs><linearGradient id="tg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#ffe066" /><stop offset="100%" stopColor="#00ffea" /></linearGradient></defs>
-                    <text x="50%" y="22" textAnchor="middle" fill="url(#tg)" fontFamily="'Playfair Display',Georgia,serif" fontSize="20" fontWeight="900" letterSpacing="1">HIDDEN HORIZONS</text>
+                    <text x="50%" y="22" textAnchor="middle" fill="url(#tg)" fontFamily="'Playfair Display',Georgia,serif" fontSize="20" fontWeight="900" letterSpacing="1">UNITED HORIZONS</text>
                     <text x="50%" y="52" textAnchor="middle" fill="url(#tg)" fontFamily="'Playfair Display',Georgia,serif" fontSize="20" fontWeight="900" letterSpacing="1">PASSPORT</text>
                   </svg>
                 </div>
@@ -929,7 +929,7 @@ export default function VR360Page() {
                     );
                   })}
                 </div>
-                <div className="passport-card-footer">#DiffHiddenHorizons #MobiFoneVR360</div>
+                <div className="passport-card-footer">#DiffUnitedHorizons #MobiFoneVR360</div>
               </div>
             </div>
           </div>
@@ -1010,7 +1010,7 @@ export default function VR360Page() {
             <a href="tel:+84935058458" className="footer-hotline">0935.058.458</a>
           </div>
         </div>
-        <p className="footer-bottom">© 2026 MobiFone Đà Nẵng · Hidden Horizons VR360 · Mùa DIFF 2026 · #DiffHiddenHorizons</p>
+        <p className="footer-bottom">© 2026 MobiFone Đà Nẵng · United Horizons VR360 · Mùa DIFF 2026 · #DiffUnitedHorizons</p>
       </footer>
 
       {/* ══ B2B MODAL ══ */}
@@ -1053,7 +1053,7 @@ export default function VR360Page() {
             <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.2rem" }}>
               <img
                 src={generatedImageUri}
-                alt="Hidden Horizons Passport"
+                alt="United Horizons Passport"
                 style={{ width: "100%", maxWidth: "280px", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.25)", border: "1px solid rgba(0,119,204,0.15)" }}
               />
             </div>
@@ -1062,7 +1062,7 @@ export default function VR360Page() {
               onClick={() => {
                 const link = document.createElement("a");
                 link.href = generatedImageUri;
-                link.download = "Hidden_Horizons_Passport.png";
+                link.download = "United_Horizons_Passport.png";
                 document.body.appendChild(link); link.click(); document.body.removeChild(link);
               }}
               style={{ width: "100%", marginTop: "0" }}
