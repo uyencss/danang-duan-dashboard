@@ -47,7 +47,7 @@ jobs:
               git reset --hard origin/master
               git clean -fd
             else
-              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/uyencss/danang-duan-dashboard.git
+              git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/uyencss/danang-duan-dashboard.git
               cd danang-duan-dashboard
             fi
             
