@@ -3,9 +3,11 @@ name: Deploy
 on:
   push:
     branches: [ master ]
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-tailscale:
+    name: Deploy to Tailnet (gps-mobifone.vn)
     runs-on: ubuntu-latest
     steps:
       - name: Connect to Tailscale
@@ -41,8 +43,13 @@ jobs:
             mkdir -p /home/hieunq/Desktop/code-deployments
             cd /home/hieunq/Desktop/code-deployments
             
-            if [ -d "danang-duan-dashboard" ]; then
+            if [ -d "danang-duan-dashboard" ] && [ ! -d "danang-duan-dashboard/.git" ]; then
+              rm -rf danang-duan-dashboard
+            fi
+
+            if [ -d "danang-duan-dashboard/.git" ]; then
               cd danang-duan-dashboard
+              git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/uyencss/danang-duan-dashboard.git
               git fetch origin master
               git reset --hard origin/master
               git clean -fd
@@ -51,6 +58,149 @@ jobs:
               cd danang-duan-dashboard
             fi
             
+            # Recreate the .env file from GitHub Actions Secrets
+            cat <<EOF > .env
+            BUILD_ID="${{ github.sha }}"
+            DATABASE_URL="$DATABASE_URL"
+            POSTGRES_PASSWORD="$POSTGRES_PASSWORD"
+            NEXT_PUBLIC_APP_URL="$NEXT_PUBLIC_APP_URL"
+            BETTER_AUTH_SECRET="$BETTER_AUTH_SECRET"
+            BETTER_AUTH_URL="$BETTER_AUTH_URL"
+            ABLY_API_KEY="$ABLY_API_KEY"
+            NEXT_PUBLIC_ABLY_KEY="$NEXT_PUBLIC_ABLY_KEY"
+            CLOUDFLARE_TUNNEL_TOKEN="$CLOUDFLARE_TUNNEL_TOKEN"
+            CLOUDFLARE_DB_TUNNEL_TOKEN="$CLOUDFLARE_DB_TUNNEL_TOKEN"
+            SMTP_HOST="$SMTP_HOST"
+            SMTP_PORT="$SMTP_PORT"
+            SMTP_USER="$SMTP_USER"
+            SMTP_PASSWORD="$SMTP_PASSWORD"
+            SMTP_FROM="$SMTP_FROM"
+            TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN"
+            TELEGRAM_DIRECTOR_CHAT_ID="$TELEGRAM_DIRECTOR_CHAT_ID"
+            EOF
+
+            # Build and deploy locally on this machine
+            docker compose up -d --build web db cloudflared cloudflared-db
+
+  deploy-vps:
+    name: Deploy to VPS (59.153.245.188)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS Server
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
+          NEXT_PUBLIC_ABLY_KEY: ${{ secrets.NEXT_PUBLIC_ABLY_KEY }}
+          CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+          CLOUDFLARE_DB_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_DB_TUNNEL_TOKEN }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_DIRECTOR_CHAT_ID: ${{ secrets.TELEGRAM_DIRECTOR_CHAT_ID }}
+        with:
+          host: ${{ secrets.VPS_SSH_HOST }}
+          username: ${{ secrets.VPS_SSH_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          envs: DATABASE_URL,POSTGRES_PASSWORD,NEXT_PUBLIC_APP_URL,BETTER_AUTH_SECRET,BETTER_AUTH_URL,ABLY_API_KEY,NEXT_PUBLIC_ABLY_KEY,CLOUDFLARE_TUNNEL_TOKEN,CLOUDFLARE_DB_TUNNEL_TOKEN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASSWORD,SMTP_FROM,TELEGRAM_BOT_TOKEN,TELEGRAM_DIRECTOR_CHAT_ID
+          script: |
+            mkdir -p /home/cloud/code-deployments
+            cd /home/cloud/code-deployments
+
+            if [ -d "danang-duan-dashboard" ] && [ ! -d "danang-duan-dashboard/.git" ]; then
+              rm -rf danang-duan-dashboard
+            fi
+
+            if [ -d "danang-duan-dashboard/.git" ]; then
+              cd danang-duan-dashboard
+              git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/uyencss/danang-duan-dashboard.git
+              git fetch origin master
+              git reset --hard origin/master
+              git clean -fd
+            else
+              git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/uyencss/danang-duan-dashboard.git
+              cd danang-duan-dashboard
+            fi
+
+            # Recreate the .env file from GitHub Actions Secrets
+            cat <<EOF > .env
+            BUILD_ID="${{ github.sha }}"
+            DATABASE_URL="$DATABASE_URL"
+            POSTGRES_PASSWORD="$POSTGRES_PASSWORD"
+            NEXT_PUBLIC_APP_URL="$NEXT_PUBLIC_APP_URL"
+            BETTER_AUTH_SECRET="$BETTER_AUTH_SECRET"
+            BETTER_AUTH_URL="$BETTER_AUTH_URL"
+            ABLY_API_KEY="$ABLY_API_KEY"
+            NEXT_PUBLIC_ABLY_KEY="$NEXT_PUBLIC_ABLY_KEY"
+            CLOUDFLARE_TUNNEL_TOKEN="$CLOUDFLARE_TUNNEL_TOKEN"
+            CLOUDFLARE_DB_TUNNEL_TOKEN="$CLOUDFLARE_DB_TUNNEL_TOKEN"
+            SMTP_HOST="$SMTP_HOST"
+            SMTP_PORT="$SMTP_PORT"
+            SMTP_USER="$SMTP_USER"
+            SMTP_PASSWORD="$SMTP_PASSWORD"
+            SMTP_FROM="$SMTP_FROM"
+            TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN"
+            TELEGRAM_DIRECTOR_CHAT_ID="$TELEGRAM_DIRECTOR_CHAT_ID"
+            EOF
+
+            # Build and deploy locally on this machine
+            docker compose up -d --build web db cloudflared cloudflared-db
+
+  deploy-vps-alt:
+    name: Deploy to Alt VPS (42.1.67.147)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS Server
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          ABLY_API_KEY: ${{ secrets.ABLY_API_KEY }}
+          NEXT_PUBLIC_ABLY_KEY: ${{ secrets.NEXT_PUBLIC_ABLY_KEY }}
+          CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+          CLOUDFLARE_DB_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_DB_TUNNEL_TOKEN }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_DIRECTOR_CHAT_ID: ${{ secrets.TELEGRAM_DIRECTOR_CHAT_ID }}
+        with:
+          host: ${{ secrets.VPS_ALT_SSH_HOST }}
+          username: ${{ secrets.VPS_ALT_SSH_USER }}
+          key: ${{ secrets.VPS_ALT_SSH_KEY }}
+          envs: DATABASE_URL,POSTGRES_PASSWORD,NEXT_PUBLIC_APP_URL,BETTER_AUTH_SECRET,BETTER_AUTH_URL,ABLY_API_KEY,NEXT_PUBLIC_ABLY_KEY,CLOUDFLARE_TUNNEL_TOKEN,CLOUDFLARE_DB_TUNNEL_TOKEN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASSWORD,SMTP_FROM,TELEGRAM_BOT_TOKEN,TELEGRAM_DIRECTOR_CHAT_ID
+          script: |
+            mkdir -p /home/uyenuyen/code-deployments
+            cd /home/uyenuyen/code-deployments
+
+            if [ -d "danang-duan-dashboard" ] && [ ! -d "danang-duan-dashboard/.git" ]; then
+              rm -rf danang-duan-dashboard
+            fi
+
+            if [ -d "danang-duan-dashboard/.git" ]; then
+              cd danang-duan-dashboard
+              git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/uyencss/danang-duan-dashboard.git
+              git fetch origin master
+              git reset --hard origin/master
+              git clean -fd
+            else
+              git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/uyencss/danang-duan-dashboard.git
+              cd danang-duan-dashboard
+            fi
+
             # Recreate the .env file from GitHub Actions Secrets
             cat <<EOF > .env
             BUILD_ID="${{ github.sha }}"
