@@ -176,4 +176,18 @@ jobs:
             OVERRIDE
 
             # Build and deploy (App Only: no db, no redis, no cloudflared-db)
-            docker compose up -d --build web cloudflared
+            # Conditionally run tunnel based on failover state
+            STATE="normal"
+            if [ -f "/home/uyenuyen/failover_state" ]; then
+              STATE=$(cat /home/uyenuyen/failover_state)
+            fi
+
+            if [ "$STATE" = "failover" ]; then
+              echo "System is in FAILOVER mode. Starting web and tunnel..."
+              docker compose up -d --build web cloudflared
+            else
+              echo "System is in NORMAL mode. Starting web only, keeping tunnel stopped..."
+              docker compose up -d --build web
+              docker stop danang-dashboard-tunnel || true
+              docker update --restart=no danang-dashboard-tunnel || true
+            fi
