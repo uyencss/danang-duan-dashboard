@@ -17,6 +17,7 @@ import { getCurrentUser, requireRole } from "@/lib/auth-utils";
 import { checkPermission } from "@/lib/rbac-server";
 import { withCache, cacheInvalidate } from "@/lib/cache";
 import { syncRevenueDistribution } from "@/lib/utils/revenue-sync";
+import { syncMasterRevenue } from "@/lib/utils/master-revenue-sync";
 import { sendTelegramAlert } from "@/lib/telegramService";
 
 // ── Schema for the NEW creation flow ────────────────────────────────
@@ -93,6 +94,10 @@ export async function createDuAn(data: any) {
   try {
     await requireRole("ADMIN", "USER", "AM", "CV");
     const validated = CreateDuAnSchema.parse(data);
+
+    if (validated.trangThaiHienTai === "DA_KY_HOP_DONG") {
+      return { error: "Đối với những dự án 'Đã ký hợp đồng' vui lòng quản trị viên để cập nhật." };
+    }
 
     // ── Resolve customer ID ──
     let resolvedCustomerId = validated.customerId;
@@ -207,6 +212,8 @@ export async function createDuAn(data: any) {
 
     // Generate revenue distribution slices for this project
     await syncRevenueDistribution(project.id);
+    // Sync Bảng 4 (Master Revenue) for dashboard queries
+    await syncMasterRevenue(project.id);
 
     await cacheInvalidate("dashboard:overview", "options:khachhang", "options:sanpham", "options:sanpham-groups");
     revalidatePath("/du-an");
@@ -216,7 +223,6 @@ export async function createDuAn(data: any) {
     revalidatePath("/dia-ban");
     revalidatePath("/admin/khach-hang");
     revalidatePath("/admin/san-pham");
-    revalidatePath("/quan-tri-doanh-thu");
     await syncReplica();
     return { success: true, id: project.id };
   } catch (error) {
@@ -258,6 +264,8 @@ export async function updateDuAn(id: number, data: any) {
 
         // Re-generate revenue distribution slices after update
         await syncRevenueDistribution(id);
+        // Sync Bảng 4 (Master Revenue) for dashboard queries
+        await syncMasterRevenue(id);
 
         await cacheInvalidate("dashboard:overview");
         revalidatePath("/du-an");
@@ -266,7 +274,6 @@ export async function updateDuAn(id: number, data: any) {
         revalidatePath("/kpi");
         revalidatePath("/dia-ban");
         revalidatePath(`/du-an/${id}`);
-        revalidatePath("/quan-tri-doanh-thu");
         await syncReplica();
         return { success: true };
     } catch (error) {

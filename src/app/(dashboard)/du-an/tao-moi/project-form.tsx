@@ -271,6 +271,11 @@ export default function ProjectForm() {
       toast.error("Vui lòng chọn sản phẩm hoặc nhập đầy đủ nhóm SP và tên SP chi tiết");
       return;
     }
+    // Validate 'Đã ký hợp đồng' block
+    if (values.trangThaiHienTai === "DA_KY_HOP_DONG") {
+      toast.error("Đối với những dự án 'Đã ký hợp đồng' vui lòng quản trị viên để cập nhật.");
+      return;
+    }
 
     setLoading(true);
     const result = await createDuAn(values);

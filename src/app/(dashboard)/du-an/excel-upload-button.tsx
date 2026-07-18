@@ -39,35 +39,77 @@ export function ExcelUploadButton({ users }: { users: UserOption[] }) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const handleDownloadSample = () => {
-    const wsData = [
-      [
-        "Tên dự án*", "Trọng điểm", "Kỳ vọng", 
-        "Khách hàng*", "Phân loại khách hàng*", "Địa chỉ",
-        "Tên sản phẩm chi tiết*", "Nhóm sản phẩm*", "Mô tả sản phẩm",
-        "Tổng doanh thu*", "DT theo tháng", "Mã hợp đồng", "Ngày bắt đầu* (DD/MM/YYYY)", "Ngày kết thúc (DD/MM/YYYY)",
-        "Chuyên viên chủ trì", "Chuyên viên hỗ trợ 1", "Chuyên viên hỗ trợ 2", "AM phụ trách", "AM hỗ trợ 1",
-        "Trạng thái khởi tạo*"
-      ],
-      [
-        "Dự án Viễn thông mẫu", "Có", "Không",
-        "Công ty TNHH ABCD", "Doanh nghiệp", "Đà Nẵng",
-        "Gói Camera An ninh", "An ninh mạng", "Camera độ phân giải cao",
-        "150.5", "10", "HD-123456", "20/10/2023", "",
-        "Nguyễn Văn A", "", "", "Trần Thị B", "",
-        "Mới"
-      ]
+    const notes = [
+      ["* LƯU Ý KHI ĐIỀN DỮ LIỆU:"],
+      ["- Phân loại khách hàng: Chọn 1 trong số: [Chính phủ/Sở ban ngành, Doanh nghiệp, Công an]"],
+      ["- Nhóm sản phẩm: Chọn 1 trong số: [Cloud DC, An ninh mạng, Giải pháp CNTT, Dự án CĐS KHCP, KHDN lớn, CNS trong lĩnh vực an ninh]"],
+      ["- Trạng thái khởi tạo: Chọn 1 trong số: [Mới, Đang làm việc, Đã demo, Đã gửi báo giá, Đã ký hợp đồng, Thất bại]"],
+      ["- Trọng điểm / Kỳ vọng: Điền [Có] hoặc [Không]"],
+      ["- Nhân sự (Chuyên viên/AM): Điền ĐÚNG tên (hệ thống sẽ map theo tên)"]
     ];
-    
-    // Notes
-    wsData.push([]);
-    wsData.push(["* LƯU Ý KHI ĐIỀN DỮ LIỆU:"]);
-    wsData.push(["- Phân loại khách hàng: Chọn 1 trong số: [Chính phủ/Sở ban ngành, Doanh nghiệp, Công an]"]);
-    wsData.push(["- Nhóm sản phẩm: Chọn 1 trong số: [Cloud DC, An ninh mạng, Giải pháp CNTT, Dự án CĐS KHCP, KHDN lớn, CNS trong lĩnh vực an ninh]"]);
-    wsData.push(["- Trạng thái khởi tạo: Chọn 1 trong số: [Mới, Đang làm việc, Đã demo, Đã gửi báo giá, Đã ký hợp đồng, Thất bại]"]);
-    wsData.push(["- Trọng điểm / Kỳ vọng: Điền [Có] hoặc [Không]"]);
-    wsData.push(["- Nhân sự (Chuyên viên/AM): Điền ĐÚNG tên (hệ thống sẽ map theo tên)"]);
 
+    const headers = [
+      "Tên dự án*",
+      "Trọng điểm",
+      "Kỳ vọng",
+      "Khách hàng*",
+      "Phân loại khách hàng*",
+      "Địa chỉ",
+      "Tên sản phẩm chi tiết*",
+      "Nhóm sản phẩm*",
+      "Mô tả sản phẩm",
+      "Tổng doanh thu*",
+      "DT theo tháng",
+      "Số kỳ 1 gói cước (tháng)",
+      "Mã hợp đồng",
+      "Ngày bắt đầu* (DD/MM/YYYY)",
+      "Ngày kết thúc (DD/MM/YYYY)",
+      "Chuyên viên chủ trì",
+      "Chuyên viên hỗ trợ 1",
+      "Chuyên viên hỗ trợ 2",
+      "AM phụ trách",
+      "AM hỗ trợ 1",
+      "Trạng thái khởi tạo*",
+    ];
+
+    const sampleRow = [
+      "Dự án Viễn thông",
+      "Không",
+      "Có",
+      "Công ty TNHH A",
+      "Doanh nghiệp",
+      "Đà Nẵng",
+      "Gói Camera an ninh",
+      "Camera",
+      "Camera giám sát độ phân giải cao",
+      "150500000",
+      "10000000",
+      "12",
+      "HD-123456",
+      "20/10/2026",
+      "20/10/2027",
+      "Nguyễn Văn A",
+      "Trần Thị B",
+      "",
+      "Lê Văn C",
+      "",
+      "Mới",
+    ];
+
+    const wsData = [...notes, headers, sampleRow];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Set column widths
+    ws["!cols"] = headers.map((h) => ({
+      wch: Math.max(h.length + 4, 15),
+    }));
+
+    // Merge each note row across all header columns
+    ws["!merges"] = notes.map((_, i) => ({
+      s: { r: i, c: 0 },
+      e: { r: i, c: headers.length - 1 }
+    }));
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Ban_Mau");
     XLSX.writeFile(wb, "Mau_Upload_DuAn.xlsx");
@@ -206,11 +248,50 @@ export function ExcelUploadButton({ users }: { users: UserOption[] }) {
     reader.onload = (evt) => {
       const bstr = evt.target?.result;
       if (bstr) {
-        // cellDates: true giúp tự động parse các ô format Date trong Excel thành JS Date
         const wb = XLSX.read(bstr, { type: "binary", cellDates: true });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+        // Auto-detect header row index by scanning for known column names
+        const rawRows = XLSX.utils.sheet_to_json<any[]>(ws, {
+          header: 1,
+          defval: "",
+        });
+
+        let headerRowIndex = 0;
+        const KNOWN_HEADERS = [
+          "Tên dự án", "Khách hàng", "Sản phẩm", "Nhóm"
+        ];
+
+        for (let i = 0; i < Math.min(rawRows.length, 15); i++) {
+          const row = rawRows[i] as any[];
+          if (!row) continue;
+
+          // Skip note rows which typically only have 1 merged string cell
+          const filledCells = row.filter(c => String(c ?? "").trim() !== "");
+          if (filledCells.length < 5) continue;
+
+          const cellValues = row.map((c: any) =>
+            String(c ?? "").trim().toLowerCase()
+          );
+
+          // Header row must contain the project name header
+          const hasProjectName = cellValues.some(v => v.includes("tên dự án") || v.includes("ten du an"));
+          if (!hasProjectName) continue;
+
+          const matchCount = KNOWN_HEADERS.filter((h) =>
+            cellValues.some((v: string) => v.includes(h.toLowerCase()))
+          ).length;
+          if (matchCount >= 2) {
+            headerRowIndex = i;
+            break;
+          }
+        }
+
+        const data = XLSX.utils.sheet_to_json(ws, {
+          defval: "",
+          range: headerRowIndex, // Skip notes rows before header
+        });
         validateAndParse(data);
       }
     };

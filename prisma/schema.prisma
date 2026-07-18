@@ -150,6 +150,9 @@ model DuAn {
   ngayChamsocCuoiCung DateTime?
   trangThaiHienTai    TrangThaiDuAn    @default(MOI)
   thoiGianDuKien      String?
+  sourceType          SourceType       @default(PIPELINE)
+  soKy1GoiCuoc        Int?             // Bảng 2: Số kỳ 1 gói cước (tháng)
+  batchId             String?          // Track Excel upload batch for recall
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
   binhLuan            BinhLuan[]
@@ -164,6 +167,8 @@ model DuAn {
   notifications       Notification[]
   tinNhan             TinNhan[]
   revenueSlices       RevenueDistribution[]
+  invoiceRecords      InvoiceRecord[]
+  masterRevenues      MasterRevenue[]
 
   @@index([customerId])
   @@index([productId])
@@ -176,6 +181,9 @@ model DuAn {
   @@index([updatedAt])
   @@index([tenDuAn])
   @@index([isPendingDelete])
+  @@index([sourceType])
+  @@index([batchId])
+  @@index([maHopDong])
 }
 
 model NhatKyCongViec {
@@ -394,6 +402,12 @@ enum LoaiDoanhThu {
   DUY_TRI
 }
 
+enum SourceType {
+  PIPELINE
+  CLOUD_DISTRIBUTE
+  ECONTRACT_INVOICE
+}
+
 model RevenueDistribution {
   id             String        @id @default(uuid())
   projectId      Int
@@ -404,6 +418,8 @@ model RevenueDistribution {
   soNgayActive   Int
   doanhThuPhanBo Float
   loaiDoanhThu   LoaiDoanhThu
+  sourceType     SourceType?
+  isManualEdit   Boolean       @default(false)
   createdAt      DateTime      @default(now())
   duAn           DuAn          @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -413,6 +429,51 @@ model RevenueDistribution {
   @@index([loaiDoanhThu])
   @@index([amId])
   @@index([chuyenVienId])
+  @@index([sourceType])
+}
+
+model InvoiceRecord {
+  id                Int      @id @default(autoincrement())
+  projectId         Int
+  thangGhiNhan      Int      // Month (1-12)
+  namGhiNhan        Int      // Year
+  doanhThuTheoThang Float    // Revenue for this specific month
+  batchId           String?  // Track Excel upload batch for recall
+  createdAt         DateTime @default(now())
+  duAn              DuAn     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([projectId, thangGhiNhan, namGhiNhan])
+  @@index([namGhiNhan])
+  @@index([batchId])
+}
+
+// ─── Bảng 4: Master Revenue Aggregation ─────────────────────────────
+// Pre-computed monthly revenue from all 3 sources (Pipeline, Cloud, EContract).
+// Dashboard queries EXCLUSIVELY from this table for performance.
+model MasterRevenue {
+  id             Int          @id @default(autoincrement())
+  projectId      Int
+  maHopDong      String?      // For deduplication across sources
+  sourceType     SourceType   // Which source contributed this row
+  nam            Int          // Year
+  thang          Int          // Month (1-12)
+  doanhThu       Float        @default(0) // Revenue for this month
+  loaiDoanhThu   LoaiDoanhThu @default(KY_MOI)
+  amId           String?
+  chuyenVienId   String?
+  batchId        String?      // Track rebuild batches
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  duAn           DuAn         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, nam, thang, sourceType])
+  @@index([nam, thang])
+  @@index([projectId])
+  @@index([maHopDong])
+  @@index([sourceType])
+  @@index([amId])
+  @@index([loaiDoanhThu])
 }
 
 enum FiveMCategory {

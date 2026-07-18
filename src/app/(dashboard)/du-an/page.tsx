@@ -1,6 +1,6 @@
 import { getDuAnList, getPendingStepLogs, getUserOptions } from "./actions";
 import { ProjectsTable } from "./projects-table";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Database } from "lucide-react";
 import Link from "next/link";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { TrangThaiDuAn } from "@prisma/client";
@@ -113,6 +113,18 @@ export default async function DuAnPage({
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Sub-nav: Dữ liệu nguồn (ADMIN/USER only) */}
+          {isQuảnTrịViên && (
+            <Link
+              href="/du-an/du-lieu-nguon"
+              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-4 md:px-5 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-purple-500/20 active:scale-95 transition-all text-xs md:text-sm h-10"
+            >
+              <Database className="size-4" />
+              <span className="hidden xs:inline">Dữ liệu nguồn</span>
+              <span className="xs:hidden">DL nguồn</span>
+            </Link>
+          )}
+
           {/* Nhóm button Tính năng Import Excel */}
           <ExcelUploadButton users={users} />
  

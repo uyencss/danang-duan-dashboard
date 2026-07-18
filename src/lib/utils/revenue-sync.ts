@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { generateRevenueSchedule, type ContractInput } from "@/lib/utils/revenue-engine";
+import { syncMasterRevenue } from "@/lib/utils/master-revenue-sync";
 
 /**
  * Persists the revenue schedule for a single project.
@@ -52,6 +53,9 @@ export async function syncRevenueDistribution(projectId: number) {
           ]
         : []),
     ]);
+
+    // Cascade sync to MasterRevenue (Bảng 4)
+    await syncMasterRevenue(projectId);
   } catch (error) {
     console.error(`[RevenueEngine] Failed to sync distribution for project ${projectId}:`, error);
   }

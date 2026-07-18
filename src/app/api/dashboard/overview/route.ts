@@ -5,6 +5,7 @@ import { withLogging } from "@/lib/logger/api-logger";
 import { logger } from "@/lib/logger";
 import { requireApiRole } from "@/lib/auth-utils";
 import { withCache } from "@/lib/cache";
+import { getDeduplicatedMasterRevenue } from "@/lib/utils/master-revenue-sync";
 export const dynamic = "force-dynamic";
 
 /**
@@ -46,8 +47,8 @@ async function computeDashboardOverview() {
   const yearStart = new Date(Date.UTC(currentYear, 0, 1));
   const yearEnd = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59));
 
-  const projects = await prisma.duAn.findMany({
-    where: excludeFailed,
+  const allProjects = await prisma.duAn.findMany({
+    where: { isPendingDelete: { not: true } },
     include: {
       am: { select: { diaBan: true } },
       nhatKy: {
@@ -58,42 +59,92 @@ async function computeDashboardOverview() {
     }
   });
 
+  // Deduplicate by project name (case-insensitive & trimmed), prioritizing more advanced statuses
+  const uniqueProjectsMap = new Map<string, typeof allProjects[0]>();
+  const statusPriority: Record<TrangThaiDuAn, number> = {
+    [TrangThaiDuAn.DA_KY_HOP_DONG]: 6,
+    [TrangThaiDuAn.DA_GUI_BAO_GIA]: 5,
+    [TrangThaiDuAn.DA_DEMO]: 4,
+    [TrangThaiDuAn.DANG_LAM_VIEC]: 3,
+    [TrangThaiDuAn.MOI]: 2,
+    [TrangThaiDuAn.THAT_BAI]: 1,
+  };
+
+  allProjects.forEach(p => {
+    const key = p.tenDuAn.trim().toLowerCase();
+    if (!uniqueProjectsMap.has(key)) {
+      uniqueProjectsMap.set(key, p);
+    } else {
+      const existing = uniqueProjectsMap.get(key)!;
+      const existingPriority = statusPriority[existing.trangThaiHienTai] || 0;
+      const currentPriority = statusPriority[p.trangThaiHienTai] || 0;
+      if (currentPriority > existingPriority) {
+        uniqueProjectsMap.set(key, p);
+      }
+    }
+  });
+  const uniqueProjects = Array.from(uniqueProjectsMap.values());
+
+  // projects is the active subset (not failed) of unique projects for revenue calculations
+  const projects = uniqueProjects.filter(p => p.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI);
+
+  // Get deduplicated MasterRevenue slices for the current year
+  const slices = await getDeduplicatedMasterRevenue(currentYear);
+
   const kpi = await prisma.chiTieuKpi.findUnique({
     where: { nam_thang: { nam: currentYear, thang: currentMonth } }
   });
   const kpiThang = kpi ? (kpi.anNinhMang + kpi.giaiPhapCntt + kpi.duAnCds + kpi.cnsAnNinh) : 0;
 
-  const dtTongDuAn = projects.reduce((sum, p) => {
-    return p.nam === currentYear ? sum + p.tongDoanhThuDuKien : sum;
-  }, 0);
+  // 1. DT Tổng dự án = DT theo tháng của dự án Đã ký hợp đồng + Tổng DT của các dự án active khác (không phải Đã ký HD hoặc Thất bại)
+  const signedSlices = slices.filter(s => s.duAn.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG);
+  const rawSignedYearlyRevenue = signedSlices.reduce((sum, s) => sum + s.doanhThu, 0);
 
-  const signedProjects = projects.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG);
-  const dtThangDaKy = signedProjects.reduce((sum, p) => {
-    const active = getActiveMonths(p.ngayBatDau, p.ngayKetThuc, monthStart, monthEnd);
-    return active > 0 ? sum + (p.doanhThuTheoThang || 0) : sum;
-  }, 0);
+  const nonSignedActiveProjects = uniqueProjects.filter(p => 
+      p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG &&
+      p.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI
+  );
+  const rawNonSignedRevenue = nonSignedActiveProjects.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
+
+  const rawDtTongDuAn = rawSignedYearlyRevenue + rawNonSignedRevenue;
+
+  // 2. DT Tháng đã ký: sum of monthly revenue for current month (e.g. July) where project is signed.
+  const currentMonthSlices = slices.filter(s => s.thang === currentMonth);
+  const signedCurrentMonthSlices = currentMonthSlices.filter(s => s.duAn.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG);
+  const rawDtThangDaKy = signedCurrentMonthSlices.reduce((sum, s) => sum + s.doanhThu, 0);
+
+  // 3. DT Dự kiến tháng: DT tháng đã ký + DT of projects in currentMonth with isKyVong === true (excluding signed & failed)
+  const expectedProjectsInMonth = uniqueProjects.filter(p => 
+      p.isKyVong === true && 
+      p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG &&
+      p.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI &&
+      p.nam === currentYear &&
+      p.thang === currentMonth
+  );
+  const rawExpectedRevenue = expectedProjectsInMonth.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
+  const rawDtDuKienThang = rawDtThangDaKy + rawExpectedRevenue;
+
+  // 4. DT theo quý: DT of standard calendar quarter months (Q1: 1,2,3; Q2: 4,5,6; Q3: 7,8,9; Q4: 10,11,12)
+  const quarterMonths = [(currentQuarter - 1) * 3 + 1, (currentQuarter - 1) * 3 + 2, (currentQuarter - 1) * 3 + 3];
+  const quarterSlices = signedSlices.filter(s => quarterMonths.includes(s.thang));
+  const rawDtTheoQuy = quarterSlices.reduce((sum, s) => sum + s.doanhThu, 0);
+
+  // 5. DT theo năm: sum of monthly revenues for all months (1-12) of signed projects in currentYear.
+  const rawDtTheoNam = signedSlices.reduce((sum, s) => sum + s.doanhThu, 0);
+
+  // ── Convert to triệu đồng ONCE at the very end ──
+  const dtTongDuAn = Math.round(rawDtTongDuAn / 1_000_000);
+  const dtThangDaKy = Math.round(rawDtThangDaKy / 1_000_000);
+  const dtDuKienThang = Math.round(rawDtDuKienThang / 1_000_000);
+  const dtTheoQuy = Math.round(rawDtTheoQuy / 1_000_000);
+  const dtTheoNam = Math.round(rawDtTheoNam / 1_000_000);
+
   const percentageHTKH_Metric2 = kpiThang > 0 ? (dtThangDaKy / kpiThang) * 100 : 0;
-
-  const expectedProjects = projects.filter(p => p.isKyVong === true && p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG);
-  const dtDuKienThang = dtThangDaKy + expectedProjects.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
   const percentageHTKH_Metric3 = kpiThang > 0 ? (dtDuKienThang / kpiThang) * 100 : 0;
 
-  const dtTheoQuy = signedProjects.reduce((sum, p) => {
-    const activeMonthsInQuarter = getActiveMonths(p.ngayBatDau, p.ngayKetThuc, quarterStart, quarterEnd);
-    return sum + ((p.doanhThuTheoThang || 0) * activeMonthsInQuarter);
-  }, 0);
+  const tongSoDuAn = uniqueProjects.length;
+  const duAnTrongDiem = uniqueProjects.filter(p => p.isTrongDiem).length;
 
-  const dtTheoNam = signedProjects.reduce((sum, p) => {
-    const activeMonthsInYear = getActiveMonths(p.ngayBatDau, p.ngayKetThuc, yearStart, yearEnd);
-    return sum + ((p.doanhThuTheoThang || 0) * activeMonthsInYear);
-  }, 0);
-
-  const tongSoDuAn = projects.length;
-  const duAnTrongDiem = projects.filter(p => p.isTrongDiem).length;
-
-  const allProjectsForStatus = await prisma.duAn.findMany({
-    select: { trangThaiHienTai: true }
-  });
   const statusOrder = [
     TrangThaiDuAn.MOI,
     TrangThaiDuAn.DANG_LAM_VIEC,
@@ -104,7 +155,7 @@ async function computeDashboardOverview() {
   ];
   const hienTrangThang = statusOrder.map(status => ({
     label: status,
-    count: allProjectsForStatus.filter(p => p.trangThaiHienTai === status).length
+    count: uniqueProjects.filter(p => p.trangThaiHienTai === status).length
   }));
 
   const stepCounts: Record<string, number> = {};
