@@ -73,13 +73,13 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
 };
 
 const STEPS = [
-  "Bước 1: Tiếp cận tìm hiểu nhu cầu",
-  "Bước 2: Đề xuất GP",
-  "Bước 3: Xây dựng đề án",
-  "Bước 4: Tham gia thầu",
-  "Bước 5: Ký hợp đồng",
-  "Bước 6: Triển khai",
-  "Bước 7: Hỗ trợ sau bán"
+  "Bước 1: Tiếp cận KH và thu thập thông tin",
+  "Bước 2: Đánh giá nhu cầu KH và đề xuất giải pháp",
+  "Bước 3: Quyết định phương án tham gia gói thầu",
+  "Bước 4: Tham dự thầu",
+  "Bước 5: Thương thảo, hoàn thiện và ký hợp đồng",
+  "Bước 6: Triển khai hợp đồng",
+  "Bước 7: Hỗ trợ sau bán hàng dự án/gói thầu"
 ];
 
 export function ProjectsTable({ 
@@ -230,7 +230,7 @@ export function ProjectsTable({
       accessorKey: "tongDoanhThuDuKien",
       header: "DT dự kiến",
       cell: ({ row }) => (
-        <span className="text-xs font-bold">{(row.getValue("tongDoanhThuDuKien") as number).toLocaleString()}</span>
+        <span className="text-xs font-bold">{Math.round((row.getValue("tongDoanhThuDuKien") as number) / 1_000_000).toLocaleString()}</span>
       ),
     },
     {
@@ -238,7 +238,7 @@ export function ProjectsTable({
       header: "DT tháng",
       cell: ({ row }) => (
         <span className="text-xs font-bold text-[#0058bc]">
-          {(row.getValue("doanhThuTheoThang") as number || 0).toLocaleString()}
+          {Math.round(((row.getValue("doanhThuTheoThang") as number) || 0) / 1_000_000).toLocaleString()}
         </span>
       ),
     },

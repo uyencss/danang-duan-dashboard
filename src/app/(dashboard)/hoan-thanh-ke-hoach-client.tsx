@@ -91,7 +91,9 @@ export function HoanThanhKeHoachClient({ projects, kpis }: { projects: any[], kp
         });
 
         return {
-            monthlyKpi, quarterlyKpi, monthlyRevenue, quarterlyRevenue
+            monthlyKpi, quarterlyKpi,
+            monthlyRevenue: Math.round(monthlyRevenue / 1_000_000),
+            quarterlyRevenue: Math.round(quarterlyRevenue / 1_000_000)
         };
     };
 

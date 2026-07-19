@@ -92,7 +92,7 @@ export function Header({ user, menuItems }: HeaderProps) {
                 </Button>
               }
             />
-            <SheetContent side="left" className="p-0 border-none w-72 bg-gradient-to-b from-[#0a192f] via-[#0d2a52] to-[#0a192f]">
+            <SheetContent side="left" className="p-0 border-none w-72 bg-gradient-to-b from-[#002d6b] via-[#003b8b] to-[#002d6b]">
               <SheetHeader className="sr-only">
                 <SheetTitle>Menu điều hướng</SheetTitle>
               </SheetHeader>

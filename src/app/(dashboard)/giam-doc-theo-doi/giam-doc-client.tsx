@@ -374,7 +374,7 @@ export default function GiamDocClient() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-none shadow-sm">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-xs md:text-sm font-bold text-blue-800 uppercase tracking-wider">Mục tiêu (Target)</CardTitle>
+                            <CardTitle className="text-xs md:text-sm font-bold text-blue-800 uppercase tracking-wider">Mục tiêu (Triệu VNĐ)</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl md:text-3xl font-black text-blue-900">{formatCurrency(kpiTarget)}</div>
@@ -382,7 +382,7 @@ export default function GiamDocClient() {
                     </Card>
                     <Card className="bg-gradient-to-br from-green-50 to-green-100 border-none shadow-sm">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-xs md:text-sm font-bold text-green-800 uppercase tracking-wider">Thực tế đạt được</CardTitle>
+                            <CardTitle className="text-xs md:text-sm font-bold text-green-800 uppercase tracking-wider">Thực tế đạt được (Triệu VNĐ)</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl md:text-3xl font-black text-green-900">{formatCurrency(kpiActual)}</div>
@@ -393,7 +393,7 @@ export default function GiamDocClient() {
                     </Card>
                     <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-none shadow-sm">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-xs md:text-sm font-bold text-orange-800 uppercase tracking-wider">Khoảng cách cần bù đắp</CardTitle>
+                            <CardTitle className="text-xs md:text-sm font-bold text-orange-800 uppercase tracking-wider">Khoảng cách cần bù đắp (Triệu VNĐ)</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl md:text-3xl font-black text-orange-900">{formatCurrency(kpiGap)}</div>
@@ -513,11 +513,19 @@ function ExecutiveCard({ title, projects, expanded, onToggle, type }: any) {
         // Initialize 7 steps
         for(let i=1; i<=7; i++) stepMap[`Bước ${i}`] = 0;
         projects.forEach((p: any) => {
-            if (p.hienTaiBuoc) stepMap[p.hienTaiBuoc] = (stepMap[p.hienTaiBuoc] || 0) + 1;
+            if (p.hienTaiBuoc) {
+                const match = p.hienTaiBuoc.match(/^Bước \d/i);
+                const stepKey = match ? match[0] : p.hienTaiBuoc;
+                stepMap[stepKey] = (stepMap[stepKey] || 0) + 1;
+            }
         });
         chartData = Object.entries(stepMap).map(([name, value]) => ({ name, value }));
         if (filterValue) {
-            filteredProjects = projects.filter((p: any) => p.hienTaiBuoc === filterValue);
+            filteredProjects = projects.filter((p: any) => {
+                const match = p.hienTaiBuoc?.match(/^Bước \d/i);
+                const stepKey = match ? match[0] : p.hienTaiBuoc;
+                return stepKey === filterValue || p.hienTaiBuoc === filterValue;
+            });
         }
     }
 
@@ -644,7 +652,7 @@ function ExecutiveCard({ title, projects, expanded, onToggle, type }: any) {
                                             </TableCell>
                                             <TableCell className="text-[10px] py-2 truncate max-w-[80px]">{p.khachHang?.ten}</TableCell>
                                             <TableCell className="text-[10px] py-2 text-right font-bold text-green-700">
-                                                {Math.round(p.tongDoanhThuDuKien || 0).toLocaleString('vi-VN')}
+                                                {Math.round((p.tongDoanhThuDuKien || 0) / 1_000_000).toLocaleString('vi-VN')}
                                             </TableCell>
                                             <TableCell className="py-2">
                                                 <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-white border-slate-200">

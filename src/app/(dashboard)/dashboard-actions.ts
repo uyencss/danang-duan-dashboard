@@ -167,14 +167,19 @@ export async function getAMPerformance() {
             // Metric 5: doanhThuDuKienThang (Final dashboard bar value)
             const doanhThuDuKienThang = doanhThuDaKy + doanhThuKyVong;
 
+            // ── Convert to triệu đồng (consistent with all other dashboard tabs) ──
+            const doanhThuDaKyTrieu = Math.round(doanhThuDaKy / 1_000_000);
+            const doanhThuKyVongTrieu = Math.round(doanhThuKyVong / 1_000_000);
+            const doanhThuDuKienThangTrieu = Math.round(doanhThuDuKienThang / 1_000_000);
+
             return {
                 id: am.id,
                 name: am.name,
                 soLuongTiepCan,
                 soHopDongDaKy,
-                doanhThuDaKy,
-                doanhThuKyVong,
-                doanhThuDuKienThang
+                doanhThuDaKy: doanhThuDaKyTrieu,
+                doanhThuKyVong: doanhThuKyVongTrieu,
+                doanhThuDuKienThang: doanhThuDuKienThangTrieu
             };
         });
 
@@ -241,7 +246,7 @@ async function _getKPITimeSeries(userId: string, userRole: string, granularity: 
 
             timeSeriesMap.set(timeKey, {
                 timeLabel: timeKey,
-                revenue: g._sum.tongDoanhThuDuKien || 0,
+                revenue: Math.round((g._sum.tongDoanhThuDuKien || 0) / 1_000_000),
                 newProjects: g._count.id || 0,
                 signedContracts: sg ? (sg._count.id || 0) : 0,
                 sortKey
@@ -437,17 +442,17 @@ async function _getDiaBanAnalytics(userId: string, userRole: string, filter?: { 
         return {
             diaBanData: Array.from(diaBanMap.values()).map(({ staffCount, ...rest }) => ({
                 ...rest,
-                revenue: Math.round(rest.revenue),
-                signedRevenue: Math.round(rest.signedRevenue),
-                otherRevenue: Math.round(rest.otherRevenue),
+                revenue: Math.round(rest.revenue / 1_000_000),
+                signedRevenue: Math.round(rest.signedRevenue / 1_000_000),
+                otherRevenue: Math.round(rest.otherRevenue / 1_000_000),
                 staffCount: staffCount.size
             })).sort((a, b) => b.revenue - a.revenue),
             topStaffData: Array.from(staffMap.values())
                 .map(s => ({
                     ...s,
-                    revenue: Math.round(s.revenue),
-                    signedRevenue: Math.round(s.signedRevenue),
-                    otherRevenue: Math.round(s.otherRevenue),
+                    revenue: Math.round(s.revenue / 1_000_000),
+                    signedRevenue: Math.round(s.signedRevenue / 1_000_000),
+                    otherRevenue: Math.round(s.otherRevenue / 1_000_000),
                     conversionRate: s.totalProjects > 0 ? (s.contracts / s.totalProjects) * 100 : 0
                 }))
                 .sort((a, b) => b.revenue - a.revenue),
@@ -661,12 +666,28 @@ export async function getBoardOverview() {
         // Get deduplicated MasterRevenue slices for the current year
         const slices = await getDeduplicatedMasterRevenue(currentYear);
 
-        const kpi = await prisma.chiTieuKpi.findUnique({
-            where: { nam_thang: { nam: currentYear, thang: currentMonth } }
+        const allKpis = await prisma.chiTieuKpi.findMany({
+            where: { nam: currentYear }
         });
-        const kpiThang = kpi ? (Number(kpi.anNinhMang) + Number(kpi.giaiPhapCntt) + Number(kpi.duAnCds) + Number(kpi.cnsAnNinh) + Number(kpi.cloudDc)) : 0;
+        
+        const quarterMonths = [(currentQuarter - 1) * 3 + 1, (currentQuarter - 1) * 3 + 2, (currentQuarter - 1) * 3 + 3];
 
-        // 1. DT Tổng dự án = DT theo tháng của dự án Đã ký hợp đồng + Tổng DT của các dự án active khác (không phải Đã ký HD hoặc Thất bại)
+        let kpiThang = 0;
+        let kpiQuy = 0;
+        let kpiNam = 0;
+
+        allKpis.forEach(k => {
+            const sum = Number(k.anNinhMang) + Number(k.giaiPhapCntt) + Number(k.duAnCds) + Number(k.cnsAnNinh) + Number(k.cloudDc);
+            kpiNam += sum;
+            if (k.thang === currentMonth) {
+                kpiThang += sum;
+            }
+            if (quarterMonths.includes(k.thang)) {
+                kpiQuy += sum;
+            }
+        });
+
+        // 1. DT Tổng dự án
         const signedSlices = slices.filter(s => s.duAn.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG);
         const rawSignedYearlyRevenue = signedSlices.reduce((sum, s) => sum + s.doanhThu, 0);
 
@@ -675,15 +696,14 @@ export async function getBoardOverview() {
             p.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI
         );
         const rawNonSignedRevenue = nonSignedActiveProjects.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
-
         const rawDtTongDuAn = rawSignedYearlyRevenue + rawNonSignedRevenue;
 
-        // 2. DT Tháng đã ký: sum of monthly revenue for current month (e.g. July) where project is signed.
+        // 2. DT Tháng đã ký
         const currentMonthSlices = slices.filter(s => s.thang === currentMonth);
         const signedCurrentMonthSlices = currentMonthSlices.filter(s => s.duAn.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG);
         const rawDtThangDaKy = signedCurrentMonthSlices.reduce((sum, s) => sum + s.doanhThu, 0);
 
-        // 3. DT Dự kiến tháng: DT tháng đã ký + DT of projects in currentMonth with isKyVong === true (excluding signed & failed)
+        // 3. DT Dự kiến tháng
         const expectedProjectsInMonth = uniqueProjects.filter(p => 
             p.isKyVong === true && 
             p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG &&
@@ -694,23 +714,47 @@ export async function getBoardOverview() {
         const rawExpectedRevenue = expectedProjectsInMonth.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
         const rawDtDuKienThang = rawDtThangDaKy + rawExpectedRevenue;
 
-        // 4. DT theo quý: DT of standard calendar quarter months (Q1: 1,2,3; Q2: 4,5,6; Q3: 7,8,9; Q4: 10,11,12)
-        const quarterMonths = [(currentQuarter - 1) * 3 + 1, (currentQuarter - 1) * 3 + 2, (currentQuarter - 1) * 3 + 3];
+        // 4. DT theo quý
         const quarterSlices = signedSlices.filter(s => quarterMonths.includes(s.thang));
         const rawDtTheoQuy = quarterSlices.reduce((sum, s) => sum + s.doanhThu, 0);
 
-        // 5. DT theo năm: sum of monthly revenues for all months (1-12) of signed projects in currentYear.
+        const expectedProjectsInQuarter = uniqueProjects.filter(p => 
+            p.isKyVong === true && 
+            p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG &&
+            p.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI &&
+            p.nam === currentYear &&
+            p.thang && quarterMonths.includes(p.thang)
+        );
+        const rawExpectedRevenueQuarter = expectedProjectsInQuarter.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
+        const rawDtDuKienQuy = rawDtTheoQuy + rawExpectedRevenueQuarter;
+
+        // 5. DT theo năm
         const rawDtTheoNam = signedSlices.reduce((sum, s) => sum + s.doanhThu, 0);
+
+        const expectedProjectsInYear = uniqueProjects.filter(p => 
+            p.isKyVong === true && 
+            p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG &&
+            p.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI &&
+            p.nam === currentYear
+        );
+        const rawExpectedRevenueYear = expectedProjectsInYear.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
+        const rawDtDuKienNam = rawDtTheoNam + rawExpectedRevenueYear;
 
         // ── Convert to triệu đồng ONCE at the very end ──
         const dtTongDuAn = Math.round(rawDtTongDuAn / 1_000_000);
         const dtThangDaKy = Math.round(rawDtThangDaKy / 1_000_000);
         const dtDuKienThang = Math.round(rawDtDuKienThang / 1_000_000);
         const dtTheoQuy = Math.round(rawDtTheoQuy / 1_000_000);
+        const dtDuKienQuy = Math.round(rawDtDuKienQuy / 1_000_000);
         const dtTheoNam = Math.round(rawDtTheoNam / 1_000_000);
+        const dtDuKienNam = Math.round(rawDtDuKienNam / 1_000_000);
 
         const percMetric2 = kpiThang > 0 ? (dtThangDaKy / kpiThang) * 100 : 0;
         const percMetric3 = kpiThang > 0 ? (dtDuKienThang / kpiThang) * 100 : 0;
+        const percTheoQuy = kpiQuy > 0 ? (dtTheoQuy / kpiQuy) * 100 : 0;
+        const percDuKienQuy = kpiQuy > 0 ? (dtDuKienQuy / kpiQuy) * 100 : 0;
+        const percTheoNam = kpiNam > 0 ? (dtTheoNam / kpiNam) * 100 : 0;
+        const percDuKienNam = kpiNam > 0 ? (dtDuKienNam / kpiNam) * 100 : 0;
 
         const projectsFull = uniqueProjects.filter(p => p.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI);
 
@@ -755,12 +799,19 @@ export async function getBoardOverview() {
                 dtThangDaKyPerc: percMetric2,
                 dtDuKienThangValue: dtDuKienThang,
                 dtDuKienThangPerc: percMetric3,
-                dtTheoQuy,
-                dtTheoNam,
+                dtTheoQuyValue: dtTheoQuy,
+                dtTheoQuyPerc: percTheoQuy,
+                dtDuKienQuyValue: dtDuKienQuy,
+                dtDuKienQuyPerc: percDuKienQuy,
+                dtTheoNamValue: dtTheoNam,
+                dtTheoNamPerc: percTheoNam,
+                dtDuKienNamValue: dtDuKienNam,
+                dtDuKienNamPerc: percDuKienNam,
             },
             projectMetrics: {
                 tongSoDuAn: projectsFull.length,
                 duAnTrongDiem: projectsFull.filter(p => p.isTrongDiem).length,
+                duAnKyVong: projectsFull.filter(p => p.isKyVong).length,
                 hienTrangThang,
                 thongKeTheoBuoc: Object.entries(stepCounts).map(([label, count]) => ({ label, count })),
                 canhBaoTheoTo: Object.entries(alertTo).map(([label, count]) => ({ label, count }))

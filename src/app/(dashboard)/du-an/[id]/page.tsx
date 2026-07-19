@@ -269,7 +269,7 @@ export default async function ProjectDetailPage({
                       </span>
                       <div className="flex items-center gap-2 text-xl font-black text-[#0058bc]">
                         <DollarSign className="size-4 text-green-600" />
-                        {project.tongDoanhThuDuKien.toLocaleString()}
+                        {Math.round(project.tongDoanhThuDuKien / 1_000_000).toLocaleString()}
                         <span className="text-xs text-slate-400 uppercase font-bold">Tr.đ</span>
                       </div>
                     </div>
@@ -361,7 +361,7 @@ export default async function ProjectDetailPage({
               Doanh thu dự kiến
             </p>
             <h2 className="text-4xl font-black text-white leading-none">
-              {project.tongDoanhThuDuKien.toLocaleString()} <span className="text-xl text-white/60">Tr.đ</span>
+              {Math.round(project.tongDoanhThuDuKien / 1_000_000).toLocaleString()} <span className="text-xl text-white/60">Tr.đ</span>
             </h2>
             <div className="mt-4 pt-4 border-t border-white/10 space-y-2 text-sm">
               <div className="flex justify-between">

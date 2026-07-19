@@ -36,7 +36,7 @@ export function AMManagementTable({ data }: { data: AMStat[] }) {
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'monthlyRev', direction: 'desc' });
 
     const formatCurrency = (val: number) => {
-        return val.toLocaleString('vi-VN') + " Tr.đ";
+        return Math.round(val / 1_000_000).toLocaleString('vi-VN') + " Tr.đ";
     };
 
     const getRankBadge = (rank: number) => {

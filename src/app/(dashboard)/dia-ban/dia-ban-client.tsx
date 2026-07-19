@@ -366,7 +366,7 @@ export function DiaBanDashboardClient({ diaBanData, topStaffData, kpiTotal }: { 
                     <CardContent className="flex-1 pb-8">
                         <div className="h-[350px] w-full mt-4">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart layout="vertical" data={[...filteredDiaBanData].sort((a,b) => b.revenue - a.revenue)} margin={{ top: 0, right: 40, left: 20, bottom: 0 }}>
+                                <BarChart layout="vertical" data={[...filteredDiaBanData].filter(d => d.name !== "Tổ dự án").sort((a,b) => b.revenue - a.revenue)} margin={{ top: 0, right: 40, left: 20, bottom: 0 }}>
                                     <XAxis type="number" hide />
                                     <YAxis 
                                         dataKey="name" 

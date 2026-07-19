@@ -63,12 +63,23 @@ export async function POST(req: Request) {
             if (isSigned || (includeExpected && isExpected)) {
                 const activeMonths = getActiveMonths(new Date(p.ngayBatDau), p.ngayKetThuc ? new Date(p.ngayKetThuc) : null, start, end);
                 if (activeMonths > 0) {
-                    const totalInPeriod = (p.doanhThuTheoThang || 0) * activeMonths;
+                    let totalInPeriod = 0;
+                    if (p.doanhThuTheoThang) {
+                        totalInPeriod = p.doanhThuTheoThang * activeMonths;
+                    } else if (p.soKy1GoiCuoc) {
+                        totalInPeriod = ((p.tongDoanhThuDuKien || 0) / p.soKy1GoiCuoc) * activeMonths;
+                    } else {
+                        // If no monthly breakdown is available, assume the total expected revenue is counted
+                        totalInPeriod = p.tongDoanhThuDuKien || 0;
+                    }
                     // Bounding by tongDoanhThuDuKien if applicable (assuming tongDoanhThuDuKien represents the total lifetime value)
                     actual += Math.min(totalInPeriod, p.tongDoanhThuDuKien || Infinity);
                 }
             }
         });
+
+        // Convert actual to Triệu đồng because target is in Triệu đồng
+        actual = actual / 1000000;
 
         return NextResponse.json({ target, actual, gap: Math.max(0, target - actual) });
     } catch (e: any) {

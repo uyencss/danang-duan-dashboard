@@ -1,20 +1,192 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, TrendingUp, Target, Briefcase, Award, Zap, Building, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import {
+  AlertTriangle,
+  CalendarRange,
+  Briefcase,
+  Award,
+  Star,
+  BarChart3,
+  ListChecks,
+  Layers,
+  CalendarDays,
+  CalendarCheck,
+} from "lucide-react";
 
 interface BoardOverviewProps {
   data: any;
 }
 
+/* ── Animated SVG ring with curved label hugging the circle ── */
+function LabeledRing({
+  percent,
+  color,
+  label,
+  size = 72,
+}: {
+  percent: number;
+  color: string;
+  label: string;
+  size?: number;
+}) {
+  const stroke = 5;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clampedPercent = Math.min(percent, 200);
+  const displayPercent = Math.min(clampedPercent, 100);
+  const offset = circumference - (displayPercent / 100) * circumference;
+
+  // Outer radius for the curved text path (slightly outside the ring)
+  const textRadius = radius + 10;
+  const cx = size / 2 + 10;
+  const cy = size / 2 + 10;
+  const svgSize = size + 20;
+
+  return (
+    <div className="relative flex items-center justify-center shrink-0">
+      <svg
+        width={svgSize}
+        height={svgSize}
+        className="shrink-0"
+        style={{ overflow: "visible" }}
+      >
+        {/* Define the curved path: starts at 12 o'clock, arcs clockwise */}
+        <defs>
+          <path
+            id={`arc-${label.replace(/\s/g, "")}-${color}`}
+            d={`M ${cx},${cy - textRadius} A ${textRadius},${textRadius} 0 0,1 ${cx + textRadius},${cy}`}
+            fill="none"
+          />
+        </defs>
+
+        {/* Curved label text — starts at 12 o'clock clockwise */}
+        <text>
+          <textPath
+            href={`#arc-${label.replace(/\s/g, "")}-${color}`}
+            startOffset="0%"
+            textAnchor="start"
+            fill={color}
+            fontSize="9"
+            fontWeight="800"
+            letterSpacing="1.5"
+            style={{ textTransform: "uppercase" }}
+          >
+            {label}
+          </textPath>
+        </text>
+
+        {/* Background ring */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={radius}
+          fill="none"
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth={stroke}
+          className="-rotate-90 origin-center"
+          style={{ transformOrigin: `${cx}px ${cy}px` }}
+        />
+        {/* Progress ring */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="-rotate-90 transition-all duration-1000 ease-out"
+          style={{ transformOrigin: `${cx}px ${cy}px` }}
+        />
+      </svg>
+      {/* Percentage text in center */}
+      <span className="absolute text-sm font-black text-white" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -40%)' }}>
+        {clampedPercent.toFixed(0)}%
+      </span>
+    </div>
+  );
+}
+
+/* ── Dual metric card (Đã ký + Kỳ vọng) ── */
+function DualRevenueCard({
+  icon: Icon,
+  signedLabel,
+  signedValue,
+  signedPerc,
+  signedColor,
+  expectedLabel,
+  expectedValue,
+  expectedPerc,
+  expectedColor,
+  formatCurrency,
+}: any) {
+  return (
+    <div className="relative rounded-2xl bg-white/[0.07] backdrop-blur-xl border border-white/[0.08] p-5 flex flex-col justify-between gap-4 overflow-hidden group hover:bg-white/[0.10] transition-colors duration-300">
+      {/* Decorative glow */}
+      <div
+        className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-20 blur-3xl group-hover:opacity-30 transition-opacity duration-500"
+        style={{ background: signedColor }}
+      />
+
+      {/* Signed row */}
+      <div className="relative z-10">
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="p-2.5 rounded-xl" style={{ background: `${signedColor}22` }}>
+            <Icon className="size-5" style={{ color: signedColor }} />
+          </div>
+          <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+            {signedLabel}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-3xl font-black text-white leading-none">
+              {formatCurrency(signedValue)}
+            </p>
+            <p className="text-xs text-white/40 font-medium mt-1">Triệu đồng</p>
+          </div>
+          <LabeledRing percent={signedPerc} color={signedColor} label="Đã ký" />
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+      {/* Expected row */}
+      <div className="relative z-10">
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="p-2.5 rounded-xl" style={{ background: `${expectedColor}22` }}>
+            <Icon className="size-5" style={{ color: expectedColor }} />
+          </div>
+          <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+            {expectedLabel}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-3xl font-black text-white leading-none">
+              {formatCurrency(expectedValue)}
+            </p>
+            <p className="text-xs text-white/40 font-medium mt-1">Triệu đồng</p>
+          </div>
+          <LabeledRing percent={expectedPerc} color={expectedColor} label="Kỳ vọng" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function BoardOverview({ data }: BoardOverviewProps) {
   if (!data || data.error) {
     return (
-      <div className="p-8 text-center text-red-500 bg-red-50 rounded-2xl border border-red-100">
+      <div className="p-8 text-center text-red-400 bg-red-950/30 rounded-2xl border border-red-500/20">
         <AlertTriangle className="size-10 mx-auto mb-2" />
-        <p className="font-bold">{data?.error || "Không có dữ liệu cho Dashboard"}</p>
+        <p className="font-bold">
+          {data?.error || "Không có dữ liệu cho Dashboard"}
+        </p>
       </div>
     );
   }
@@ -22,187 +194,307 @@ export function BoardOverview({ data }: BoardOverviewProps) {
   const { revenueMetrics, projectMetrics } = data;
 
   const formatCurrency = (val: number) => {
-    return Math.round(val).toLocaleString('vi-VN');
+    return Math.round(val).toLocaleString("vi-VN");
+  };
+
+  // Status color mapping
+  const statusColors: Record<string, string> = {
+    MOI: "#8b5cf6",
+    DANG_LAM_VIEC: "#3b82f6",
+    DA_DEMO: "#06b6d4",
+    DA_GUI_BAO_GIA: "#f59e0b",
+    DA_KY_HOP_DONG: "#10b981",
+    THAT_BAI: "#ef4444",
+  };
+
+  const statusLabels: Record<string, string> = {
+    MOI: "Mới",
+    DANG_LAM_VIEC: "Đang làm việc",
+    DA_DEMO: "Đã demo",
+    DA_GUI_BAO_GIA: "Đã gửi báo giá",
+    DA_KY_HOP_DONG: "Đã ký HĐ",
+    THAT_BAI: "Thất bại",
   };
 
   return (
-    <div className="space-y-10">
-      {/* LỚP DOANH THU */}
-      <section className="space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="w-1.5 h-8 bg-gradient-to-b from-[#004F9E] to-[#00AEEF] rounded-full" />
-          <h3 className="text-xl font-black uppercase tracking-tight text-[#191c1e]">Tổng Quan Doanh Thu</h3>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {/* Card 1: DT Tổng Dự Án */}
-          <MetricCard 
-             title="DT Tổng Dự Án" 
-             value={`${formatCurrency(revenueMetrics.dtTongDuAn)} Tr.đ`}
-             icon={Briefcase}
-             accentColor="from-[#004F9E] to-[#0070eb]"
-          />
+    <div className="relative -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-8 rounded-3xl overflow-hidden">
+      {/* ── Background gradient — #003b8b dominant ── */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#002d6b] via-[#003b8b] to-[#002d6b]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(0,83,207,0.15)_0%,transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(0,45,107,0.40)_0%,transparent_60%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_rgba(0,59,139,0.20)_0%,transparent_40%)]" />
 
-          {/* Card 2: DT Tháng Đã Ký */}
-          <Card className="relative p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden group">
-            <div className="relative z-10 space-y-4">
-               <div className="flex items-center justify-between">
-                 <div className="p-2.5 rounded-2xl bg-green-50 text-green-600">
-                    <Award className="size-5" />
-                 </div>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-[#004F9E] bg-blue-50 px-2 py-0.5 rounded-full">Kế hoạch</span>
-               </div>
-               <div>
-                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">DT Tháng Đã Ký</p>
-                  <p className="text-2xl font-black text-slate-900">{formatCurrency(revenueMetrics.dtThangDaKyValue)} <span className="text-xs">Tr.đ</span></p>
-               </div>
-               <div className="space-y-1.5">
-                  <div className="flex justify-between items-end">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">% HTKH</span>
-                    <span className="text-sm font-black text-green-600">{revenueMetrics.dtThangDaKyPerc.toFixed(1)}%</span>
+      {/* Content */}
+      <div className="relative z-10 space-y-6">
+        {/* ── ROW 1: Revenue metrics (4 cols) ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Ô 1: DT Tổng Dự Án + Tổng Số Dự Án */}
+          <div className="relative rounded-2xl bg-gradient-to-br from-[#1e3a5f]/80 to-[#0f2847]/80 backdrop-blur-xl border border-white/[0.08] p-5 overflow-hidden group hover:border-cyan-500/20 transition-all duration-300">
+            {/* Decorative orb */}
+            <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-cyan-500/10 blur-2xl group-hover:bg-cyan-500/20 transition-all duration-500" />
+
+            <div className="relative z-10 flex flex-col h-full justify-between gap-5">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20">
+                  <Briefcase className="size-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-white/40">
+                    Doanh thu tổng
+                  </p>
+                  <p className="text-[11px] text-cyan-400/70 font-medium">
+                    Tất cả dự án
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-4xl font-black text-white leading-none tracking-tight">
+                  {formatCurrency(revenueMetrics.dtTongDuAn)}
+                </p>
+                <p className="text-xs text-white/40 font-medium mt-1">
+                  Triệu đồng
+                </p>
+              </div>
+
+              <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-xl bg-blue-500/10">
+                    <Layers className="size-5 text-blue-400" />
                   </div>
-                  <Progress value={revenueMetrics.dtThangDaKyPerc} className="h-2 bg-slate-100" indicatorClassName="bg-gradient-to-r from-[#003B75] to-[#00AEEF]" />
-               </div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+                    Tổng số dự án
+                  </span>
+                </div>
+                <p className="text-3xl font-black text-white">
+                  {projectMetrics.tongSoDuAn}
+                </p>
+              </div>
             </div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-green-50/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:scale-125 transition-transform duration-500" />
-          </Card>
+          </div>
 
-          {/* Card 3: DT Dự Kiến Tháng */}
-          <Card className="relative p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden group">
-            <div className="relative z-10 space-y-4">
-               <div className="flex items-center justify-between">
-                 <div className="p-2.5 rounded-2xl bg-blue-50 text-[#0058bc]">
-                    <Target className="size-5" />
-                 </div>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-[#004F9E] bg-blue-50 px-2 py-0.5 rounded-full">Dự kiến</span>
-               </div>
-               <div>
-                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">DT Dự Kiến Tháng</p>
-                  <p className="text-2xl font-black text-slate-900">{formatCurrency(revenueMetrics.dtDuKienThangValue)} <span className="text-xs">Tr.đ</span></p>
-               </div>
-               <div className="space-y-1.5">
-                  <div className="flex justify-between items-end">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">% HTKH</span>
-                    <span className="text-sm font-black text-[#0058bc]">{revenueMetrics.dtDuKienThangPerc.toFixed(1)}%</span>
-                  </div>
-                  <Progress value={revenueMetrics.dtDuKienThangPerc} className="h-2 bg-slate-100" indicatorClassName="bg-gradient-to-r from-[#003B75] to-[#00AEEF]" />
-               </div>
-            </div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:scale-125 transition-transform duration-500" />
-          </Card>
-
-          {/* Card 4: DT Theo Quý */}
-          <MetricCard 
-             title="DT Theo Quý" 
-             value={`${formatCurrency(revenueMetrics.dtTheoQuy)} Tr.đ`}
-             description="Quý hiện tại (Quý 2)"
-             icon={Zap}
-             accentColor="from-orange-500 to-amber-500"
+          {/* Ô 2: DT Tháng */}
+          <DualRevenueCard
+            icon={CalendarDays}
+            signedLabel="DT Tháng Đã Ký"
+            signedValue={revenueMetrics.dtThangDaKyValue}
+            signedPerc={revenueMetrics.dtThangDaKyPerc}
+            signedColor="#10b981"
+            expectedLabel="DT Dự Kiến Tháng"
+            expectedValue={revenueMetrics.dtDuKienThangValue}
+            expectedPerc={revenueMetrics.dtDuKienThangPerc}
+            expectedColor="#38bdf8"
+            formatCurrency={formatCurrency}
           />
 
-          {/* Card 5: DT Theo Năm */}
-          <MetricCard 
-             title="DT Theo Năm" 
-             value={`${formatCurrency(revenueMetrics.dtTheoNam)} Tr.đ`}
-             description="Toàn bộ năm 2026"
-             icon={TrendingUp}
-             accentColor="from-purple-600 to-indigo-600"
+          {/* Ô 3: DT Quý */}
+          <DualRevenueCard
+            icon={CalendarRange}
+            signedLabel="DT Quý Đã Ký"
+            signedValue={revenueMetrics.dtTheoQuyValue}
+            signedPerc={revenueMetrics.dtTheoQuyPerc}
+            signedColor="#f59e0b"
+            expectedLabel="DT Dự Kiến Quý"
+            expectedValue={revenueMetrics.dtDuKienQuyValue}
+            expectedPerc={revenueMetrics.dtDuKienQuyPerc}
+            expectedColor="#a78bfa"
+            formatCurrency={formatCurrency}
+          />
+
+          {/* Ô 4: DT Năm */}
+          <DualRevenueCard
+            icon={CalendarCheck}
+            signedLabel="DT Năm Đã Ký"
+            signedValue={revenueMetrics.dtTheoNamValue}
+            signedPerc={revenueMetrics.dtTheoNamPerc}
+            signedColor="#c084fc"
+            expectedLabel="DT Dự Kiến Năm"
+            expectedValue={revenueMetrics.dtDuKienNamValue}
+            expectedPerc={revenueMetrics.dtDuKienNamPerc}
+            expectedColor="#fb7185"
+            formatCurrency={formatCurrency}
           />
         </div>
-      </section>
 
-      {/* TỔNG QUAN DỰ ÁN */}
-      <section className="space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="w-1.5 h-8 bg-gradient-to-b from-[#004493] to-[#0058bc] rounded-full" />
-          <h3 className="text-xl font-black uppercase tracking-tight text-[#191c1e]">Tổng Quan Dự Án</h3>
-        </div>
+        {/* ── ROW 2: Project metrics (4 cols) ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Ô 5: Dự Án Trọng Điểm & Kỳ Vọng */}
+          <div className="relative rounded-2xl bg-white/[0.07] backdrop-blur-xl border border-white/[0.08] p-5 overflow-hidden group hover:bg-white/[0.10] transition-colors duration-300">
+            <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-amber-500/10 blur-2xl" />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-           {/* Metric 6: Tổng số dự án */}
-           <MetricCard 
-             title="Tổng Số Dự Án" 
-             value={projectMetrics.tongSoDuAn}
-             icon={Building}
-             accentColor="from-slate-600 to-slate-800"
-          />
-
-          {/* Metric 7: Dự án trọng điểm */}
-
-          <MetricCard 
-             title="Dự Án Trọng Điểm" 
-             value={projectMetrics.duAnTrongDiem}
-             description="Các dự án Flagged"
-             icon={Award}
-             accentColor="from-amber-400 to-orange-500"
-          />
-
-          {/* Metric 8: Hiện trạng tháng */}
-          <Card className="p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden flex flex-col justify-between min-h-[160px]">
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Hiện Trạng Tháng</p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
-                {projectMetrics.hienTrangThang.map((s: any, i: number) => (
-                  <div key={i} className="flex justify-between items-center text-[11px] font-medium border-b border-slate-50 last:border-none pb-1">
-                    <span className="text-slate-500">{s.label}</span>
-                    <span className="font-black text-[#0058bc]">{s.count}</span>
+            <div className="relative z-10 flex flex-col h-full gap-5">
+              {/* Trọng điểm */}
+              <div>
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-500/20">
+                    <Award className="size-5 text-white" />
                   </div>
-                ))}
+                  <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+                    Dự án trọng điểm
+                  </span>
+                </div>
+                <div className="flex items-end gap-2">
+                  <p className="text-4xl font-black text-white leading-none">
+                    {projectMetrics.duAnTrongDiem}
+                  </p>
+                  <span className="text-sm text-amber-400/70 font-bold mb-0.5">
+                    dự án
+                  </span>
+                </div>
+              </div>
+
+              <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+              {/* Kỳ vọng */}
+              <div>
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className="p-2.5 rounded-xl bg-blue-500/10">
+                    <Star className="size-5 text-blue-400" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+                    Dự án kỳ vọng
+                  </span>
+                </div>
+                <div className="flex items-end gap-2">
+                  <p className="text-4xl font-black text-white leading-none">
+                    {projectMetrics.duAnKyVong}
+                  </p>
+                  <span className="text-sm text-blue-400/70 font-bold mb-0.5">
+                    dự án
+                  </span>
+                </div>
+              </div>
             </div>
-          </Card>
+          </div>
 
-          {/* Metric 9: Thống kê theo bước */}
-          <Card className="p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden flex flex-col min-h-[160px]">
-             <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Theo Bước Quy Trình</p>
-             <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 custom-scrollbar">
-                {projectMetrics.thongKeTheoBuoc.map((b: any, i: number) => (
-                  <div key={i} className="flex justify-between items-center text-[10px] font-bold px-2 py-1 bg-slate-50 rounded-lg">
-                    <span className="text-slate-600 truncate max-w-[80px]">{b.label}</span>
-                    <span className="text-[#0058bc]">{b.count}</span>
+          {/* Ô 6: Hiện Trạng Tháng */}
+          <div className="relative rounded-2xl bg-white/[0.07] backdrop-blur-xl border border-white/[0.08] p-5 overflow-hidden">
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20">
+                <BarChart3 className="size-5 text-white" />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+                Hiện Trạng Tháng
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {projectMetrics.hienTrangThang.map((s: any, i: number) => {
+                const color = statusColors[s.label] || "#64748b";
+                const label = statusLabels[s.label] || s.label;
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 group/item"
+                  >
+                    <div
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ background: color }}
+                    />
+                    <span className="text-[13px] font-medium text-white/60 flex-1 truncate group-hover/item:text-white/80 transition-colors">
+                      {label}
+                    </span>
+                    <span
+                      className="text-base font-black tabular-nums"
+                      style={{ color }}
+                    >
+                      {s.count}
+                    </span>
                   </div>
-                ))}
-                {projectMetrics.thongKeTheoBuoc.length === 0 && <p className="text-[10px] text-slate-400 italic">Chưa có dữ liệu bước</p>}
-             </div>
-          </Card>
+                );
+              })}
+            </div>
+          </div>
 
-          {/* Metric 10: Cảnh báo theo tổ */}
-          <Card className="p-4 md:p-6 rounded-[2rem] border-red-100 border-2 shadow-sm bg-red-50 overflow-hidden flex flex-col justify-between min-h-[160px]">
-             <div className="flex items-center gap-2 text-red-600">
-                <AlertTriangle className="size-4 animate-pulse" />
-                <p className="text-[11px] font-black uppercase tracking-widest">CẢNH BÁO (&gt;10 ngày)</p>
-             </div>
-             <div className="grid grid-cols-2 gap-2 mt-2">
+          {/* Ô 7: Theo Bước Quy Trình */}
+          <div className="relative rounded-2xl bg-white/[0.07] backdrop-blur-xl border border-white/[0.08] p-5 overflow-hidden">
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 shadow-lg shadow-teal-500/20">
+                <ListChecks className="size-5 text-white" />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+                Theo Bước Quy Trình
+              </span>
+            </div>
+
+            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+              {projectMetrics.thongKeTheoBuoc.map((b: any, i: number) => {
+                const stepColors = [
+                  "#06b6d4",
+                  "#3b82f6",
+                  "#8b5cf6",
+                  "#a855f7",
+                  "#ec4899",
+                  "#f43f5e",
+                  "#10b981",
+                ];
+                const color = stepColors[i % stepColors.length];
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] transition-colors group/step"
+                  >
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-white shrink-0"
+                      style={{ background: `${color}33` }}
+                    >
+                      <span style={{ color }}>{i + 1}</span>
+                    </div>
+                    <span className="text-[12px] font-medium text-white/60 flex-1 truncate group-hover/step:text-white/80 transition-colors">
+                      {b.label}
+                    </span>
+                    <span
+                      className="text-base font-black tabular-nums"
+                      style={{ color }}
+                    >
+                      {b.count}
+                    </span>
+                  </div>
+                );
+              })}
+              {projectMetrics.thongKeTheoBuoc.length === 0 && (
+                <p className="text-xs text-white/30 italic">
+                  Chưa có dữ liệu bước
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Ô 8: Cảnh Báo (>10 ngày) */}
+          <div className="relative rounded-2xl bg-gradient-to-br from-red-950/40 to-rose-950/30 backdrop-blur-xl border border-red-500/20 p-5 overflow-hidden">
+            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-red-500/10 blur-2xl" />
+
+            <div className="relative z-10">
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 shadow-lg shadow-red-500/20">
+                  <AlertTriangle className="size-5 text-white animate-pulse" />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-wider text-red-400/80">
+                  Cảnh báo (&gt;10 ngày)
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 {projectMetrics.canhBaoTheoTo.map((t: any, i: number) => (
-                  <div key={i} className="flex flex-col items-center p-2 bg-white rounded-xl shadow-sm border border-red-100">
-                    <span className="text-[10px] font-bold text-slate-400">{t.label}</span>
-                    <span className="text-lg font-black text-red-600 leading-none">{t.count}</span>
+                  <div
+                    key={i}
+                    className="flex flex-col items-center p-3.5 rounded-xl bg-white/[0.05] border border-red-500/10 hover:border-red-500/20 transition-colors"
+                  >
+                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-wide">
+                      {t.label}
+                    </span>
+                    <span className="text-2xl font-black text-red-400 leading-none mt-2">
+                      {t.count}
+                    </span>
                   </div>
                 ))}
-             </div>
-          </Card>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function MetricCard({ title, value, description, icon: Icon, accentColor }: any) {
-  return (
-    <Card className="group relative p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white overflow-hidden transition-all hover:shadow-xl hover:shadow-blue-900/5">
-      <div className="relative z-10 flex flex-col h-full justify-between gap-4">
-        <div className="flex items-center justify-between">
-          <div className={cn("p-2.5 rounded-2xl bg-gradient-to-br text-white shadow-lg", accentColor)}>
-            <Icon className="size-5" />
+              </div>
+            </div>
           </div>
         </div>
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">{title}</p>
-          <p className="text-2xl font-black text-slate-900">{value}</p>
-          <p className="text-[10px] font-medium text-slate-400 mt-1 italic min-h-[15px]">
-            {description || ""}
-          </p>
-        </div>
       </div>
-      <div className={cn("absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-br opacity-[0.03] rounded-full translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700", accentColor)} />
-    </Card>
+    </div>
   );
 }

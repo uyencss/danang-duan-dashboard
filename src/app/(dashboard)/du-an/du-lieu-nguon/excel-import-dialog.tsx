@@ -137,7 +137,13 @@ export function ExcelImportDialog({
     const validationErrors: string[] = [];
 
     // Map header names to internal field names
-    const mappedRows = rows.map((row, idx) => {
+    const mappedRows = rows.map((rawRow, idx) => {
+      const row: any = {};
+      Object.keys(rawRow).forEach((k) => {
+        const normalizedKey = k.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+        row[normalizedKey] = rawRow[k];
+      });
+
       const mapped: any = {};
 
       // Try various header name patterns
