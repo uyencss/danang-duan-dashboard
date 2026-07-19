@@ -245,6 +245,8 @@ export async function updateDuAn(id: number, data: any) {
             where: { id },
             data: {
                 ...validated,
+                tongDoanhThuDuKien: validated.tongDoanhThuDuKien,
+                doanhThuTheoThang: validated.doanhThuTheoThang || 0,
                 amId: validated.amId || null,
                 amHoTroId: validated.amHoTroId || null,
                 chuyenVienId: validated.chuyenVienId || null,

@@ -538,7 +538,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                     name="tongDoanhThuDuKien"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Tổng doanh thu (Tr.đ)</FormLabel>
+                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Tổng doanh thu (VNĐ)</FormLabel>
                         <FormControl>
                           <Input type="number" step="any" className="rounded-xl h-10 border-slate-200" {...field} />
                         </FormControl>
@@ -551,7 +551,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                     name="doanhThuTheoThang"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Thu theo tháng (Tr.đ)</FormLabel>
+                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Thu theo tháng (VNĐ)</FormLabel>
                         <FormControl>
                           <Input type="number" step="any" className="rounded-xl h-10 border-slate-200" {...field} />
                         </FormControl>

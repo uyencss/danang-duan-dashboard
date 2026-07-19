@@ -557,7 +557,7 @@ export default function ProjectForm() {
                       <FieldLabel required>
                         Tổng Doanh Thu{" "}
                         <span className="float-right text-[9px] text-[#0058bc] bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-md font-bold">
-                          Triệu đ.
+                          VNĐ
                         </span>
                       </FieldLabel>
                       <FormControl>
@@ -580,7 +580,7 @@ export default function ProjectForm() {
                       <FieldLabel>
                         DT Theo Tháng{" "}
                         <span className="float-right text-[9px] text-slate-400 font-bold italic">
-                          Triệu đ./th.
+                          VNĐ/tháng
                         </span>
                       </FieldLabel>
                       <FormControl>
