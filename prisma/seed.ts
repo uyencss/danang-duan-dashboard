@@ -112,8 +112,6 @@ async function main() {
           email: data.email,
           password: data.password,
           name: data.name,
-          role: data.role,
-          diaBan: data.diaBan,
         },
       });
     }
