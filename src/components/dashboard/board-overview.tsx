@@ -217,7 +217,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
   };
 
   return (
-    <div className="relative -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-8 rounded-3xl overflow-hidden">
+    <div className="relative p-6 lg:p-8 rounded-3xl overflow-hidden">
       {/* ── Background gradient — #003b8b dominant ── */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#002d6b] via-[#003b8b] to-[#002d6b]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(0,83,207,0.15)_0%,transparent_50%)]" />
