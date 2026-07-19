@@ -11,11 +11,13 @@ if (!DB_URL) {
   process.exit(1);
 }
 
+const connectionString: string = DB_URL;
+
 async function main() {
   console.log("=== BẮT ĐẦU QUÁ TRÌNH SAO LƯU VÀ XÓA DỰ ÁN ===");
-  console.log("Kết nối tới database:", DB_URL.replace(/:[^:@/]+@/, ":***@"));
+  console.log("Kết nối tới database:", connectionString.replace(/:[^:@/]+@/, ":***@"));
 
-  const pool = new Pool({ connectionString: DB_URL });
+  const pool = new Pool({ connectionString });
   const adapter = new PrismaPg(pool);
   const prisma = new PrismaClient({ adapter });
 
