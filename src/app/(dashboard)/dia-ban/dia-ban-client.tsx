@@ -92,7 +92,7 @@ export function DiaBanDashboardClient({ diaBanData, topStaffData, kpiTotal }: { 
     const totalOtherRevenue = filteredDiaBanData.reduce((acc, d) => acc + d.otherRevenue, 0);
     const totalProjects = filteredDiaBanData.reduce((acc, d) => acc + d.projects, 0);
     const totalContracts = filteredDiaBanData.reduce((acc, d) => acc + d.contracts, 0);
-    const avgConversion = (totalProjects > 0) ? (totalContracts / totalProjects * 100) : 0;
+    const avgConversion = (totalRevenue > 0) ? (totalSignedRevenue / totalRevenue * 100) : 0;
 
     // Globals for percentage calculations
     const globalSigned = diaBanData.reduce((acc, d) => acc + d.signedRevenue, 0);
