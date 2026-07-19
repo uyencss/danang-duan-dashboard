@@ -62,9 +62,12 @@ local-replica.db-wal
 # System logs
 /logs
 pino-pretty.log
+rbac-debug.log
+*.log
 /uploads/
 public/uploads/
 
 # Scratch files
 /scratch/
+
 
