@@ -369,7 +369,7 @@ export function ExcelImportDialog({
     setIsImporting(true);
     setImportProgress("");
 
-    const CHUNK_SIZE = 500; // Send 500 rows per request
+    const CHUNK_SIZE = 200; // Send 200 rows per request
     const totalChunks = Math.ceil(parsedRows.length / CHUNK_SIZE);
     let totalImported = 0;
     let lastError = "";
@@ -441,10 +441,10 @@ export function ExcelImportDialog({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader>
+        <DialogHeader className="pr-8">
           <DialogTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="size-5 text-emerald-600" />
-            Import Excel — {sourceLabel}
+            <FileSpreadsheet className="size-5 text-emerald-600 shrink-0" />
+            <span className="truncate">Import Excel — {sourceLabel}</span>
           </DialogTitle>
           <DialogDescription>
             Chọn file Excel (.xlsx, .csv) để import dữ liệu vào{" "}
@@ -466,10 +466,10 @@ export function ExcelImportDialog({
               className="hidden"
             />
             {file ? (
-              <div className="flex items-center justify-center gap-3">
-                <FileSpreadsheet className="size-8 text-emerald-500" />
-                <div className="text-left">
-                  <p className="font-bold text-slate-800">{file.name}</p>
+              <div className="flex items-center justify-center gap-3 w-full max-w-full">
+                <FileSpreadsheet className="size-8 text-emerald-500 shrink-0" />
+                <div className="text-left min-w-0 flex-1">
+                  <p className="font-bold text-slate-800 truncate" title={file.name}>{file.name}</p>
                   <p className="text-xs text-slate-500">
                     {(file.size / 1024).toFixed(1)} KB •{" "}
                     {parsedRows.length} dòng
