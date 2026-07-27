@@ -253,6 +253,41 @@ export function SourceTable({
       });
     }
 
+    // Ngày bắt đầu / Ngày kết thúc
+    if (sourceType === "cloud") {
+      baseCols.push({
+        accessorKey: "ngayBatDau",
+        header: "Ngày bắt đầu",
+        size: 110,
+        cell: ({ row }) => {
+          const dateStr = row.original.ngayBatDau;
+          if (!dateStr) return <span className="text-xs text-slate-400">-</span>;
+          const d = new Date(dateStr);
+          return (
+            <span className="text-xs text-slate-600 block text-center">
+              {d.toLocaleDateString("vi-VN")}
+            </span>
+          );
+        },
+      });
+
+      baseCols.push({
+        accessorKey: "ngayKetThuc",
+        header: "Ngày kết thúc",
+        size: 110,
+        cell: ({ row }) => {
+          const dateStr = row.original.ngayKetThuc;
+          if (!dateStr) return <span className="text-xs text-slate-400">-</span>;
+          const d = new Date(dateStr);
+          return (
+            <span className="text-xs text-slate-600 block text-center">
+              {d.toLocaleDateString("vi-VN")}
+            </span>
+          );
+        },
+      });
+    }
+
     // ── 12 Month Columns ──────────────────────────────────────────
     if (sourceType !== "econtract") {
       for (let m = 1; m <= 12; m++) {
@@ -468,7 +503,7 @@ export function SourceTable({
                 <tr className="bg-gradient-to-r from-slate-100 to-blue-50 border-t-2 border-slate-200">
                   <td
                     colSpan={
-                      sourceType === "master" ? 10 : 9
+                      sourceType === "master" ? 10 : (sourceType === "cloud" ? 11 : 9)
                     }
                     className="px-2 py-2.5 text-right text-xs font-black text-slate-600 uppercase"
                   >

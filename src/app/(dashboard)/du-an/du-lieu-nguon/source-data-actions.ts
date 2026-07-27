@@ -101,7 +101,8 @@ export async function getSourceDataByType(
             p.ngayBatDau,
             p.doanhThuTheoThang || 0,
             p.soKy1GoiCuoc || 0,
-            year
+            year,
+            p.tongDoanhThuDuKien || 0
           );
           break;
         case "ECONTRACT_INVOICE":
@@ -121,6 +122,7 @@ export async function getSourceDataByType(
           ngayBatDau: p.ngayBatDau,
           doanhThuTheoThang: p.doanhThuTheoThang,
           soKy1GoiCuoc: p.soKy1GoiCuoc,
+          tongDoanhThuDuKien: p.tongDoanhThuDuKien,
           invoiceRecords: p.invoiceRecords || [],
         },
         p.revenueSlices,
@@ -261,8 +263,11 @@ export async function getMasterRevenueData(year: number): Promise<{
 
     const consolidated = new Map<string, ConsolidatedRow>();
     for (const row of masterRows) {
-      const contractKey = row.duAn.maHopDong
-        ? `hd:${row.duAn.maHopDong}`
+      if (!row.duAn) continue;
+      const spName = row.duAn?.sanPham?.tenChiTiet?.trim().toLowerCase() || "";
+      const startDate = row.duAn?.ngayBatDau ? new Date(row.duAn.ngayBatDau).getTime() : "";
+      const contractKey = row.duAn?.maHopDong
+        ? `hd:${row.duAn.maHopDong}:dt:${row.duAn.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
         : `pid:${row.projectId}`;
       const key = `${row.sourceType}:${contractKey}:${row.thang}`;
 
@@ -284,9 +289,11 @@ export async function getMasterRevenueData(year: number): Promise<{
     // Keep only the highest-priority source for each contract + month
     const deduped = new Map<string, ConsolidatedRow>();
     for (const row of consolidated.values()) {
-      const contractKey = row.project.maHopDong
-        ? `hd:${row.project.maHopDong}`
-        : `pid:${row.project.id}`;
+      const spName = row.project?.sanPham?.tenChiTiet?.trim().toLowerCase() || "";
+      const startDate = row.project?.ngayBatDau ? new Date(row.project.ngayBatDau).getTime() : "";
+      const contractKey = row.project?.maHopDong
+        ? `hd:${row.project.maHopDong}:dt:${row.project.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
+        : `pid:${row.project?.id || 'unknown'}`;
       const dedupeKey = `${contractKey}:${row.thang}`;
 
       const existing = deduped.get(dedupeKey);
@@ -312,9 +319,11 @@ export async function getMasterRevenueData(year: number): Promise<{
 
     const contractMap = new Map<string, ContractEntry>();
     for (const row of deduped.values()) {
-      const contractKey = row.project.maHopDong
-        ? `hd:${row.project.maHopDong}`
-        : `pid:${row.project.id}`;
+      const spName = row.project?.sanPham?.tenChiTiet?.trim().toLowerCase() || "";
+      const startDate = row.project?.ngayBatDau ? new Date(row.project.ngayBatDau).getTime() : "";
+      const contractKey = row.project?.maHopDong
+        ? `hd:${row.project.maHopDong}:dt:${row.project.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
+        : `pid:${row.project?.id || 'unknown'}`;
 
       if (!contractMap.has(contractKey)) {
         contractMap.set(contractKey, {
@@ -349,8 +358,9 @@ export async function getMasterRevenueData(year: number): Promise<{
     }
 
     // ── Step 4: Build final SourceDataRow[] ──
-    const rows: SourceDataRow[] = Array.from(contractMap.entries()).map(
-      ([_contractKey, { project, sourceType, loaiDoanhThu, months }]) => {
+    const rows: SourceDataRow[] = Array.from(contractMap.entries())
+      .filter(([_, entry]) => entry.project != null)
+      .map(([_, { project, sourceType, loaiDoanhThu, months }]) => {
         const totalNam = Object.values(months).reduce(
           (sum, val) => sum + val,
           0
@@ -359,10 +369,10 @@ export async function getMasterRevenueData(year: number): Promise<{
         return {
           id: project.id,
           tenDuAn: project.tenDuAn,
-          khachHang: project.khachHang.ten,
-          phanLoaiKH: project.khachHang.phanLoai,
-          nhomSP: project.sanPham.nhom,
-          tenSP: project.sanPham.tenChiTiet,
+          khachHang: project.khachHang?.ten || "",
+          phanLoaiKH: project.khachHang?.phanLoai || "",
+          nhomSP: project.sanPham?.nhom || "",
+          tenSP: project.sanPham?.tenChiTiet || "",
           amName: project.am?.name || null,
           cvName: project.chuyenVien?.name || null,
           tongDoanhThu: project.tongDoanhThuDuKien,
@@ -551,76 +561,76 @@ export async function importSourceExcel(
       return null; // Not found — skip instead of FK error
     };
 
-    // Process rows in chunks
+    // Process rows in chunks INSIDE a single transaction to ensure atomicity
     const chunkSize = 20;
     const createdProjectIds: number[] = [];
 
-    for (let i = 0; i < rows.length; i += chunkSize) {
-      const chunk = rows.slice(i, i + chunkSize);
+    await prisma.$transaction(
+      async (tx) => {
+        for (let i = 0; i < rows.length; i += chunkSize) {
+          const chunk = rows.slice(i, i + chunkSize);
 
-      const preparedData = chunk
-        .map((row: any) => {
-          if (!row.tenDuAn) return null;
-          const khInfo = khMap.get(row.khachHangName?.trim().toLowerCase());
-          const spId = spMap.get(
-            `${row.nhomSanPham?.trim()}|${row.tenSanPham?.trim()}`.toLowerCase()
-          );
-          if (!khInfo || !spId) return null;
+          const preparedData = chunk
+            .map((row: any) => {
+              if (!row.tenDuAn) return null;
+              const khInfo = khMap.get(row.khachHangName?.trim().toLowerCase());
+              const spId = spMap.get(
+                `${row.nhomSanPham?.trim()}|${row.tenSanPham?.trim()}`.toLowerCase()
+              );
+              if (!khInfo || !spId) return null;
 
-          const ngayBatDau = parseExcelDateUTC(row.ngayBatDau);
-          const ngayKetThuc = row.ngayKetThuc
-            ? parseExcelDateUTC(row.ngayKetThuc)
-            : null;
-          const { tuan, thang, quy, nam } = extractTimeFields(ngayBatDau);
-          const trangThai =
-            trangThaiMap[row.trangThaiKhoiTao] || TrangThaiDuAn.MOI;
+              const ngayBatDau = parseExcelDateUTC(row.ngayBatDau);
+              const ngayKetThuc = row.ngayKetThuc
+                ? parseExcelDateUTC(row.ngayKetThuc)
+                : null;
+              const { tuan, thang, quy, nam } = extractTimeFields(ngayBatDau);
+              const trangThai =
+                trangThaiMap[row.trangThaiKhoiTao] || TrangThaiDuAn.MOI;
 
-          return {
-            duAnData: {
-              tenDuAn: row.tenDuAn,
-              linhVuc: khInfo.linhVuc as any,
-              customerId: khInfo.id,
-              productId: spId,
-              tongDoanhThuDuKien: safeParseFloat(row.tongDoanhThu),
-              doanhThuTheoThang: safeParseFloat(row.dtTheoThang),
-              maHopDong: row.maHopDong || null,
-              ngayBatDau,
-              ngayKetThuc,
-              tuan,
-              thang,
-              quy,
-              nam,
-              amId: resolveUserId(row.amId),
-              amHoTroId: resolveUserId(row.amHoTro1Id),
-              chuyenVienId: resolveUserId(row.chuyenVienId),
-              cvHoTro1Id: resolveUserId(row.cvHoTro1Id),
-              cvHoTro2Id: resolveUserId(row.cvHoTro2Id),
-              isTrongDiem: row.isTrongDiem === "Có",
-              isKyVong: row.isKyVong === "Có",
-              trangThaiHienTai: trangThai,
-              ngayChamsocCuoiCung: new Date(),
-              sourceType: sourceType as SourceType,
-              soKy1GoiCuoc: parseInt(row.soKy1GoiCuoc) || null,
-              batchId,
-            },
-            trangThai,
-            invoiceData:
-              sourceType === "ECONTRACT_INVOICE"
-                ? extractInvoiceData(
-                    row,
-                    ngayBatDau,
-                    safeParseFloat(row.tongDoanhThu),
-                    safeParseFloat(row.dtTheoThang)
-                  )
-                : null,
-          };
-        })
-        .filter(Boolean);
+              return {
+                duAnData: {
+                  tenDuAn: row.tenDuAn,
+                  linhVuc: khInfo.linhVuc as any,
+                  customerId: khInfo.id,
+                  productId: spId,
+                  tongDoanhThuDuKien: safeParseFloat(row.tongDoanhThu),
+                  doanhThuTheoThang: safeParseFloat(row.dtTheoThang),
+                  maHopDong: row.maHopDong || null,
+                  ngayBatDau,
+                  ngayKetThuc,
+                  tuan,
+                  thang,
+                  quy,
+                  nam,
+                  amId: resolveUserId(row.amId),
+                  amHoTroId: resolveUserId(row.amHoTro1Id),
+                  chuyenVienId: resolveUserId(row.chuyenVienId),
+                  cvHoTro1Id: resolveUserId(row.cvHoTro1Id),
+                  cvHoTro2Id: resolveUserId(row.cvHoTro2Id),
+                  isTrongDiem: row.isTrongDiem === "Có",
+                  isKyVong: row.isKyVong === "Có",
+                  trangThaiHienTai: trangThai,
+                  ngayChamsocCuoiCung: new Date(),
+                  sourceType: sourceType as SourceType,
+                  soKy1GoiCuoc: parseInt(row.soKy1GoiCuoc) || null,
+                  batchId,
+                },
+                trangThai,
+                invoiceData:
+                  sourceType === "ECONTRACT_INVOICE"
+                    ? extractInvoiceData(
+                        row,
+                        ngayBatDau,
+                        safeParseFloat(row.tongDoanhThu),
+                        safeParseFloat(row.dtTheoThang)
+                      )
+                    : null,
+              };
+            })
+            .filter(Boolean);
 
-      if (preparedData.length === 0) continue;
+          if (preparedData.length === 0) continue;
 
-      await prisma.$transaction(
-        async (tx) => {
           await Promise.all(
             preparedData.map(async (item: any) => {
               const duAn = await tx.duAn.create({ data: item.duAnData });
@@ -654,10 +664,10 @@ export async function importSourceExcel(
               successCount++;
             })
           );
-        },
-        { timeout: 60000 }
-      );
-    }
+        }
+      },
+      { timeout: 300000 } // 5 minutes timeout to handle large files
+    );
 
     // Sync MasterRevenue for all created projects in bulk
     await syncMasterRevenueMany(createdProjectIds);

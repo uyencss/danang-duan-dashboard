@@ -48,7 +48,8 @@ export function generateCloudDistributeMonthlyView(
   ngayBatDau: Date | string,
   dtTheoThang: number,
   soKy1GoiCuoc: number,
-  year: number
+  year: number,
+  tongDoanhThu: number = 0
 ): MonthlyRevenueView {
   const result = { ...EMPTY_MONTHS };
   if (!ngayBatDau || !dtTheoThang || !soKy1GoiCuoc || soKy1GoiCuoc <= 0) {
@@ -66,7 +67,13 @@ export function generateCloudDistributeMonthlyView(
 
     if (targetYear === year && targetMonth >= 1 && targetMonth <= 12) {
       const key = `month${targetMonth}` as keyof MonthlyRevenueView;
-      result[key] += dtTheoThang;
+      // For the last month, calculate the remainder to ensure exact total match
+      if (i === soKy1GoiCuoc - 1 && tongDoanhThu > 0) {
+        const remainder = tongDoanhThu - (dtTheoThang * (soKy1GoiCuoc - 1));
+        result[key] += remainder;
+      } else {
+        result[key] += dtTheoThang;
+      }
     }
   }
 
@@ -123,6 +130,7 @@ export function generateMasterMonthlyView(
     ngayBatDau: Date | string;
     doanhThuTheoThang?: number | null;
     soKy1GoiCuoc?: number | null;
+    tongDoanhThuDuKien?: number | null;
     invoiceRecords?: Array<{
       thangGhiNhan: number;
       namGhiNhan: number;
@@ -149,7 +157,8 @@ export function generateMasterMonthlyView(
         project.ngayBatDau,
         project.doanhThuTheoThang || 0,
         project.soKy1GoiCuoc || 0,
-        year
+        year,
+        project.tongDoanhThuDuKien || 0
       );
       break;
     case "ECONTRACT_INVOICE":

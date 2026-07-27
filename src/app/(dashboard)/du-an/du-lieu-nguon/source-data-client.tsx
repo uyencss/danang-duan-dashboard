@@ -270,6 +270,75 @@ export function SourceDataClient({
     toast.success(`Đã tải mẫu Excel cho ${getTabLabel(sourceType)}`);
   };
 
+  // Export Data to Excel
+  const handleExportData = async () => {
+    const XLSX = await import("xlsx");
+    
+    // Formatting data for Excel
+    const dataToExport = activeData.map((row, index) => ({
+      "STT": index + 1,
+      "Tên dự án": row.tenDuAn,
+      "Khách hàng": row.khachHang,
+      "Phân loại KH": row.phanLoaiKH,
+      "Sản phẩm chi tiết": row.tenSP,
+      "Nhóm sản phẩm": row.nhomSP,
+      "Tổng doanh thu": row.tongDoanhThu,
+      "DT theo tháng": row.doanhThuTheoThang || "",
+      "Trạng thái": row.trangThai,
+      "Mã hợp đồng": row.maHopDong || "",
+      "Ngày bắt đầu": row.ngayBatDau ? new Date(row.ngayBatDau).toLocaleDateString('vi-VN') : "",
+      "Ngày kết thúc": row.ngayKetThuc ? new Date(row.ngayKetThuc).toLocaleDateString('vi-VN') : "",
+      "Chuyên viên": row.cvName || "",
+      "AM": row.amName || "",
+      "Năm": year,
+      "T1": row.months.month1 || 0,
+      "T2": row.months.month2 || 0,
+      "T3": row.months.month3 || 0,
+      "T4": row.months.month4 || 0,
+      "T5": row.months.month5 || 0,
+      "T6": row.months.month6 || 0,
+      "T7": row.months.month7 || 0,
+      "T8": row.months.month8 || 0,
+      "T9": row.months.month9 || 0,
+      "T10": row.months.month10 || 0,
+      "T11": row.months.month11 || 0,
+      "T12": row.months.month12 || 0,
+      "Tổng Năm": row.totalNam || 0,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    
+    // Auto adjust column width (basic approach)
+    const colWidths = [
+      { wch: 5 }, // STT
+      { wch: 40 }, // Tên dự án
+      { wch: 30 }, // Khách hàng
+      { wch: 20 }, // Phân loại khách hàng
+      { wch: 30 }, // Sản phẩm
+      { wch: 20 }, // Nhóm sản phẩm
+      { wch: 15 }, // Tổng doanh thu
+      { wch: 15 }, // DT theo tháng
+      { wch: 15 }, // Trạng thái
+      { wch: 15 }, // Mã hợp đồng
+      { wch: 15 }, // Ngày bắt đầu
+      { wch: 15 }, // Ngày kết thúc
+      { wch: 20 }, // Chuyên viên
+      { wch: 20 }, // AM
+      { wch: 10 }, // Năm
+      ...Array(12).fill({ wch: 10 }), // T1-T12
+      { wch: 15 } // Tổng Năm
+    ];
+    ws["!cols"] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, currentTab.label);
+    
+    const filename = `DuLieu_${currentTab.subtitle}_Nam${year}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    
+    toast.success(`Đã xuất dữ liệu ${currentTab.label} thành công`);
+  };
+
   const getTabLabel = (sourceType: string) => {
     switch (sourceType) {
       case "PIPELINE": return "Bảng 1 (Pipeline)";
@@ -341,6 +410,16 @@ export function SourceDataClient({
             Mẫu Excel
           </Button>
         )}
+
+        {/* Export Excel (for all tables) */}
+        <Button
+          variant="outline"
+          className="gap-2 h-10 rounded-xl border-green-200 text-green-700 hover:bg-green-50"
+          onClick={handleExportData}
+        >
+          <FileSpreadsheet className="size-4" />
+          Xuất Excel
+        </Button>
 
         {/* Rebuild Bảng 4 (only for Master tab or always visible) */}
         <Button

@@ -440,11 +440,11 @@ export function ExcelImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader className="pr-8">
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="sm:max-w-2xl overflow-hidden w-[calc(100%-2rem)] max-h-[90vh] flex flex-col">
+        <DialogHeader className="pr-8 shrink-0">
+          <DialogTitle className="flex items-center gap-2 min-w-0">
             <FileSpreadsheet className="size-5 text-emerald-600 shrink-0" />
-            <span className="truncate">Import Excel — {sourceLabel}</span>
+            <span className="truncate flex-1">Import Excel — {sourceLabel}</span>
           </DialogTitle>
           <DialogDescription>
             Chọn file Excel (.xlsx, .csv) để import dữ liệu vào{" "}
@@ -452,10 +452,10 @@ export function ExcelImportDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-2 overflow-y-auto min-w-0 shrink flex-1">
           {/* File Input */}
           <div
-            className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors"
+            className="border-2 border-dashed border-slate-200 rounded-xl p-6 sm:p-8 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors w-full overflow-hidden break-words"
             onClick={() => fileRef.current?.click()}
           >
             <input
@@ -569,7 +569,7 @@ export function ExcelImportDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="shrink-0">
           <Button variant="outline" onClick={handleClose} className="rounded-xl">
             Đóng
           </Button>

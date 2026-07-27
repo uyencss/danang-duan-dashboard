@@ -233,6 +233,7 @@ function generateMasterRows(
       // Cloud-Distribute: Fixed N months from ngayBatDau
       const dtTheoThang = project.doanhThuTheoThang || 0;
       const soKy = project.soKy1GoiCuoc || 0;
+      const tongDoanhThu = project.tongDoanhThuDuKien || 0;
       if (dtTheoThang > 0 && soKy > 0) {
         const start = new Date(project.ngayBatDau);
         const startMonth = start.getUTCMonth(); // 0-indexed
@@ -251,10 +252,15 @@ function generateMasterRows(
             targetMonth === contractStartMonth &&
             targetYear === contractStartYear;
 
+          let doanhThuKy = dtTheoThang;
+          if (i === soKy - 1 && tongDoanhThu > 0) {
+            doanhThuKy = tongDoanhThu - (dtTheoThang * (soKy - 1));
+          }
+
           rows.push({
             nam: targetYear,
             thang: targetMonth,
-            doanhThu: dtTheoThang,
+            doanhThu: doanhThuKy,
             loaiDoanhThu: isStartMonth ? "KY_MOI" : "DUY_TRI",
           });
         }
@@ -435,6 +441,9 @@ export async function getDeduplicatedMasterRevenue(
         select: {
           trangThaiHienTai: true,
           isKyVong: true,
+          tongDoanhThuDuKien: true,
+          ngayBatDau: true,
+          sanPham: { select: { tenChiTiet: true } },
         }
       }
     },
@@ -443,7 +452,13 @@ export async function getDeduplicatedMasterRevenue(
   // 1. Consolidate (sum) rows from the SAME source type for the same contract/project-month
   const consolidated = new Map<string, typeof allRows[0]>();
   for (const row of allRows) {
-    const key = `${row.sourceType}:${row.maHopDong ? `hd:${row.maHopDong}` : `pid:${row.projectId}`}:${row.thang}`;
+    if (!row.duAn) continue;
+    const spName = row.duAn?.sanPham?.tenChiTiet?.trim().toLowerCase() || "";
+    const startDate = row.duAn?.ngayBatDau ? new Date(row.duAn.ngayBatDau).getTime() : "";
+    const contractKey = row.maHopDong
+      ? `hd:${row.maHopDong}:dt:${row.duAn?.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
+      : `pid:${row.projectId}`;
+    const key = `${row.sourceType}:${contractKey}:${row.thang}`;
     const existing = consolidated.get(key);
     if (!existing) {
       consolidated.set(key, { ...row });
@@ -456,9 +471,12 @@ export async function getDeduplicatedMasterRevenue(
   const deduped = new Map<string, typeof allRows[0]>();
 
   for (const row of consolidated.values()) {
-    const dedupeKey = row.maHopDong
-      ? `hd:${row.maHopDong}:${row.thang}`
-      : `pid:${row.projectId}:${row.thang}`;
+    const spName = row.duAn?.sanPham?.tenChiTiet?.trim().toLowerCase() || "";
+    const startDate = row.duAn?.ngayBatDau ? new Date(row.duAn.ngayBatDau).getTime() : "";
+    const contractKey = row.maHopDong
+      ? `hd:${row.maHopDong}:dt:${row.duAn?.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
+      : `pid:${row.projectId}`;
+    const dedupeKey = `${contractKey}:${row.thang}`;
 
     const existing = deduped.get(dedupeKey);
     if (!existing) {
