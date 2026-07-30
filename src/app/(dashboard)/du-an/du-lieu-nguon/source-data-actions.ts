@@ -67,7 +67,6 @@ export async function getSourceDataByType(
         chuyenVien: { select: { name: true } },
         invoiceRecords: sourceType === "ECONTRACT_INVOICE"
           ? {
-              where: { namGhiNhan: year },
               select: {
                 thangGhiNhan: true,
                 namGhiNhan: true,
@@ -105,11 +104,13 @@ export async function getSourceDataByType(
             p.tongDoanhThuDuKien || 0
           );
           break;
-        case "ECONTRACT_INVOICE":
-          months = generateEContractMonthlyView(
-            p.invoiceRecords || [],
-            year
+        case "ECONTRACT_INVOICE": {
+          // Filter invoices for selected year for monthly view
+          const yearInvoices = (p.invoiceRecords || []).filter(
+            (inv: any) => inv.namGhiNhan === year
           );
+          months = generateEContractMonthlyView(yearInvoices, year);
+        }
           break;
         default:
           months = generatePipelineMonthlyView();
@@ -123,7 +124,9 @@ export async function getSourceDataByType(
           doanhThuTheoThang: p.doanhThuTheoThang,
           soKy1GoiCuoc: p.soKy1GoiCuoc,
           tongDoanhThuDuKien: p.tongDoanhThuDuKien,
-          invoiceRecords: p.invoiceRecords || [],
+          invoiceRecords: sourceType === "ECONTRACT_INVOICE"
+            ? (p.invoiceRecords || []).filter((inv: any) => inv.namGhiNhan === year)
+            : p.invoiceRecords || [],
         },
         p.revenueSlices,
         year
@@ -134,8 +137,14 @@ export async function getSourceDataByType(
         0
       );
 
-      const firstInvoice = p.invoiceRecords?.[0];
-      const thangGhiNhan = firstInvoice ? `Tháng ${firstInvoice.thangGhiNhan}` : "-";
+      // For Bảng 3: show tháng ghi nhận from ALL invoices (not just current year)
+      const allInvoices = p.invoiceRecords || [];
+      const thangGhiNhanList = allInvoices.map(
+        (inv: any) => `T${inv.thangGhiNhan}/${inv.namGhiNhan}`
+      );
+      const thangGhiNhan = thangGhiNhanList.length > 0
+        ? thangGhiNhanList.join(", ")
+        : "-";
 
       return {
         id: p.id,
@@ -426,7 +435,8 @@ export async function rebuildMasterData(): Promise<{
 // ── Import Excel for Source Data ───────────────────────────────────
 export async function importSourceExcel(
   rows: any[],
-  sourceType: "PIPELINE" | "CLOUD_DISTRIBUTE" | "ECONTRACT_INVOICE"
+  sourceType: "PIPELINE" | "CLOUD_DISTRIBUTE" | "ECONTRACT_INVOICE",
+  skipRevalidate: boolean = false
 ): Promise<{ success: boolean; count?: number; message?: string; error?: string }> {
   try {
     const user = await requireRole("ADMIN", "USER");
@@ -465,70 +475,24 @@ export async function importSourceExcel(
       "Công an": PhanLoaiKH.CONG_AN,
     };
 
+    const normalizeStr = (val: any) => {
+      if (!val) return "";
+      return val.toString().replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, " ").trim();
+    };
+
     // Pre-fetch existing customers and products (same pattern as excel-actions.ts)
     const uniqueKHNames = new Set<string>();
     const uniqueSPKeys = new Set<string>();
 
     rows.forEach((row) => {
-      if (row.khachHangName) uniqueKHNames.add(row.khachHangName.trim());
-      if (row.nhomSanPham && row.tenSanPham) {
-        uniqueSPKeys.add(`${row.nhomSanPham.trim()}|${row.tenSanPham.trim()}`);
+      const kh = normalizeStr(row.khachHangName);
+      if (kh) uniqueKHNames.add(kh);
+      const nhomSP = normalizeStr(row.nhomSanPham);
+      const tenSP = normalizeStr(row.tenSanPham);
+      if (nhomSP && tenSP) {
+        uniqueSPKeys.add(`${nhomSP}|${tenSP}`);
       }
     });
-
-    const existingKHs = await prisma.khachHang.findMany({
-      where: { ten: { in: Array.from(uniqueKHNames) } },
-    });
-    const khMap = new Map<string, { id: number; linhVuc: string }>();
-    existingKHs.forEach((kh) =>
-      khMap.set(kh.ten.toLowerCase(), { id: kh.id, linhVuc: kh.phanLoai })
-    );
-
-    const existingSPs = await prisma.sanPham.findMany();
-    const spMap = new Map<string, number>();
-    existingSPs.forEach((sp) =>
-      spMap.set(`${sp.nhom}|${sp.tenChiTiet}`.toLowerCase(), sp.id)
-    );
-
-    // Create missing customers & products
-    for (const name of uniqueKHNames) {
-      if (!khMap.has(name.toLowerCase())) {
-        const sampleRow = rows.find(
-          (r: any) => r.khachHangName?.trim() === name
-        );
-        const pl =
-          phanLoaiMap[sampleRow?.phanLoaiKH] || PhanLoaiKH.DOANH_NGHIEP;
-        const newKH = await prisma.khachHang.create({
-          data: { 
-            ten: name, 
-            phanLoai: pl,
-            diaChi: sampleRow?.diaChi?.toString().trim() || null
-          },
-        });
-        khMap.set(name.toLowerCase(), {
-          id: newKH.id,
-          linhVuc: pl,
-        });
-      }
-    }
-
-    for (const key of uniqueSPKeys) {
-      if (!spMap.has(key.toLowerCase())) {
-        const [nhom, ten] = key.split("|");
-        const sampleRow = rows.find(
-          (r: any) =>
-            `${r.nhomSanPham?.trim()}|${r.tenSanPham?.trim()}`.toLowerCase() === key.toLowerCase()
-        );
-        const newSP = await prisma.sanPham.create({
-          data: { 
-            nhom, 
-            tenChiTiet: ten,
-            moTa: sampleRow?.moTaSanPham?.toString().trim() || null
-          },
-        });
-        spMap.set(key.toLowerCase(), newSP.id);
-      }
-    }
 
     // Pre-fetch users for AM/CV name → ID lookup
     const allUsers = await prisma.user.findMany({
@@ -561,21 +525,149 @@ export async function importSourceExcel(
       return null; // Not found — skip instead of FK error
     };
 
+    // ── IMPORT DEDUP: Pre-fetch existing projects OUTSIDE transaction ──
+    // This avoids holding a long transaction lock while reading.
+    // Dedup key (6 trường — KHÔNG thay đổi trừ khi người dùng yêu cầu):
+    //   maHopDong + tenSP + tongDoanhThu + ngayBatDau + ngayKetThuc + soKy1GoiCuoc
+    const makeDedupeKey = (
+      maHopDong: string | null,
+      tenSP: string,
+      tongDT: number,
+      ngayBD: Date | string,
+      ngayKT: Date | string | null,
+      soKy: number | null
+    ) => {
+      return [
+        (maHopDong || "").trim().toLowerCase(),
+        (tenSP || "").trim().toLowerCase(),
+        String(Math.round(tongDT)),
+        new Date(ngayBD).toISOString(),
+        ngayKT ? new Date(ngayKT).toISOString() : "",
+        String(soKy || 0),
+      ].join("||");
+    };
+
+    const existingProjects = await prisma.duAn.findMany({
+      where: {
+        sourceType: sourceType as SourceType,
+        isPendingDelete: false,
+      },
+      select: {
+        id: true,
+        maHopDong: true,
+        tongDoanhThuDuKien: true,
+        ngayBatDau: true,
+        ngayKetThuc: true,
+        soKy1GoiCuoc: true,
+        sanPham: { select: { tenChiTiet: true } },
+        // Bảng 3: cần thangGhiNhan để dedup theo tháng
+        invoiceRecords: sourceType === "ECONTRACT_INVOICE"
+          ? { select: { thangGhiNhan: true }, take: 1 }
+          : false,
+      },
+    });
+
+    const existingKeyToId = new Map<string, number>();
+    for (const p of existingProjects) {
+      let key = makeDedupeKey(
+        p.maHopDong,
+        p.sanPham?.tenChiTiet || "",
+        p.tongDoanhThuDuKien,
+        p.ngayBatDau,
+        p.ngayKetThuc,
+        p.soKy1GoiCuoc
+      );
+      // Bảng 3: thêm thangGhiNhan vào key (mỗi tháng = 1 record riêng)
+      if (sourceType === "ECONTRACT_INVOICE") {
+        const inv = (p as any).invoiceRecords?.[0];
+        key += `||${inv?.thangGhiNhan ?? ""}`;
+      }
+      if (!existingKeyToId.has(key)) {
+        existingKeyToId.set(key, p.id);
+      }
+    }
+
+    console.log(`[Import Dedup] Found ${existingKeyToId.size} existing unique records for ${sourceType}`);
+
+    // Collect existing project IDs that need doanhThuTheoThang updates
+    const updatesToApply: Array<{ id: number; doanhThuTheoThang: number; soKy1GoiCuoc: number | null }> = [];
+
     // Process rows in chunks INSIDE a single transaction to ensure atomicity
-    const chunkSize = 20;
+    const chunkSize = 1000;
     const createdProjectIds: number[] = [];
+    let skippedCount = 0;
+
+    // Track seen keys within THIS import batch for within-batch dedup
+    const batchSeenKeys = new Set<string>();
 
     await prisma.$transaction(
       async (tx) => {
+        // --- 1. SYNC CUSTOMERS & PRODUCTS INSIDE TRANSACTION ---
+        const existingKHs = uniqueKHNames.size > 0 
+          ? await tx.khachHang.findMany({
+              where: {
+                OR: Array.from(uniqueKHNames).map(name => ({
+                  ten: { equals: name, mode: "insensitive" }
+                }))
+              }
+            })
+          : [];
+        const khMap = new Map<string, { id: number; linhVuc: string }>();
+        existingKHs.forEach((kh) =>
+          khMap.set(kh.ten.toLowerCase(), { id: kh.id, linhVuc: kh.phanLoai })
+        );
+
+        for (const name of uniqueKHNames) {
+          if (!khMap.has(name.toLowerCase())) {
+            const sampleRow = rows.find(
+              (r: any) => normalizeStr(r.khachHangName) === name
+            );
+            const pl = phanLoaiMap[sampleRow?.phanLoaiKH] || PhanLoaiKH.DOANH_NGHIEP;
+            const newKH = await tx.khachHang.create({
+              data: { 
+                ten: name, 
+                phanLoai: pl,
+                diaChi: normalizeStr(sampleRow?.diaChi) || null
+              },
+            });
+            khMap.set(name.toLowerCase(), { id: newKH.id, linhVuc: pl });
+          }
+        }
+
+        const existingSPs = await tx.sanPham.findMany();
+        const spMap = new Map<string, number>();
+        existingSPs.forEach((sp) =>
+          spMap.set(`${sp.nhom}|${sp.tenChiTiet}`.toLowerCase(), sp.id)
+        );
+
+        for (const key of uniqueSPKeys) {
+          if (!spMap.has(key.toLowerCase())) {
+            const [nhom, ten] = key.split("|");
+            const sampleRow = rows.find(
+              (r: any) =>
+                `${normalizeStr(r.nhomSanPham)}|${normalizeStr(r.tenSanPham)}`.toLowerCase() === key.toLowerCase()
+            );
+            const newSP = await tx.sanPham.create({
+              data: { 
+                nhom, 
+                tenChiTiet: ten,
+                moTa: normalizeStr(sampleRow?.moTaSanPham) || null
+              },
+            });
+            spMap.set(key.toLowerCase(), newSP.id);
+          }
+        }
+
+        // --- 2. PROCESS ROWS ---
         for (let i = 0; i < rows.length; i += chunkSize) {
           const chunk = rows.slice(i, i + chunkSize);
 
           const preparedData = chunk
             .map((row: any) => {
               if (!row.tenDuAn) return null;
-              const khInfo = khMap.get(row.khachHangName?.trim().toLowerCase());
+              const khInfo = khMap.get(normalizeStr(row.khachHangName).toLowerCase());
               const spId = spMap.get(
-                `${row.nhomSanPham?.trim()}|${row.tenSanPham?.trim()}`.toLowerCase()
+                `${normalizeStr(row.nhomSanPham)}|${normalizeStr(row.tenSanPham)}`.toLowerCase()
               );
               if (!khInfo || !spId) return null;
 
@@ -586,6 +678,43 @@ export async function importSourceExcel(
               const { tuan, thang, quy, nam } = extractTimeFields(ngayBatDau);
               const trangThai =
                 trangThaiMap[row.trangThaiKhoiTao] || TrangThaiDuAn.MOI;
+
+              // ── DEDUP CHECK: Skip if already exists in DB or earlier in this batch ──
+              const tenSP = normalizeStr(row.tenSanPham);
+              let dedupeKey = makeDedupeKey(
+                row.maHopDong || null,
+                tenSP,
+                safeParseFloat(row.tongDoanhThu),
+                ngayBatDau,
+                ngayKetThuc,
+                parseInt(row.soKy1GoiCuoc) || null
+              );
+              // Bảng 3: thêm thangGhiNhan vào dedup key
+              // Mỗi tháng ghi nhận là 1 record riêng biệt cho cùng 1 hợp đồng
+              if (sourceType === "ECONTRACT_INVOICE") {
+                const tgMatch = row.thangGhiNhan?.toString().match(/\d+/);
+                dedupeKey += `||${tgMatch ? tgMatch[0] : ""}`;
+              }
+
+              if (existingKeyToId.has(dedupeKey)) {
+                // Record already exists — skip creation but update revenue fields
+                const existingId = existingKeyToId.get(dedupeKey)!;
+                const newDtTheoThang = safeParseFloat(row.dtTheoThang);
+                const newSoKy = parseInt(row.soKy1GoiCuoc) || null;
+                updatesToApply.push({
+                  id: existingId,
+                  doanhThuTheoThang: newDtTheoThang,
+                  soKy1GoiCuoc: newSoKy,
+                });
+                skippedCount++;
+                return null;
+              }
+              // Within-batch dedup: skip if seen earlier in this import
+              if (batchSeenKeys.has(dedupeKey)) {
+                skippedCount++;
+                return null;
+              }
+              batchSeenKeys.add(dedupeKey);
 
               return {
                 duAnData: {
@@ -627,64 +756,127 @@ export async function importSourceExcel(
                     : null,
               };
             })
-            .filter(Boolean);
+            .filter((x): x is NonNullable<typeof x> => x !== null);
 
           if (preparedData.length === 0) continue;
 
-          await Promise.all(
-            preparedData.map(async (item: any) => {
-              const duAn = await tx.duAn.create({ data: item.duAnData });
-              createdProjectIds.push(duAn.id);
+          // DEBUG: Log dtTheoThang stats for Bảng 3 import
+          if (sourceType === "ECONTRACT_INVOICE") {
+            const dtValues = preparedData.map((item: any) => item.duAnData.doanhThuTheoThang);
+            const nonZero = dtValues.filter((v: number) => v > 0);
+            const totalDT = dtValues.reduce((s: number, v: number) => s + v, 0);
+            console.log(`[IMPORT DEBUG] Bảng 3 batch: ${preparedData.length} rows`);
+            console.log(`[IMPORT DEBUG] dtTheoThang: ${nonZero.length} non-zero, ${dtValues.length - nonZero.length} zero`);
+            console.log(`[IMPORT DEBUG] Sum dtTheoThang: ${totalDT.toLocaleString()}`);
+            // Log first 3 rows raw values
+            for (let di = 0; di < Math.min(3, preparedData.length); di++) {
+              const d = preparedData[di].duAnData;
+              console.log(`[IMPORT DEBUG] Row ${di}: tongDT=${d.tongDoanhThuDuKien}, dtThang=${d.doanhThuTheoThang}`);
+            }
+            // Log invoice data for first 3
+            for (let di = 0; di < Math.min(3, preparedData.length); di++) {
+              const inv = preparedData[di].invoiceData;
+              console.log(`[IMPORT DEBUG] Invoice ${di}:`, JSON.stringify(inv));
+            }
+          }
 
-              // Create log entry
-              await tx.nhatKyCongViec.create({
-                data: {
-                  projectId: duAn.id,
-                  userId: user.id,
-                  trangThaiMoi: item.trangThai,
-                  noiDungChiTiet: `Import dữ liệu nguồn ${sourceType} [${batchId}]`,
-                  ngayGio: new Date(),
-                  status: "APPROVED",
-                },
-              });
+          // Bulk insert projects
+          const createdDuAns = await tx.duAn.createManyAndReturn({
+            data: preparedData.map((item: any) => item.duAnData),
+          });
 
-              // For EContract: create invoice records
-              if (item.invoiceData && item.invoiceData.length > 0) {
-                await tx.invoiceRecord.createMany({
-                  data: item.invoiceData.map((inv: any) => ({
-                    projectId: duAn.id,
-                    thangGhiNhan: inv.thang,
-                    namGhiNhan: inv.nam,
-                    doanhThuTheoThang: inv.doanhThu,
-                    batchId,
-                  })),
-                });
-              }
+          const newIds = createdDuAns.map((d: any) => d.id);
+          createdProjectIds.push(...newIds);
 
-              successCount++;
-            })
-          );
+          // Bulk insert logs
+          await tx.nhatKyCongViec.createMany({
+            data: createdDuAns.map((duAn: any, idx: number) => ({
+              projectId: duAn.id,
+              userId: user.id,
+              trangThaiMoi: preparedData[idx]!.trangThai,
+              noiDungChiTiet: `Import dữ liệu nguồn ${sourceType} [${batchId}]`,
+              ngayGio: new Date(),
+              status: "APPROVED",
+            })),
+          });
+
+          // Bulk insert invoices
+          const invoicesToCreate: any[] = [];
+          for (let idx = 0; idx < preparedData.length; idx++) {
+            const item = preparedData[idx]!;
+            const duAnId = createdDuAns[idx].id;
+            if (item.invoiceData && item.invoiceData.length > 0) {
+              invoicesToCreate.push(
+                ...item.invoiceData.map((inv: any) => ({
+                  projectId: duAnId,
+                  thangGhiNhan: inv.thang,
+                  namGhiNhan: inv.nam,
+                  doanhThuTheoThang: inv.doanhThu,
+                  batchId,
+                }))
+              );
+            }
+          }
+          if (invoicesToCreate.length > 0) {
+            await tx.invoiceRecord.createMany({
+              data: invoicesToCreate,
+            });
+          }
+
+          successCount += preparedData.length;
         }
       },
-      { timeout: 300000 } // 5 minutes timeout to handle large files
+      { timeout: 600000 } // 10 minutes timeout to handle large files
     );
 
-    // Sync MasterRevenue for all created projects in bulk
-    await syncMasterRevenueMany(createdProjectIds);
+    console.log(`[Import] Created ${successCount} new, Skipped ${skippedCount} duplicates, Updating ${updatesToApply.length} existing records`);
 
-    await cacheInvalidate(
-      "dashboard:overview",
-      "options:khachhang",
-      "options:sanpham"
-    );
-    (revalidateTag as any)("dashboard-overview");
-    revalidatePath("/du-an");
-    revalidatePath("/du-an/du-lieu-nguon");
+    // ── Apply dedup updates to existing records (OUTSIDE transaction for performance) ──
+    // Update doanhThuTheoThang and soKy1GoiCuoc for records that were skipped by dedup
+    // This ensures the latest Excel values are reflected in revenue calculations
+    const updatedProjectIds: number[] = [];
+    if (updatesToApply.length > 0) {
+      const UPDATE_CHUNK = 100;
+      for (let i = 0; i < updatesToApply.length; i += UPDATE_CHUNK) {
+        const chunk = updatesToApply.slice(i, i + UPDATE_CHUNK);
+        await Promise.all(
+          chunk.map((upd) =>
+            prisma.duAn.update({
+              where: { id: upd.id },
+              data: {
+                doanhThuTheoThang: upd.doanhThuTheoThang,
+                soKy1GoiCuoc: upd.soKy1GoiCuoc,
+              },
+            })
+          )
+        );
+        updatedProjectIds.push(...chunk.map((u) => u.id));
+      }
+      console.log(`[Import] Updated ${updatedProjectIds.length} existing records with new revenue values`);
+    }
 
+    // Sync MasterRevenue for all created AND updated projects in bulk.
+    // MUST be awaited to prevent connection pool exhaustion and Serverless freezes
+    // when processing multiple chunks sequentially.
+    const allProjectIdsToSync = [...createdProjectIds, ...updatedProjectIds];
+    await syncMasterRevenueMany(allProjectIdsToSync);
+
+    if (!skipRevalidate) {
+      await cacheInvalidate(
+        "dashboard:overview",
+        "options:khachhang",
+        "options:sanpham"
+      );
+      (revalidateTag as any)("dashboard-overview");
+      revalidatePath("/du-an");
+      revalidatePath("/du-an/du-lieu-nguon");
+    }
+
+    const updatedCount = updatedProjectIds.length;
     return {
       success: true,
-      count: successCount,
-      message: `Đã import thành công ${successCount} dự án vào ${getSourceLabel(sourceType)}.`,
+      count: successCount + updatedCount,
+      message: `Đã import thành công ${successCount} dự án mới${updatedCount > 0 ? `, cập nhật ${updatedCount} dự án` : ""} vào ${getSourceLabel(sourceType)}${skippedCount > 0 ? ` (${skippedCount - updatedCount} bản ghi giống hệt đã bỏ qua)` : ""}. Toàn bộ dữ liệu doanh thu đã được đồng bộ hoàn tất.`,
     };
   } catch (error: any) {
     console.error("[SourceData] importSourceExcel error:", error);
@@ -820,8 +1012,12 @@ function extractInvoiceData(
   const match = thangStr.match(/\d+/);
   const thang = match ? parseInt(match[0]) : 1; // default to January if not parseable
 
-  const nam = ngayBatDau.getUTCFullYear();
+  // namGhiNhan = năm hiện tại (năm upload), KHÔNG phải năm ngayBatDau
+  const nam = new Date().getFullYear();
+
+  // Doanh thu ghi nhận = dtTheoThang (DT theo tháng) — ghi nhận đúng giá trị từ Excel
   const doanhThu = typeof doanhThuTheoThang === "number" ? doanhThuTheoThang : safeParseFloat(row.dtTheoThang);
 
   return [{ thang, nam, doanhThu }];
 }
+

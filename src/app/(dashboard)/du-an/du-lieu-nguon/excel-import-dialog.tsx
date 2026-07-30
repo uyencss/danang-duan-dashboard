@@ -385,7 +385,8 @@ export function ExcelImportDialog({
           `Đang xử lý batch ${i + 1}/${totalChunks} (${Math.min((i + 1) * CHUNK_SIZE, parsedRows.length)}/${parsedRows.length} dòng)...`
         );
 
-        const res = await importSourceExcel(chunk, sourceType);
+        const isLastChunk = i === totalChunks - 1;
+        const res = await importSourceExcel(chunk, sourceType as any, !isLastChunk);
         if (res.success) {
           totalImported += res.count || 0;
         } else {

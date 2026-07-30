@@ -13,6 +13,10 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
+// Valid tab ids that map to source types
+const VALID_TABS = ["pipeline", "cloud", "econtract", "master"] as const;
+type TabId = (typeof VALID_TABS)[number];
+
 export default async function DuLieuNguonPage({
   searchParams,
 }: {
@@ -25,13 +29,43 @@ export default async function DuLieuNguonPage({
       ? parseInt(params.year)
       : new Date().getFullYear();
 
-  // Fetch all 4 tables in parallel
-  const [pipelineRes, cloudRes, econtractRes, masterRes] = await Promise.all([
-    getSourceDataByType("PIPELINE", year),
-    getSourceDataByType("CLOUD_DISTRIBUTE", year),
-    getSourceDataByType("ECONTRACT_INVOICE", year),
-    getMasterRevenueData(year),
-  ]);
+  // Determine which tab to pre-fetch (default: pipeline)
+  const requestedTab = (typeof params.tab === "string" ? params.tab : "pipeline") as TabId;
+  const activeTab = VALID_TABS.includes(requestedTab) ? requestedTab : "pipeline";
+
+  // Only fetch data for the initially active tab to avoid 73s+ SSR loads
+  let pipelineData: Awaited<ReturnType<typeof getSourceDataByType>>["data"] = [];
+  let cloudData: Awaited<ReturnType<typeof getSourceDataByType>>["data"] = [];
+  let econtractData: Awaited<ReturnType<typeof getSourceDataByType>>["data"] = [];
+  let masterData: Awaited<ReturnType<typeof getMasterRevenueData>>["data"] = [];
+
+  try {
+    switch (activeTab) {
+      case "pipeline": {
+        const res = await getSourceDataByType("PIPELINE", year);
+        pipelineData = res.data;
+        break;
+      }
+      case "cloud": {
+        const res = await getSourceDataByType("CLOUD_DISTRIBUTE", year);
+        cloudData = res.data;
+        break;
+      }
+      case "econtract": {
+        const res = await getSourceDataByType("ECONTRACT_INVOICE", year);
+        econtractData = res.data;
+        break;
+      }
+      case "master": {
+        const res = await getMasterRevenueData(year);
+        masterData = res.data;
+        break;
+      }
+    }
+  } catch (error) {
+    console.error("[DuLieuNguon] SSR fetch error:", error);
+    // Gracefully continue with empty data — client will retry on tab switch
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -60,13 +94,14 @@ export default async function DuLieuNguonPage({
         </div>
       </div>
 
-      {/* Client Component with all data */}
+      {/* Client Component — only the active tab has pre-loaded data */}
       <SourceDataClient
         initialYear={year}
-        pipelineData={pipelineRes.data}
-        cloudData={cloudRes.data}
-        econtractData={econtractRes.data}
-        masterData={masterRes.data}
+        initialTab={activeTab}
+        pipelineData={pipelineData}
+        cloudData={cloudData}
+        econtractData={econtractData}
+        masterData={masterData}
       />
     </div>
   );

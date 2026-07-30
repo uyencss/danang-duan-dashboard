@@ -253,8 +253,24 @@ export function SourceTable({
       });
     }
 
+    // DT theo tháng (Bảng 3 - EContract)
+    if (sourceType === "econtract") {
+      baseCols.push({
+        accessorKey: "doanhThuTheoThang",
+        header: "DT ghi nhận/tháng",
+        size: 120,
+        cell: ({ row }) => (
+          <span className="text-sm font-bold text-emerald-700 tabular-nums">
+            {row.original.doanhThuTheoThang > 0
+              ? formatRevenue(row.original.doanhThuTheoThang)
+              : "-"}
+          </span>
+        ),
+      });
+    }
+
     // Ngày bắt đầu / Ngày kết thúc
-    if (sourceType === "cloud") {
+    if (sourceType === "cloud" || sourceType === "econtract") {
       baseCols.push({
         accessorKey: "ngayBatDau",
         header: "Ngày bắt đầu",
@@ -289,7 +305,7 @@ export function SourceTable({
     }
 
     // ── 12 Month Columns ──────────────────────────────────────────
-    if (sourceType !== "econtract") {
+    if (sourceType !== "pipeline") {
       for (let m = 1; m <= 12; m++) {
         baseCols.push({
           id: `month${m}`,
@@ -318,7 +334,7 @@ export function SourceTable({
     }
 
     // Tổng năm
-    if (sourceType !== "econtract") {
+    if (sourceType !== "pipeline") {
       baseCols.push({
         id: "totalNam",
         header: () => (
@@ -503,7 +519,7 @@ export function SourceTable({
                 <tr className="bg-gradient-to-r from-slate-100 to-blue-50 border-t-2 border-slate-200">
                   <td
                     colSpan={
-                      sourceType === "master" ? 10 : (sourceType === "cloud" ? 11 : 9)
+                      sourceType === "master" ? 10 : (sourceType === "cloud" ? 11 : (sourceType === "econtract" ? 12 : 9))
                     }
                     className="px-2 py-2.5 text-right text-xs font-black text-slate-600 uppercase"
                   >

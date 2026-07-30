@@ -74,26 +74,29 @@ export async function syncMasterRevenue(projectId: number) {
     const rows = generateMasterRows(project);
 
     // Atomic: delete old + insert new
-    await prisma.$transaction([
-      prisma.masterRevenue.deleteMany({ where: { projectId } }),
-      ...(rows.length > 0
-        ? [
-            prisma.masterRevenue.createMany({
-              data: rows.map((r) => ({
-                projectId,
-                maHopDong: project.maHopDong || null,
-                sourceType: project.sourceType,
-                nam: r.nam,
-                thang: r.thang,
-                doanhThu: r.doanhThu,
-                loaiDoanhThu: r.loaiDoanhThu,
-                amId: project.amId,
-                chuyenVienId: project.chuyenVienId,
-              })),
-            }),
-          ]
-        : []),
-    ]);
+    await prisma.$transaction(
+      [
+        prisma.masterRevenue.deleteMany({ where: { projectId } }),
+        ...(rows.length > 0
+          ? [
+              prisma.masterRevenue.createMany({
+                data: rows.map((r) => ({
+                  projectId,
+                  maHopDong: project.maHopDong || null,
+                  sourceType: project.sourceType,
+                  nam: r.nam,
+                  thang: r.thang,
+                  doanhThu: r.doanhThu,
+                  loaiDoanhThu: r.loaiDoanhThu,
+                  amId: project.amId,
+                  chuyenVienId: project.chuyenVienId,
+                })),
+              }),
+            ]
+          : []),
+      ],
+      { timeout: 300000 }
+    );
   } catch (error) {
     console.error(
       `[MasterRevenue] Failed to sync for project ${projectId}:`,
@@ -160,19 +163,30 @@ export async function syncMasterRevenueMany(projectIds: number[]) {
       }
     }
 
-    // Atomic delete and bulk insert
-    await prisma.$transaction([
-      prisma.masterRevenue.deleteMany({
-        where: { projectId: { in: projectIds } },
-      }),
-      ...(masterRowsToInsert.length > 0
-        ? [
-            prisma.masterRevenue.createMany({
-              data: masterRowsToInsert,
-            }),
-          ]
-        : []),
-    ]);
+    // Atomic delete and bulk insert inside an interactive transaction to ensure timeout works
+    await prisma.$transaction(
+      async (tx) => {
+        // Chunk the operations if projectIds is very large (e.g., > 1000)
+        const CHUNK_SIZE = 500;
+        for (let i = 0; i < projectIds.length; i += CHUNK_SIZE) {
+          const chunkProjectIds = projectIds.slice(i, i + CHUNK_SIZE);
+          
+          await tx.masterRevenue.deleteMany({
+            where: { projectId: { in: chunkProjectIds } },
+          });
+
+          // Filter masterRowsToInsert that belong to this chunk's projects
+          const chunkRows = masterRowsToInsert.filter((r) => chunkProjectIds.includes(r.projectId));
+          
+          if (chunkRows.length > 0) {
+            await tx.masterRevenue.createMany({
+              data: chunkRows,
+            });
+          }
+        }
+      },
+      { timeout: 300000 } // 5 minutes timeout
+    );
   } catch (error) {
     console.error(
       `[MasterRevenue] Failed to bulk sync for ${projectIds.length} projects:`,

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useTransition, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Calendar,
   Download,
@@ -10,6 +10,7 @@ import {
   Undo2,
   FileSpreadsheet,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -18,6 +19,8 @@ import { ExcelImportDialog } from "./excel-import-dialog";
 import {
   rebuildMasterData,
   recallSourceBatch,
+  getSourceDataByType,
+  getMasterRevenueData,
   type SourceDataRow,
 } from "./source-data-actions";
 import {
@@ -79,6 +82,7 @@ type TabId = (typeof TABS)[number]["id"];
 
 interface SourceDataClientProps {
   initialYear: number;
+  initialTab?: TabId;
   pipelineData: SourceDataRow[];
   cloudData: SourceDataRow[];
   econtractData: SourceDataRow[];
@@ -87,41 +91,92 @@ interface SourceDataClientProps {
 
 export function SourceDataClient({
   initialYear,
+  initialTab = "pipeline",
   pipelineData,
   cloudData,
   econtractData,
   masterData,
 }: SourceDataClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabId>("pipeline");
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [year, setYear] = useState(initialYear);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isRebuilding, setIsRebuilding] = useState(false);
   const [confirmRecall, setConfirmRecall] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // Lazy-loaded data state — track which tabs have been loaded
+  const [tabData, setTabData] = useState<Record<TabId, SourceDataRow[]>>({
+    pipeline: pipelineData,
+    cloud: cloudData,
+    econtract: econtractData,
+    master: masterData,
+  });
+  const [loadingTab, setLoadingTab] = useState<TabId | null>(null);
+  // Track which tabs have been loaded for this year
+  const loadedTabs = useRef<Set<string>>(new Set([initialTab]));
+
   const currentTab = TABS.find((t) => t.id === activeTab)!;
 
-  // Get data for active tab
-  const getActiveData = (): SourceDataRow[] => {
-    switch (activeTab) {
-      case "pipeline":
-        return pipelineData;
-      case "cloud":
-        return cloudData;
-      case "econtract":
-        return econtractData;
-      case "master":
-        return masterData;
-    }
-  };
+  // ── Lazy-load tab data on demand ────────────────────────────────
+  const fetchTabData = useCallback(
+    async (tabId: TabId, targetYear: number) => {
+      const cacheKey = `${tabId}:${targetYear}`;
+      if (loadedTabs.current.has(cacheKey)) return; // Already loaded
 
-  // Change year filter
+      setLoadingTab(tabId);
+      try {
+        let result: { data: SourceDataRow[]; error?: string };
+        if (tabId === "master") {
+          result = await getMasterRevenueData(targetYear);
+        } else {
+          const sourceTypeMap = {
+            pipeline: "PIPELINE" as const,
+            cloud: "CLOUD_DISTRIBUTE" as const,
+            econtract: "ECONTRACT_INVOICE" as const,
+          };
+          result = await getSourceDataByType(sourceTypeMap[tabId], targetYear);
+        }
+
+        if (result.error) {
+          toast.error(`Lỗi tải dữ liệu: ${result.error}`);
+        } else {
+          setTabData((prev) => ({ ...prev, [tabId]: result.data }));
+          loadedTabs.current.add(cacheKey);
+        }
+      } catch (err) {
+        toast.error("Lỗi kết nối mạng khi tải dữ liệu. Vui lòng thử lại.");
+      } finally {
+        setLoadingTab(null);
+      }
+    },
+    []
+  );
+
+  // ── Switch tab ─────────────────────────────────────────────────
+  const handleTabSwitch = useCallback(
+    (tabId: TabId) => {
+      setActiveTab(tabId);
+      fetchTabData(tabId, year);
+    },
+    [year, fetchTabData]
+  );
+
+  // Change year filter — reset all loaded tabs and re-fetch active
   const handleYearChange = (newYear: number) => {
     setYear(newYear);
+    // Reset loaded tabs cache for the new year
+    loadedTabs.current.clear();
+    // Clear all data and reload only the active tab
+    setTabData({
+      pipeline: [],
+      cloud: [],
+      econtract: [],
+      master: [],
+    });
+    fetchTabData(activeTab, newYear);
     startTransition(() => {
-      router.push(`/du-an/du-lieu-nguon?year=${newYear}`);
-      router.refresh();
+      router.push(`/du-an/du-lieu-nguon?year=${newYear}&tab=${activeTab}`);
     });
   };
 
@@ -132,7 +187,9 @@ export function SourceDataClient({
       const res = await rebuildMasterData();
       if (res.success) {
         toast.success(res.message);
-        router.refresh();
+        // Invalidate master tab cache and re-fetch
+        loadedTabs.current.delete(`master:${year}`);
+        fetchTabData("master", year);
       } else {
         toast.error(res.error);
       }
@@ -149,7 +206,9 @@ export function SourceDataClient({
       const res = await recallSourceBatch(sourceType as any);
       if (res.success) {
         toast.success(res.message);
-        router.refresh();
+        // Invalidate all tabs and re-fetch active
+        loadedTabs.current.clear();
+        fetchTabData(activeTab, year);
       } else {
         toast.error(res.error);
       }
@@ -270,6 +329,9 @@ export function SourceDataClient({
     toast.success(`Đã tải mẫu Excel cho ${getTabLabel(sourceType)}`);
   };
 
+  // Get data for active tab
+  const activeData = tabData[activeTab];
+
   // Export Data to Excel
   const handleExportData = async () => {
     const XLSX = await import("xlsx");
@@ -352,8 +414,8 @@ export function SourceDataClient({
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
-  const activeData = getActiveData();
   const totalRevenue = activeData.reduce((sum, row) => sum + row.totalNam, 0);
+  const isTabLoading = loadingTab === activeTab;
 
   return (
     <div className="space-y-5">
@@ -439,19 +501,14 @@ export function SourceDataClient({
       <div className="flex gap-1.5 bg-slate-100/80 p-1.5 rounded-xl w-fit">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
-          const count =
-            tab.id === "pipeline"
-              ? pipelineData.length
-              : tab.id === "cloud"
-                ? cloudData.length
-                : tab.id === "econtract"
-                  ? econtractData.length
-                  : masterData.length;
+          const isLoading = loadingTab === tab.id;
+          const count = tabData[tab.id].length;
 
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabSwitch(tab.id)}
+              disabled={isLoading}
               className={`relative px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
                 isActive
                   ? `bg-white shadow-sm text-slate-900 scale-[1.02]`
@@ -460,13 +517,17 @@ export function SourceDataClient({
             >
               <div className="flex items-center gap-2">
                 <span>{tab.label}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
-                    isActive ? `${tab.bgColor} ${tab.textColor}` : "bg-slate-200 text-slate-500"
-                  }`}
-                >
-                  {count}
-                </span>
+                {isLoading ? (
+                  <Loader2 className="size-3 animate-spin text-slate-400" />
+                ) : (
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
+                      isActive ? `${tab.bgColor} ${tab.textColor}` : "bg-slate-200 text-slate-500"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                )}
               </div>
               <span className="text-[10px] font-medium opacity-60 block -mt-0.5">
                 {tab.subtitle}
@@ -502,19 +563,31 @@ export function SourceDataClient({
         </div>
       </div>
 
-      {/* ── DataTable ───────────────────────────────────────────────── */}
-      <SourceTable
-        data={activeData}
-        year={year}
-        sourceType={activeTab}
-        isReadOnly={activeTab === "master"}
-      />
+      {/* ── DataTable / Loading State ────────────────────────────────── */}
+      {isTabLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
+          <Loader2 className="size-8 animate-spin text-blue-400" />
+          <p className="text-sm font-medium">Đang tải dữ liệu {currentTab.label}...</p>
+        </div>
+      ) : (
+        <SourceTable
+          data={activeData}
+          year={year}
+          sourceType={activeTab}
+          isReadOnly={activeTab === "master"}
+        />
+      )}
 
       {/* ── Import Dialog ──────────────────────────────────────────── */}
       {currentTab.sourceType && (
         <ExcelImportDialog
           open={isImportOpen}
-          onClose={() => setIsImportOpen(false)}
+          onClose={() => {
+            setIsImportOpen(false);
+            // After import, invalidate current tab and re-fetch
+            loadedTabs.current.delete(`${activeTab}:${year}`);
+            fetchTabData(activeTab, year);
+          }}
           sourceType={currentTab.sourceType}
           sourceLabel={`${currentTab.label} (${currentTab.subtitle})`}
         />
