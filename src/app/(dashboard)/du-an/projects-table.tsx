@@ -128,12 +128,6 @@ export function ProjectsTable({
             {(row.original as any).khachHang.ten}
           </Link>
           <div className="flex items-center gap-1.5 mt-0.5">
-            {(row.original as any).isTrongDiem && (
-              <Star className="size-3.5 fill-red-500 text-red-500 shrink-0" />
-            )}
-            {(row.original as any).isKyVong && (
-              <Banknote className="size-3.5 text-emerald-600 shrink-0" />
-            )}
             <p className="text-[11px] text-slate-500 line-clamp-2">{(row.original as any).tenDuAn}</p>
           </div>
         </div>
@@ -169,9 +163,8 @@ export function ProjectsTable({
       header: "Lĩnh vực",
       cell: ({ row }) => {
         const lv = row.getValue("linhVuc") as string;
-        const style = LINH_VUC_COLORS[lv] || LINH_VUC_COLORS.CHINH_PHU;
         return (
-          <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold border", style)}>
+          <span className="text-xs text-[#191c1e] font-medium whitespace-nowrap">
             {LINH_VUC_LABELS[lv] || lv}
           </span>
         );
@@ -217,7 +210,7 @@ export function ProjectsTable({
         const state = row.getValue("trangThaiHienTai") as TrangThaiDuAn;
         const style = STATUS_STYLES[state] || STATUS_STYLES.MOI;
         return (
-          <span className={cn("px-2 py-1 rounded text-[11px] font-bold tracking-tight", style.className)}>
+          <span className={cn("px-2 py-1 rounded text-[11px] font-bold tracking-tight whitespace-nowrap", style.className)}>
             {style.label}
           </span>
         );
@@ -452,7 +445,7 @@ export function ProjectsTable({
       <div className="bg-white rounded-2xl shadow-xl shadow-blue-900/5 border border-gray-100 max-h-[calc(100vh-220px)] overflow-auto">
         <table className="w-full text-left border-collapse table-auto text-xs md:text-sm min-w-[1100px]">
           <thead className="bg-gradient-to-r from-[#042654] to-[#0058bc] shadow-md sticky top-0 z-20">
-            <tr>
+            <tr className="divide-x divide-white/10">
               {table.getHeaderGroups().map((hg) =>
                 hg.headers.map((header) => {
                   const paramMap: Record<string, string> = {
@@ -472,7 +465,7 @@ export function ProjectsTable({
                     <th
                       key={header.id}
                       className={cn(
-                        "py-2.5 px-2 md:px-4 font-extrabold text-[10px] md:text-xs uppercase tracking-[0.1em] text-white group align-middle border-none",
+                        "py-2.5 px-2 md:px-4 font-extrabold text-[10px] md:text-xs uppercase tracking-[0.1em] text-white group align-middle",
                         header.id === "actions" && "sticky right-0 z-30 bg-[#042654] shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.15)]"
                       )}
                     >
@@ -583,7 +576,7 @@ export function ProjectsTable({
                   <tr
                     key={row.id}
                     className={cn(
-                      "transition-all duration-300",
+                      "transition-all duration-300 divide-x divide-slate-100",
                       isUrgent
                         ? "bg-[#ffdad6]/20 hover:bg-[#ffdad6]/40"
                         : row.index % 2 === 1
