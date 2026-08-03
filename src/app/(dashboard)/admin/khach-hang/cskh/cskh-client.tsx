@@ -78,23 +78,57 @@ function ColumnFilter({ column, placeholder = "Lọc..." }: { column: any; place
         <Filter className={cn("size-3", columnFilterValue ? "text-white fill-white" : "text-white/50")} />
       </PopoverTrigger>
       <PopoverContent className="w-48 p-2" align="start">
-        <div className="relative">
-          <Input
-            placeholder={placeholder}
-            value={(columnFilterValue ?? "") as string}
-            onChange={(e) => column.setFilterValue(e.target.value)}
-            className="h-8 text-xs pr-7"
-          />
-          {columnFilterValue && (
+        {column.id === "contactHeat" ? (
+          <div className="flex flex-col gap-1">
             <button
-              onClick={() => column.setFilterValue("")}
-              className="absolute right-1.5 top-1.5 p-0.5 rounded-full hover:bg-gray-100 text-gray-500"
-              title="Xóa lọc"
+              onClick={() => column.setFilterValue("empty")}
+              className={cn("flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors hover:bg-gray-100", columnFilterValue === "empty" ? "bg-gray-100 font-bold" : "")}
             >
-              <X className="size-3.5" />
+              <HelpCircle className="size-4 text-gray-400" /> Cần điền info
             </button>
-          )}
-        </div>
+            <button
+              onClick={() => column.setFilterValue("info")}
+              className={cn("flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors hover:bg-blue-50", columnFilterValue === "info" ? "bg-blue-50 font-bold" : "")}
+            >
+              <Info className="size-4 text-blue-500" /> Có thông tin
+            </button>
+            <button
+              onClick={() => column.setFilterValue("fire")}
+              className={cn("flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors hover:bg-orange-100", columnFilterValue === "fire" ? "bg-orange-100 font-bold" : "")}
+            >
+              <Flame className="size-4 text-orange-500 fill-orange-500" /> Cần CSKH
+            </button>
+            
+            {columnFilterValue && (
+              <div className="pt-1 mt-1 border-t border-gray-100">
+                <button
+                  onClick={() => column.setFilterValue("")}
+                  className="flex w-full items-center justify-center gap-2 px-2 py-1.5 rounded-md text-[11px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors uppercase tracking-wider font-bold"
+                >
+                  Xóa lọc
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="relative">
+            <Input
+              placeholder={placeholder}
+              value={(columnFilterValue ?? "") as string}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              className="h-8 text-xs pr-7"
+            />
+            {columnFilterValue && (
+              <button
+                onClick={() => column.setFilterValue("")}
+                className="absolute right-1.5 top-1.5 p-0.5 rounded-full hover:bg-gray-100 text-gray-500"
+                title="Xóa lọc"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
