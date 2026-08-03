@@ -449,9 +449,9 @@ export function ProjectsTable({
         </div>
       </div>
 
-      <div className="bg-white/80 backdrop-blur-xl rounded-3xl overflow-x-auto shadow-2xl shadow-blue-900/5 border border-blue-100/50">
-        <table className="w-full text-left border-collapse table-auto text-xs md:text-sm">
-          <thead className="bg-slate-50/80 border-y border-slate-100">
+      <div className="bg-white rounded-2xl shadow-xl shadow-blue-900/5 border border-gray-100 max-h-[calc(100vh-220px)] overflow-auto">
+        <table className="w-full text-left border-collapse table-auto text-xs md:text-sm min-w-[1100px]">
+          <thead className="bg-gradient-to-r from-[#042654] to-[#0058bc] shadow-md sticky top-0 z-20">
             <tr>
               {table.getHeaderGroups().map((hg) =>
                 hg.headers.map((header) => {
@@ -471,7 +471,10 @@ export function ProjectsTable({
                   return (
                     <th
                       key={header.id}
-                      className="py-4 px-2 md:px-3 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-slate-500 group align-middle"
+                      className={cn(
+                        "py-2.5 px-2 md:px-4 font-extrabold text-[10px] md:text-xs uppercase tracking-[0.1em] text-white group align-middle border-none",
+                        header.id === "actions" && "sticky right-0 z-30 bg-[#042654] shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.15)]"
+                      )}
                     >
                       <div className="flex items-center gap-2">
                         {header.isPlaceholder
@@ -482,8 +485,8 @@ export function ProjectsTable({
                           <Popover>
                             <PopoverTrigger>
                               <div className={cn(
-                                "p-1 rounded hover:bg-slate-200 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer text-slate-400 hover:text-slate-600",
-                                currentFilterValue && "opacity-100 bg-slate-100 text-[#0058bc]"
+                                "p-1 rounded hover:bg-white/20 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer text-white/50 hover:text-white",
+                                currentFilterValue && "opacity-100 bg-white/20 text-white"
                               )}>
                                 <Filter className="size-3" />
                               </div>
@@ -566,7 +569,7 @@ export function ProjectsTable({
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-blue-50/50">
+          <tbody className="divide-y divide-gray-200">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
               const p = row.original as any;
@@ -583,11 +586,24 @@ export function ProjectsTable({
                       "transition-all duration-300",
                       isUrgent
                         ? "bg-[#ffdad6]/20 hover:bg-[#ffdad6]/40"
-                        : "hover:bg-blue-50/60"
+                        : row.index % 2 === 1
+                          ? "bg-slate-50/60 hover:bg-blue-50/60"
+                          : "bg-white hover:bg-blue-50/60"
                     )}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="py-2.5 px-2 md:px-3 align-middle">
+                      <td
+                        key={cell.id}
+                        className={cn(
+                          "py-3 px-2 md:px-4 align-middle",
+                          cell.column.id === "actions" && "sticky right-0 z-10 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)]",
+                          cell.column.id === "actions" && (isUrgent
+                            ? "bg-[#fff0ee]"
+                            : row.index % 2 === 1
+                              ? "bg-[#f8f9fb]"
+                              : "bg-white")
+                        )}
+                      >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
