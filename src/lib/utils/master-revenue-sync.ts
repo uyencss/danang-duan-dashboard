@@ -470,7 +470,7 @@ export async function getDeduplicatedMasterRevenue(
     const spName = row.duAn?.sanPham?.tenChiTiet?.trim().toLowerCase() || "";
     const startDate = row.duAn?.ngayBatDau ? new Date(row.duAn.ngayBatDau).getTime() : "";
     const contractKey = row.maHopDong
-      ? `hd:${row.maHopDong}:dt:${row.duAn?.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
+      ? `src:${row.sourceType}:hd:${row.maHopDong}:dt:${row.duAn?.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
       : `pid:${row.projectId}`;
     const key = `${row.sourceType}:${contractKey}:${row.thang}`;
     const existing = consolidated.get(key);
@@ -488,7 +488,7 @@ export async function getDeduplicatedMasterRevenue(
     const spName = row.duAn?.sanPham?.tenChiTiet?.trim().toLowerCase() || "";
     const startDate = row.duAn?.ngayBatDau ? new Date(row.duAn.ngayBatDau).getTime() : "";
     const contractKey = row.maHopDong
-      ? `hd:${row.maHopDong}:dt:${row.duAn?.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
+      ? `src:${row.sourceType}:hd:${row.maHopDong}:dt:${row.duAn?.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
       : `pid:${row.projectId}`;
     const dedupeKey = `${contractKey}:${row.thang}`;
 

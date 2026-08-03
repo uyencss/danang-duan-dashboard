@@ -276,7 +276,7 @@ export async function getMasterRevenueData(year: number): Promise<{
       const spName = row.duAn?.sanPham?.tenChiTiet?.trim().toLowerCase() || "";
       const startDate = row.duAn?.ngayBatDau ? new Date(row.duAn.ngayBatDau).getTime() : "";
       const contractKey = row.duAn?.maHopDong
-        ? `hd:${row.duAn.maHopDong}:dt:${row.duAn.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
+        ? `src:${row.sourceType}:hd:${row.duAn.maHopDong}:dt:${row.duAn.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
         : `pid:${row.projectId}`;
       const key = `${row.sourceType}:${contractKey}:${row.thang}`;
 
@@ -301,7 +301,7 @@ export async function getMasterRevenueData(year: number): Promise<{
       const spName = row.project?.sanPham?.tenChiTiet?.trim().toLowerCase() || "";
       const startDate = row.project?.ngayBatDau ? new Date(row.project.ngayBatDau).getTime() : "";
       const contractKey = row.project?.maHopDong
-        ? `hd:${row.project.maHopDong}:dt:${row.project.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
+        ? `src:${row.sourceType}:hd:${row.project.maHopDong}:dt:${row.project.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
         : `pid:${row.project?.id || 'unknown'}`;
       const dedupeKey = `${contractKey}:${row.thang}`;
 
@@ -331,7 +331,7 @@ export async function getMasterRevenueData(year: number): Promise<{
       const spName = row.project?.sanPham?.tenChiTiet?.trim().toLowerCase() || "";
       const startDate = row.project?.ngayBatDau ? new Date(row.project.ngayBatDau).getTime() : "";
       const contractKey = row.project?.maHopDong
-        ? `hd:${row.project.maHopDong}:dt:${row.project.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
+        ? `src:${row.sourceType}:hd:${row.project.maHopDong}:dt:${row.project.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
         : `pid:${row.project?.id || 'unknown'}`;
 
       if (!contractMap.has(contractKey)) {

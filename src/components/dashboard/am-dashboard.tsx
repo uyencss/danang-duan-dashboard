@@ -51,7 +51,7 @@ export function AMPerformanceTab({ amPerf }: AMPerformanceTabProps) {
               DASHBOARD AM
               <Users2 className="size-6 text-[#0058bc]" />
             </h4>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-4">Tháng 04/2026 • Doanh thu dự kiến & Lượt tiếp cận</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-4">Tháng {String(new Date().getMonth() + 1).padStart(2, '0')}/{new Date().getFullYear()} • Doanh thu dự kiến & Lượt tiếp cận</p>
           </div>
         </div>
 

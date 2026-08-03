@@ -1,6 +1,6 @@
 import { requireAuth } from "@/lib/auth-utils";
-import { getCSKHData, getLeaderOptions } from "./cskh/cskh-actions";
-import { CSKHClient } from "./cskh/cskh-client";
+import { getCSKHData, getLeaderOptions } from "./cskh-actions";
+import { CSKHClient } from "./cskh-client";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { HeartHandshake } from "lucide-react";
 
@@ -10,7 +10,7 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function KhachHangPage() {
+export default async function CSKHPage() {
   await requireAuth();
 
   const [cskhResult, leaderResult] = await Promise.all([
@@ -26,7 +26,8 @@ export default async function KhachHangPage() {
       <Breadcrumb
         items={[
           { label: "Danh mục" },
-          { label: "Khách hàng" },
+          { label: "Khách hàng", href: "/admin/khach-hang" },
+          { label: "CSKH" },
         ]}
       />
 

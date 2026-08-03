@@ -30,10 +30,11 @@ model User {
   duAnCV         DuAn[]           @relation("CVRelation")
   duAnCVHoTro1   DuAn[]           @relation("CVHoTro1Relation")
   duAnCVHoTro2   DuAn[]           @relation("CVHoTro2Relation")
-  nhatKy         NhatKyCongViec[]
-  notifications  Notification[]
-  sessions       Session[]
-  tinNhan        TinNhan[]
+  nhatKy             NhatKyCongViec[]
+  notifications      Notification[]
+  sessions           Session[]
+  tinNhan            TinNhan[]
+  khachHangTheoDoi   KhachHang[]      @relation("LanhDaoTheoDoiKH")
 
   @@index([email])
   @@index([role])
@@ -98,14 +99,17 @@ model KhachHang {
   ngayThanhLap       DateTime?
   ngayKyNiem         DateTime?
   ghiChu             String?
+  lanhDaoTheoDoiId   String?
   isActive           Boolean    @default(true)
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   duAns              DuAn[]
+  lanhDaoTheoDoi     User?      @relation("LanhDaoTheoDoiKH", fields: [lanhDaoTheoDoiId], references: [id])
 
   @@index([phanLoai])
   @@index([ten])
   @@index([updatedAt])
+  @@index([lanhDaoTheoDoiId])
 }
 
 model SanPham {
