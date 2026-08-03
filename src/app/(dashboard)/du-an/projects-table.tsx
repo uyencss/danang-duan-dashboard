@@ -120,7 +120,7 @@ export function ProjectsTable({
       accessorKey: "khachHang",
       header: "Khách hàng & Dự án",
       cell: ({ row }) => (
-        <div className="max-w-[200px] lg:max-w-[300px] whitespace-normal">
+        <div className="max-w-[160px] lg:max-w-[240px] whitespace-normal">
           <Link
             href={`/du-an/${(row.original as any).id}`}
             className="font-bold text-[13px] text-[#191c1e] hover:text-[#0058bc] transition-colors leading-tight line-clamp-2"
@@ -177,7 +177,11 @@ export function ProjectsTable({
       accessorKey: "sanPham",
       header: "Sản phẩm",
       cell: ({ row }) => (
-        <span className="text-sm text-[#44474d]">{(row.original as any).sanPham.tenChiTiet}</span>
+        <div className="max-w-[120px] lg:max-w-[160px] whitespace-normal">
+          <span className="text-[11px] md:text-xs text-[#44474d] line-clamp-2" title={(row.original as any).sanPham.tenChiTiet}>
+            {(row.original as any).sanPham.tenChiTiet}
+          </span>
+        </div>
       ),
       filterFn: (row, id, value) => {
         return row.original.sanPham.tenChiTiet.toLowerCase().includes(value.toLowerCase());
@@ -443,7 +447,7 @@ export function ProjectsTable({
       </div>
 
       <div className="bg-white rounded-2xl shadow-xl shadow-blue-900/5 border border-gray-100 max-h-[calc(100vh-220px)] overflow-auto">
-        <table className="w-full text-left border-collapse table-auto text-xs md:text-sm min-w-[1100px]">
+        <table className="w-full text-left border-collapse table-auto text-xs md:text-sm min-w-[900px]">
           <thead className="bg-gradient-to-r from-[#042654] to-[#0058bc] shadow-md sticky top-0 z-20">
             <tr className="divide-x divide-white/20">
               {table.getHeaderGroups().map((hg) =>
@@ -465,8 +469,8 @@ export function ProjectsTable({
                     <th
                       key={header.id}
                       className={cn(
-                        "py-2.5 font-extrabold text-[10px] md:text-xs uppercase tracking-[0.1em] text-white group align-middle whitespace-nowrap",
-                        ["phanLoai", "linhVuc", "hienTaiBuoc", "actions"].includes(header.id) ? "px-2" : "px-2 md:px-4",
+                        "py-2.5 font-extrabold text-[10px] md:text-[11px] uppercase tracking-wider text-white group align-middle whitespace-nowrap",
+                        ["sanPham", "trangThaiHienTai", "tongDoanhThuDuKien", "doanhThuTheoThang", "hienTaiBuoc", "warning", "actions", "phanLoai", "linhVuc"].includes(header.id) ? "px-1.5 md:px-2" : "px-2 md:px-3",
                         header.id === "actions" && "sticky right-0 z-30 bg-[#042654] shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.15)]"
                       )}
                     >
@@ -589,8 +593,8 @@ export function ProjectsTable({
                       <td
                         key={cell.id}
                         className={cn(
-                          "py-3 align-middle",
-                          ["phanLoai", "linhVuc", "hienTaiBuoc", "actions"].includes(cell.column.id) ? "px-2" : "px-2 md:px-4",
+                          "py-2.5 align-middle",
+                          ["trangThaiHienTai", "tongDoanhThuDuKien", "doanhThuTheoThang", "hienTaiBuoc", "warning", "actions", "phanLoai", "linhVuc"].includes(cell.column.id) ? "px-1.5 md:px-2 whitespace-nowrap" : cell.column.id === "sanPham" ? "px-1.5 md:px-2" : "px-2 md:px-3",
                           cell.column.id === "actions" && "sticky right-0 z-10 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)]",
                           cell.column.id === "actions" && (isUrgent
                             ? "bg-[#fff0ee]"
