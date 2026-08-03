@@ -1,9 +1,9 @@
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 
 # Stage 1: Build the source code
 FROM base AS builder
 # Install necessary packages and timezone data
-RUN apk add --no-cache libc6-compat tzdata
+RUN apt-get update && apt-get install -y openssl tzdata && rm -rf /var/lib/apt/lists/*
 ENV TZ=Asia/Ho_Chi_Minh
 
 WORKDIR /app
@@ -35,7 +35,7 @@ FROM base AS runner
 WORKDIR /app
 
 # Set timezone correctly for the runtime as well
-RUN apk add --no-cache tzdata
+RUN apt-get update && apt-get install -y tzdata && rm -rf /var/lib/apt/lists/*
 ENV TZ=Asia/Ho_Chi_Minh
 
 ENV NODE_ENV=production
