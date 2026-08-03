@@ -98,7 +98,7 @@ export default async function DuAnPage({
   });
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-3 animate-in fade-in duration-500">
       <Breadcrumb items={[{ label: "CRM & DS Dự án" }]} />
 
       {/* Page Header */}

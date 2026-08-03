@@ -420,7 +420,7 @@ export function ProjectsTable({
   };
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-2">
       {/* Filter Bar */}
       <div className="bg-[#f2f4f6] p-2 rounded-2xl flex flex-col sm:flex-row gap-2 items-center justify-between">
         <div className="w-full sm:flex-1 flex gap-2 overflow-x-auto px-1 py-1 min-w-0">

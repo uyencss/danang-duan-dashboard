@@ -38,7 +38,7 @@ export function DashboardWrapper({ children, user, menuItems }: DashboardWrapper
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <Header user={user} menuItems={menuItems} />
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-8">
+          <main className="flex-1 overflow-y-auto p-4 md:px-8 md:py-4">
             <div className="max-w-screen-2xl mx-auto">
               {children}
             </div>
