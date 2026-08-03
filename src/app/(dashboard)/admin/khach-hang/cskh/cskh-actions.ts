@@ -185,3 +185,45 @@ export async function updateLanhDaoTheoDoi(
     return { error: "Lỗi khi cập nhật lãnh đạo theo dõi" };
   }
 }
+
+// ─── Sync phanLoai from DuAn.linhVuc back to KhachHang ──────────
+export async function syncPhanLoaiFromDuAn() {
+  await requireRole("ADMIN");
+
+  try {
+    // Find all KH whose projects have a different linhVuc than KH's phanLoai
+    const customers = await prisma.khachHang.findMany({
+      select: {
+        id: true,
+        ten: true,
+        phanLoai: true,
+        duAns: {
+          where: { isPendingDelete: false },
+          select: { linhVuc: true },
+          orderBy: { updatedAt: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    let updated = 0;
+    for (const kh of customers) {
+      if (kh.duAns.length === 0) continue;
+      const latestLinhVuc = kh.duAns[0].linhVuc;
+      // PhanLoaiKH and LinhVuc share the same values
+      if (latestLinhVuc && latestLinhVuc !== kh.phanLoai) {
+        await prisma.khachHang.update({
+          where: { id: kh.id },
+          data: { phanLoai: latestLinhVuc as unknown as PhanLoaiKH },
+        });
+        updated++;
+        console.log(`[Sync phanLoai] ${kh.ten}: ${kh.phanLoai} → ${latestLinhVuc}`);
+      }
+    }
+
+    return { success: true, updated };
+  } catch (error) {
+    console.error("[Sync phanLoai] Error:", error);
+    return { error: "Lỗi khi đồng bộ phân loại" };
+  }
+}

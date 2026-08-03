@@ -1,5 +1,5 @@
 import { requireAuth } from "@/lib/auth-utils";
-import { getCSKHData, getLeaderOptions } from "./cskh/cskh-actions";
+import { getCSKHData, getLeaderOptions, syncPhanLoaiFromDuAn } from "./cskh/cskh-actions";
 import { CSKHClient } from "./cskh/cskh-client";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { HeartHandshake } from "lucide-react";
@@ -12,6 +12,9 @@ export const dynamic = "force-dynamic";
 
 export default async function KhachHangPage() {
   await requireAuth();
+
+  // Auto-sync phanLoai from DuAn.linhVuc (fixes any drift)
+  await syncPhanLoaiFromDuAn().catch(() => {});
 
   const [cskhResult, leaderResult] = await Promise.all([
     getCSKHData(),

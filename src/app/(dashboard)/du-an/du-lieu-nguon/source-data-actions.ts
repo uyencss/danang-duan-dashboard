@@ -631,6 +631,22 @@ export async function importSourceExcel(
               },
             });
             khMap.set(name.toLowerCase(), { id: newKH.id, linhVuc: pl });
+          } else {
+            // Sync phanLoai from Excel if it differs from existing KH record
+            const sampleRow = rows.find(
+              (r: any) => normalizeStr(r.khachHangName) === name
+            );
+            if (sampleRow?.phanLoaiKH) {
+              const newPl = phanLoaiMap[sampleRow.phanLoaiKH];
+              const existing = khMap.get(name.toLowerCase())!;
+              if (newPl && newPl !== existing.linhVuc) {
+                await tx.khachHang.update({
+                  where: { id: existing.id },
+                  data: { phanLoai: newPl },
+                });
+                khMap.set(name.toLowerCase(), { id: existing.id, linhVuc: newPl });
+              }
+            }
           }
         }
 

@@ -75,26 +75,24 @@ export async function syncMasterRevenue(projectId: number) {
 
     // Atomic: delete old + insert new
     await prisma.$transaction(
-      [
-        prisma.masterRevenue.deleteMany({ where: { projectId } }),
-        ...(rows.length > 0
-          ? [
-              prisma.masterRevenue.createMany({
-                data: rows.map((r) => ({
-                  projectId,
-                  maHopDong: project.maHopDong || null,
-                  sourceType: project.sourceType,
-                  nam: r.nam,
-                  thang: r.thang,
-                  doanhThu: r.doanhThu,
-                  loaiDoanhThu: r.loaiDoanhThu,
-                  amId: project.amId,
-                  chuyenVienId: project.chuyenVienId,
-                })),
-              }),
-            ]
-          : []),
-      ],
+      async (tx) => {
+        await tx.masterRevenue.deleteMany({ where: { projectId } });
+        if (rows.length > 0) {
+          await tx.masterRevenue.createMany({
+            data: rows.map((r) => ({
+              projectId,
+              maHopDong: project.maHopDong || null,
+              sourceType: project.sourceType,
+              nam: r.nam,
+              thang: r.thang,
+              doanhThu: r.doanhThu,
+              loaiDoanhThu: r.loaiDoanhThu,
+              amId: project.amId,
+              chuyenVienId: project.chuyenVienId,
+            })),
+          });
+        }
+      },
       { timeout: 300000 }
     );
   } catch (error) {
