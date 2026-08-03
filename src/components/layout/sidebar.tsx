@@ -25,6 +25,8 @@ import {
   Settings,
   Users,
   BarChart3,
+  Goal,
+  ListChecks,
 } from "lucide-react";
 
 import type { AppRole } from "@/lib/rbac";
@@ -47,6 +49,28 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Users,
   BarChart3,
 };
+
+const HREF_ICON_MAP: Record<string, React.ElementType> = {
+  "/": LayoutDashboard,
+  "/giam-doc-theo-doi": TrendingUp,
+  "/du-an": FolderKanban,
+  "/nhu-cau-catp": ClipboardList,
+  "/kpi": Target,
+  "/dia-ban": MapPin,
+  "/quan-ly-am": UserCheck,
+  "/quan-ly-cv": GraduationCap,
+  "/giao-kpi": Goal,
+  "/theo-doi-cac-buoc": ListChecks,
+  "/theo-doi-buoc": ListChecks,
+  "/du-an-da-xoa": Trash2,
+  "/san-pham": Package,
+  "/khach-hang": Building2,
+  "/quan-ly-user": UserCog,
+  "/users": UserCog,
+  "/phan-quyen": Shield,
+  "/roles": Shield,
+};
+
 
 interface SidebarItem {
   label: string;
@@ -147,12 +171,25 @@ export function Sidebar({
   const mapDbItems = (dbItems: any[]): SidebarItem[] => {
     return dbItems
       .filter(Boolean)
-      .map(item => ({
-        label: item.label,
-        href: item.href,
-        icon: ICON_MAP[item.icon] || LayoutDashboard,
-        allowedRoles: ["ADMIN", "USER", "AM", "CV", "LEADER"], 
-      }));
+      .map(item => {
+        // Priority to predefined href mapping to ensure distinct icons, fallback to DB icon, then LayoutDashboard
+        let finalIcon = HREF_ICON_MAP[item.href];
+        if (!finalIcon) {
+          if (item.href.includes("user")) finalIcon = UserCog;
+          else if (item.href.includes("quyen") || item.href.includes("roles")) finalIcon = Shield;
+          else if (item.href.includes("da-xoa")) finalIcon = Trash2;
+          else if (item.href.includes("san-pham")) finalIcon = Package;
+          else if (item.href.includes("khach-hang")) finalIcon = Building2;
+          else finalIcon = ICON_MAP[item.icon] || LayoutDashboard;
+        }
+
+        return {
+          label: item.label,
+          href: item.href,
+          icon: finalIcon,
+          allowedRoles: ["ADMIN", "USER", "AM", "CV", "LEADER"], 
+        };
+      });
   };
   finalMainItems = mapDbItems(mainDb);
   finalAdminItems = sortByLabelOrder(mapDbItems(adminDb), ADMIN_LABEL_ORDER);

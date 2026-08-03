@@ -137,7 +137,7 @@ function DualRevenueCard({
           <div className="p-2.5 rounded-xl" style={{ background: `${signedColor}22` }}>
             <Icon className="size-5" style={{ color: signedColor }} />
           </div>
-          <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+          <span className="text-xs font-bold uppercase tracking-wider text-blue-100/90">
             {signedLabel}
           </span>
         </div>
@@ -146,7 +146,7 @@ function DualRevenueCard({
             <p className="text-3xl font-black text-white leading-none">
               {formatCurrency(signedValue)}
             </p>
-            <p className="text-xs text-white/40 font-medium mt-1">Triệu đồng</p>
+            <p className="text-xs text-blue-100/80 font-medium mt-1">Triệu đồng</p>
           </div>
           <LabeledRing percent={signedPerc} color={signedColor} label="Đã ký" />
         </div>
@@ -161,7 +161,7 @@ function DualRevenueCard({
           <div className="p-2.5 rounded-xl" style={{ background: `${expectedColor}22` }}>
             <Icon className="size-5" style={{ color: expectedColor }} />
           </div>
-          <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+          <span className="text-xs font-bold uppercase tracking-wider text-blue-100/90">
             {expectedLabel}
           </span>
         </div>
@@ -170,7 +170,7 @@ function DualRevenueCard({
             <p className="text-3xl font-black text-white leading-none">
               {formatCurrency(expectedValue)}
             </p>
-            <p className="text-xs text-white/40 font-medium mt-1">Triệu đồng</p>
+            <p className="text-xs text-blue-100/80 font-medium mt-1">Triệu đồng</p>
           </div>
           <LabeledRing percent={expectedPerc} color={expectedColor} label="Kỳ vọng" />
         </div>
@@ -239,10 +239,10 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                   <Briefcase className="size-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-white/40">
+                  <p className="text-xs font-bold uppercase tracking-wider text-blue-100/80">
                     Doanh thu tổng
                   </p>
-                  <p className="text-[11px] text-cyan-400/70 font-medium">
+                  <p className="text-[11px] text-cyan-300 font-medium">
                     Tất cả dự án
                   </p>
                 </div>
@@ -252,7 +252,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                 <p className="text-4xl font-black text-white leading-none tracking-tight">
                   {formatCurrency(revenueMetrics.dtTongDuAn)}
                 </p>
-                <p className="text-xs text-white/40 font-medium mt-1">
+                <p className="text-xs text-blue-100/80 font-medium mt-1">
                   Triệu đồng
                 </p>
               </div>
@@ -264,7 +264,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                   <div className="p-2.5 rounded-xl bg-blue-500/10">
                     <Layers className="size-5 text-blue-400" />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+                  <span className="text-xs font-bold uppercase tracking-wider text-blue-100/90">
                     Tổng số dự án
                   </span>
                 </div>
@@ -331,7 +331,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                   <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-500/20">
                     <Award className="size-5 text-white" />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+                  <span className="text-xs font-bold uppercase tracking-wider text-blue-100/90">
                     Dự án trọng điểm
                   </span>
                 </div>
@@ -339,7 +339,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                   <p className="text-4xl font-black text-white leading-none">
                     {projectMetrics.duAnTrongDiem}
                   </p>
-                  <span className="text-sm text-amber-400/70 font-bold mb-0.5">
+                  <span className="text-sm text-amber-300 font-bold mb-0.5">
                     dự án
                   </span>
                 </div>
@@ -353,7 +353,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                   <div className="p-2.5 rounded-xl bg-blue-500/10">
                     <Star className="size-5 text-blue-400" />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+                  <span className="text-xs font-bold uppercase tracking-wider text-blue-100/90">
                     Dự án kỳ vọng
                   </span>
                 </div>
@@ -361,7 +361,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                   <p className="text-4xl font-black text-white leading-none">
                     {projectMetrics.duAnKyVong}
                   </p>
-                  <span className="text-sm text-blue-400/70 font-bold mb-0.5">
+                  <span className="text-sm text-blue-300 font-bold mb-0.5">
                     dự án
                   </span>
                 </div>
@@ -375,7 +375,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
               <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20">
                 <BarChart3 className="size-5 text-white" />
               </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-100/90">
                 Hiện Trạng Tháng
               </span>
             </div>
@@ -393,7 +393,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ background: color }}
                     />
-                    <span className="text-[13px] font-medium text-white/60 flex-1 truncate group-hover/item:text-white/80 transition-colors">
+                    <span className="text-[13px] font-medium text-blue-100 flex-1 truncate group-hover/item:text-white transition-colors">
                       {label}
                     </span>
                     <span
@@ -414,7 +414,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
               <div className="p-2.5 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 shadow-lg shadow-teal-500/20">
                 <ListChecks className="size-5 text-white" />
               </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-white/50">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-100/90">
                 Theo Bước Quy Trình
               </span>
             </div>
@@ -442,7 +442,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                     >
                       <span style={{ color }}>{i + 1}</span>
                     </div>
-                    <span className="text-[12px] font-medium text-white/60 flex-1 truncate group-hover/step:text-white/80 transition-colors">
+                    <span className="text-[12px] font-medium text-blue-100 flex-1 truncate group-hover/step:text-white transition-colors">
                       {b.label}
                     </span>
                     <span
@@ -455,7 +455,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                 );
               })}
               {projectMetrics.thongKeTheoBuoc.length === 0 && (
-                <p className="text-xs text-white/30 italic">
+                <p className="text-xs text-blue-100/70 italic">
                   Chưa có dữ liệu bước
                 </p>
               )}
@@ -482,7 +482,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                     key={i}
                     className="flex flex-col items-center p-3.5 rounded-xl bg-white/[0.05] border border-red-500/10 hover:border-red-500/20 transition-colors"
                   >
-                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-wide">
+                    <span className="text-[10px] font-bold text-blue-100/80 uppercase tracking-wide">
                       {t.label}
                     </span>
                     <span className="text-2xl font-black text-red-400 leading-none mt-2">

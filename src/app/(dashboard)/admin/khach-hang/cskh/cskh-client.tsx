@@ -513,34 +513,21 @@ export function CSKHClient({ data, leaders }: CSKHClientProps) {
         {/* Left: Category toggles + Search */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           {/* Category pills */}
-          <div className="flex items-center bg-gray-100/80 p-1 rounded-xl gap-0.5">
+          <div className="flex items-center bg-slate-100/80 p-2 rounded-2xl gap-2.5 shadow-inner border border-slate-200">
             {CATEGORY_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => setSelectedCategory(opt.value)}
                 className={cn(
-                  "px-3 py-1.5 text-xs font-bold rounded-lg transition-all",
+                  "px-4 py-1.5 text-[11px] md:text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-100",
                   selectedCategory === opt.value
-                    ? "bg-white text-[#191c1e] shadow-sm"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
+                    ? "bg-gradient-to-b from-blue-500 to-blue-700 text-white shadow-[inset_0_4px_8px_rgba(0,0,0,0.4)] border border-blue-800 translate-y-[3px]"
+                    : "bg-gradient-to-b from-[#0058bc] to-[#003b8b] text-white border border-[#002d6b] shadow-[0_3px_0_#002150,0_4px_6px_rgba(0,0,0,0.2)] hover:brightness-110 active:translate-y-[2px] active:shadow-[0_1px_0_#002150]"
                 )}
               >
                 {opt.label}
               </button>
             ))}
-          </div>
-
-          {/* Search */}
-          <div className="flex items-center bg-white px-3 py-1.5 rounded-xl border border-gray-100 w-full sm:w-auto sm:min-w-[240px] shadow-sm">
-            <Search className="size-4 text-gray-400 mr-2 shrink-0" />
-            <Input
-              placeholder="Tìm khách hàng hoặc CV..."
-              value={(table.getColumn("ten")?.getFilterValue() as string) ?? ""}
-              onChange={(e) =>
-                table.getColumn("ten")?.setFilterValue(e.target.value)
-              }
-              className="border-none bg-transparent h-6 focus-visible:ring-0 text-sm shadow-none p-0"
-            />
           </div>
 
           {/* Nút xoá lọc (Clear filters) */}
@@ -590,9 +577,9 @@ export function CSKHClient({ data, leaders }: CSKHClientProps) {
       </div>
 
       {/* ─── Table ────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm [&>div]:max-h-[calc(100vh-220px)] [&>div]:overflow-auto">
         <Table>
-          <TableHeader className="bg-gradient-to-r from-[#042654] to-[#0058bc] shadow-md border-none">
+          <TableHeader className="bg-gradient-to-r from-[#042654] to-[#0058bc] shadow-md border-none sticky top-0 z-20">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-none">
                 {headerGroup.headers.map((header) => (

@@ -446,7 +446,24 @@ export function ProjectsTable({
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-xl shadow-blue-900/5 border border-gray-100 max-h-[calc(100vh-220px)] overflow-auto">
+      <div 
+        className="bg-white rounded-2xl shadow-xl shadow-blue-900/5 border border-gray-100 overflow-auto transition-all duration-500"
+        style={{ maxHeight: 'calc(100vh - 220px)' }}
+        onScroll={(e) => {
+          const header = document.getElementById("crm-page-header");
+          if (header) {
+            if (e.currentTarget.scrollTop > 50) {
+              header.style.maxHeight = '0px';
+              header.style.opacity = '0';
+              e.currentTarget.style.maxHeight = 'calc(100vh - 130px)';
+            } else {
+              header.style.maxHeight = '200px';
+              header.style.opacity = '1';
+              e.currentTarget.style.maxHeight = 'calc(100vh - 220px)';
+            }
+          }
+        }}
+      >
         <table className="w-full text-left border-collapse table-auto text-xs md:text-sm min-w-[900px]">
           <thead className="bg-gradient-to-r from-[#042654] to-[#0058bc] shadow-md sticky top-0 z-20">
             <tr className="divide-x divide-white/20">

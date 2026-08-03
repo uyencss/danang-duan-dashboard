@@ -99,44 +99,47 @@ export default async function DuAnPage({
 
   return (
     <div className="space-y-3 animate-in fade-in duration-500">
-      <Breadcrumb items={[{ label: "CRM & DS Dự án" }]} />
+      {/* HEADER SECTION TO HIDE ON SCROLL */}
+      <div id="crm-page-header" className="transition-all duration-500 ease-in-out overflow-hidden opacity-100 max-h-[200px]">
+        <Breadcrumb items={[{ label: "CRM & DS Dự án" }]} />
 
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#191c1e]">
-            CRM &amp; Danh sách Dự án
-          </h2>
-          <p className="text-[#44474d] text-sm md:text-base mt-1">
-            Quản lý lộ trình triển khai và chăm sóc khách hàng doanh nghiệp
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Sub-nav: Dữ liệu nguồn (ADMIN/USER only) */}
-          {isQuảnTrịViên && (
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mt-3">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#191c1e]">
+              CRM &amp; Danh sách Dự án
+            </h2>
+            <p className="text-[#44474d] text-sm md:text-base mt-1">
+              Quản lý lộ trình triển khai và chăm sóc khách hàng doanh nghiệp
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Sub-nav: Dữ liệu nguồn (ADMIN/USER only) */}
+            {isQuảnTrịViên && (
+              <Link
+                href="/du-an/du-lieu-nguon"
+                className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-4 md:px-5 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-purple-500/20 active:scale-95 transition-all text-xs md:text-sm h-10"
+              >
+                <Database className="size-4" />
+                <span className="hidden xs:inline">Dữ liệu nguồn</span>
+                <span className="xs:hidden">DL nguồn</span>
+              </Link>
+            )}
+
+            {/* Nhóm button Tính năng Import Excel */}
+            <ExcelUploadButton users={users} />
+  
+            {/* Tạo dự án đơn lẻ */}
             <Link
-              href="/du-an/du-lieu-nguon"
-              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-4 md:px-5 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-purple-500/20 active:scale-95 transition-all text-xs md:text-sm h-10"
+              href="/du-an/tao-moi"
+              className="bg-gradient-to-r from-[#0058bc] to-blue-500 hover:from-blue-600 hover:to-cyan-500 text-white px-4 md:px-6 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/30 active:scale-95 transition-all text-xs md:text-sm h-10"
             >
-              <Database className="size-4" />
-              <span className="hidden xs:inline">Dữ liệu nguồn</span>
-              <span className="xs:hidden">DL nguồn</span>
+              <PlusCircle className="size-4" />
+              <span className="hidden xs:inline">+ Tạo dự án</span>
+              <span className="xs:hidden">+ Tạo</span>
             </Link>
-          )}
-
-          {/* Nhóm button Tính năng Import Excel */}
-          <ExcelUploadButton users={users} />
- 
-          {/* Tạo dự án đơn lẻ */}
-          <Link
-            href="/du-an/tao-moi"
-            className="bg-gradient-to-r from-[#0058bc] to-blue-500 hover:from-blue-600 hover:to-cyan-500 text-white px-4 md:px-6 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/30 active:scale-95 transition-all text-xs md:text-sm h-10"
-          >
-            <PlusCircle className="size-4" />
-            <span className="hidden xs:inline">+ Tạo dự án</span>
-            <span className="xs:hidden">+ Tạo</span>
-          </Link>
+          </div>
         </div>
       </div>
 
