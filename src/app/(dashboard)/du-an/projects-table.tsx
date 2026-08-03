@@ -445,7 +445,7 @@ export function ProjectsTable({
       <div className="bg-white rounded-2xl shadow-xl shadow-blue-900/5 border border-gray-100 max-h-[calc(100vh-220px)] overflow-auto">
         <table className="w-full text-left border-collapse table-auto text-xs md:text-sm min-w-[1100px]">
           <thead className="bg-gradient-to-r from-[#042654] to-[#0058bc] shadow-md sticky top-0 z-20">
-            <tr className="divide-x divide-white/10">
+            <tr className="divide-x divide-white/20">
               {table.getHeaderGroups().map((hg) =>
                 hg.headers.map((header) => {
                   const paramMap: Record<string, string> = {
@@ -465,7 +465,8 @@ export function ProjectsTable({
                     <th
                       key={header.id}
                       className={cn(
-                        "py-2.5 px-2 md:px-4 font-extrabold text-[10px] md:text-xs uppercase tracking-[0.1em] text-white group align-middle",
+                        "py-2.5 font-extrabold text-[10px] md:text-xs uppercase tracking-[0.1em] text-white group align-middle whitespace-nowrap",
+                        ["phanLoai", "linhVuc", "hienTaiBuoc", "actions"].includes(header.id) ? "px-2" : "px-2 md:px-4",
                         header.id === "actions" && "sticky right-0 z-30 bg-[#042654] shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.15)]"
                       )}
                     >
@@ -576,7 +577,7 @@ export function ProjectsTable({
                   <tr
                     key={row.id}
                     className={cn(
-                      "transition-all duration-300 divide-x divide-slate-100",
+                      "transition-all duration-300 divide-x divide-gray-200",
                       isUrgent
                         ? "bg-[#ffdad6]/20 hover:bg-[#ffdad6]/40"
                         : row.index % 2 === 1
@@ -588,7 +589,8 @@ export function ProjectsTable({
                       <td
                         key={cell.id}
                         className={cn(
-                          "py-3 px-2 md:px-4 align-middle",
+                          "py-3 align-middle",
+                          ["phanLoai", "linhVuc", "hienTaiBuoc", "actions"].includes(cell.column.id) ? "px-2" : "px-2 md:px-4",
                           cell.column.id === "actions" && "sticky right-0 z-10 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)]",
                           cell.column.id === "actions" && (isUrgent
                             ? "bg-[#fff0ee]"
