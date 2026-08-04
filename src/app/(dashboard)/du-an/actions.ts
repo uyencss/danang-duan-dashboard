@@ -241,6 +241,12 @@ export async function updateDuAn(id: number, data: any) {
         const validated = DuAnSchema.parse(data);
         const { tuan, thang, quy, nam } = extractTimeFields(validated.ngayBatDau);
 
+        // Read old linhVuc BEFORE updating to detect changes
+        const oldProject = await prisma.duAn.findUnique({
+            where: { id },
+            select: { linhVuc: true, customerId: true },
+        });
+
         await prisma.duAn.update({
             where: { id },
             data: {
@@ -264,18 +270,40 @@ export async function updateDuAn(id: number, data: any) {
             } as any,
         });
 
+        // ── Sync KhachHang.phanLoai when linhVuc changes ──
+        // LinhVuc and PhanLoaiKH share the same enum values
+        const linhVucChanged = oldProject && oldProject.linhVuc !== validated.linhVuc;
+        if (linhVucChanged && oldProject.customerId) {
+            // Update the parent KhachHang record
+            await prisma.khachHang.update({
+                where: { id: oldProject.customerId },
+                data: { phanLoai: validated.linhVuc as unknown as PhanLoaiKH },
+            });
+            // Also update all sibling DuAn under the same customer
+            await prisma.duAn.updateMany({
+                where: { customerId: oldProject.customerId, id: { not: id } },
+                data: { linhVuc: validated.linhVuc as unknown as LinhVuc },
+            });
+            console.log(
+                `[updateDuAn] Synced phanLoai for KH #${oldProject.customerId}: ${oldProject.linhVuc} → ${validated.linhVuc}`
+            );
+        }
+
         // Re-generate revenue distribution slices after update
         await syncRevenueDistribution(id);
         // Sync Bảng 4 (Master Revenue) for dashboard queries
         await syncMasterRevenue(id);
 
-        await cacheInvalidate("dashboard:overview");
+        await cacheInvalidate("dashboard:overview", "options:khachhang");
         revalidatePath("/du-an");
         revalidatePath("/quan-ly-am");
         revalidatePath("/quan-ly-cv");
         revalidatePath("/kpi");
         revalidatePath("/dia-ban");
         revalidatePath(`/du-an/${id}`);
+        revalidatePath("/admin/khach-hang");
+        revalidatePath("/admin/khach-hang/cskh");
+        revalidatePath("/");
         await syncReplica();
         return { success: true };
     } catch (error) {
@@ -284,6 +312,7 @@ export async function updateDuAn(id: number, data: any) {
         return { error: "Lỗi hệ thống khi cập nhật dự án" };
     }
 }
+
 
 export async function updateNhatKy(id: number, content: string, status?: TrangThaiDuAn, date?: Date) {
     try {
