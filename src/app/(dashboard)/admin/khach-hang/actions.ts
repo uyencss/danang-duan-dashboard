@@ -129,6 +129,12 @@ export async function updateKhachHang(id: number, data: any) {
     await requireRole("ADMIN", "USER", "AM", "CV");
     const validated = KhachHangSchema.parse(data);
     
+    // Read old phanLoai BEFORE updating to detect changes
+    const oldKH = await prisma.khachHang.findUnique({
+      where: { id },
+      select: { phanLoai: true },
+    });
+
     // Build Prisma data explicitly to avoid unknown field errors
     const dataToUpdate: any = {
       ten: validated.ten,
@@ -158,8 +164,25 @@ export async function updateKhachHang(id: number, data: any) {
       data: dataToUpdate,
     });
 
-    await cacheInvalidate("options:khachhang");
+    // ── Sync linhVuc of all related DuAn when phanLoai changes ──
+    // DuAn.linhVuc is a copy of KhachHang.phanLoai (same enum values)
+    // so when phanLoai changes, all existing projects must be updated
+    const phanLoaiChanged = oldKH && oldKH.phanLoai !== validated.phanLoai;
+    if (phanLoaiChanged) {
+      await prisma.duAn.updateMany({
+        where: { customerId: id },
+        data: { linhVuc: validated.phanLoai as any },
+      });
+      console.log(
+        `[updateKhachHang] Synced linhVuc for KH #${id}: ${oldKH.phanLoai} → ${validated.phanLoai}`
+      );
+    }
+
+    await cacheInvalidate("options:khachhang", "dashboard:overview");
     revalidatePath("/admin/khach-hang");
+    revalidatePath("/admin/khach-hang/cskh");
+    revalidatePath("/du-an");
+    revalidatePath("/");
     await syncReplica();
     return { success: true };
   } catch (error: any) {
