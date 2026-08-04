@@ -66,7 +66,9 @@ import { toast } from "sonner";
 import { KhachHangFormDialog } from "../khach-hang-form-dialog";
 import { deleteKhachHang } from "../actions";
 import { LeaderCombobox } from "./leader-combobox";
+import { CvCskhCombobox } from "./cv-cskh-combobox";
 import { ContactInfoModal } from "./contact-info-modal";
+import { CustomerProjectsModal } from "./customer-projects-modal";
 import type { CSKHRow, LeaderOption } from "./cskh-actions";
 
 function ColumnFilter({ column, placeholder = "Lọc..." }: { column: any; placeholder?: string }) {
@@ -136,7 +138,20 @@ function ColumnFilter({ column, placeholder = "Lọc..." }: { column: any; place
 
 // ─── Heat detection ─────────────────────────────────────────────
 function getHeatLevel(row: CSKHRow): "fire" | "info" | "empty" {
-  const dates = [row.ngaySinhDauMoi, row.ngaySinhLanhDao, row.ngayKyNiem];
+  const dates: (string | null)[] = [row.ngayKyNiem];
+
+  if (row.danhSachDauMoi && Array.isArray(row.danhSachDauMoi) && row.danhSachDauMoi.length > 0) {
+    row.danhSachDauMoi.forEach((d: any) => { if (d.ngaySinh) dates.push(d.ngaySinh); });
+  } else if (row.ngaySinhDauMoi) {
+    dates.push(row.ngaySinhDauMoi);
+  }
+
+  if (row.danhSachLanhDao && Array.isArray(row.danhSachLanhDao) && row.danhSachLanhDao.length > 0) {
+    row.danhSachLanhDao.forEach((d: any) => { if (d.ngaySinh) dates.push(d.ngaySinh); });
+  } else if (row.ngaySinhLanhDao) {
+    dates.push(row.ngaySinhLanhDao);
+  }
+
   const hasDates = dates.some((d) => !!d);
 
   if (!hasDates) return "empty";
@@ -164,9 +179,10 @@ const CATEGORY_OPTIONS = [
 interface CSKHClientProps {
   data: CSKHRow[];
   leaders: LeaderOption[];
+  cvCskhOptions: LeaderOption[];
 }
 
-export function CSKHClient({ data, leaders }: CSKHClientProps) {
+export function CSKHClient({ data, leaders, cvCskhOptions }: CSKHClientProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [selectedCategory, setSelectedCategory] = React.useState<string>("ALL");
@@ -183,6 +199,11 @@ export function CSKHClient({ data, leaders }: CSKHClientProps) {
   // Contact info modal state
   const [contactModalOpen, setContactModalOpen] = React.useState(false);
   const [contactModalKH, setContactModalKH] = React.useState<CSKHRow | null>(null);
+
+  // Projects modal state
+  const [projectsModalOpen, setProjectsModalOpen] = React.useState(false);
+  const [projectsModalKH, setProjectsModalKH] = React.useState<CSKHRow | null>(null);
+  const [projectsModalType, setProjectsModalType] = React.useState<"DANG_THEO_DOI" | "TRONG_DIEM" | "DA_KY" | null>(null);
 
   // ─── Filter data by category ──────────────────────────────────
   const filteredByCategory = React.useMemo(() => {
@@ -247,29 +268,24 @@ export function CSKHClient({ data, leaders }: CSKHClientProps) {
       ),
     },
 
-    // 3. Chuyên viên chủ trì – Tổ
+    // 3. CV CSKH
     {
-      id: "chuyenVienChuTri",
-      accessorFn: (row) => row.chuyenVienChuTri || "",
+      id: "cvCskh",
+      accessorFn: (row) => row.cvCskhName || "",
       header: ({ column }) => (
         <div className="flex items-center gap-1 text-white font-extrabold uppercase tracking-[0.1em] text-xs">
-          CV chủ trì – Tổ
+          CV CSKH
           <ColumnFilter column={column} />
         </div>
       ),
-      cell: ({ row }) => {
-        const val = row.original.chuyenVienChuTri;
-        if (!val) return <span className="text-gray-300 text-xs">—</span>;
-        return (
-          <div className="text-xs font-medium text-gray-700 min-w-[180px]">
-            {val}
-          </div>
-        );
-      },
-      filterFn: (row, id, filterValue) => {
-        const val = (row.original.chuyenVienChuTri || "").toLowerCase();
-        return val.includes(filterValue.toLowerCase());
-      },
+      cell: ({ row }) => (
+        <CvCskhCombobox
+          khachHangId={row.original.id}
+          currentUserId={row.original.cvCskhId}
+          currentUserName={row.original.cvCskhName}
+          users={cvCskhOptions}
+        />
+      ),
     },
 
     // 4. DA đang theo dõi
@@ -294,7 +310,12 @@ export function CSKHClient({ data, leaders }: CSKHClientProps) {
         <div className="text-center">
           <Badge
             variant="secondary"
-            className="font-mono font-bold px-2.5 py-1 text-xs"
+            className="font-mono font-bold px-2.5 py-1 text-xs cursor-pointer hover:bg-slate-200 transition-colors"
+            onClick={() => {
+              setProjectsModalKH(row.original);
+              setProjectsModalType("DANG_THEO_DOI");
+              setProjectsModalOpen(true);
+            }}
           >
             {row.original.duAnDangTheoDoi}
           </Badge>
@@ -319,9 +340,14 @@ export function CSKHClient({ data, leaders }: CSKHClientProps) {
             <Badge
               variant="secondary"
               className={cn(
-                "font-mono font-bold px-2.5 py-1 text-xs",
-                count > 0 && "bg-amber-100 text-amber-700 border-amber-200"
+                "font-mono font-bold px-2.5 py-1 text-xs cursor-pointer hover:bg-slate-200 transition-colors",
+                count > 0 && "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200"
               )}
+              onClick={() => {
+                setProjectsModalKH(row.original);
+                setProjectsModalType("TRONG_DIEM");
+                setProjectsModalOpen(true);
+              }}
             >
               {count}
             </Badge>
@@ -355,11 +381,16 @@ export function CSKHClient({ data, leaders }: CSKHClientProps) {
             <Badge
               variant="secondary"
               className={cn(
-                "font-mono font-bold px-2.5 py-1 text-xs",
+                "font-mono font-bold px-2.5 py-1 text-xs cursor-pointer transition-colors",
                 count === 0
-                  ? "bg-red-50 text-red-600 border-red-200"
-                  : "bg-green-50 text-green-700 border-green-200"
+                  ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                  : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
               )}
+              onClick={() => {
+                setProjectsModalKH(row.original);
+                setProjectsModalType("DA_KY");
+                setProjectsModalOpen(true);
+              }}
             >
               {count}
             </Badge>
@@ -482,19 +513,15 @@ export function CSKHClient({ data, leaders }: CSKHClientProps) {
             ? "Công an"
             : "Doanh nghiệp",
         "Lãnh đạo theo dõi": kh.lanhDaoTheoDoiName || "",
-        "CV chủ trì – Tổ": kh.chuyenVienChuTri || "",
+        "CV CSKH": kh.cvCskhName || "",
         "DA đang theo dõi": kh.duAnDangTheoDoi,
         "DA trọng điểm": kh.duAnTrongDiem,
         "DA đã ký HĐ": kh.duAnDaKy,
-        "Đầu mối": kh.dauMoiTiepCan || "",
-        "SĐT đầu mối": kh.soDienThoaiDauMoi || "",
-        "Sinh nhật đầu mối": kh.ngaySinhDauMoi
-          ? new Date(kh.ngaySinhDauMoi).toLocaleDateString("vi-VN")
-          : "",
-        "Lãnh đạo đơn vị": kh.lanhDaoDonVi || "",
-        "Sinh nhật lãnh đạo": kh.ngaySinhLanhDao
-          ? new Date(kh.ngaySinhLanhDao).toLocaleDateString("vi-VN")
-          : "",
+        "Đầu mối": kh.danhSachDauMoi?.length ? kh.danhSachDauMoi.map((d: any) => d.hoTen).join(", ") : (kh.dauMoiTiepCan || ""),
+        "SĐT đầu mối": kh.danhSachDauMoi?.length ? kh.danhSachDauMoi.map((d: any) => d.soDienThoai).filter(Boolean).join(", ") : (kh.soDienThoaiDauMoi || ""),
+        "Sinh nhật đầu mối": kh.danhSachDauMoi?.length ? kh.danhSachDauMoi.map((d: any) => d.ngaySinh ? new Date(d.ngaySinh).toLocaleDateString("vi-VN") : "").filter(Boolean).join(", ") : (kh.ngaySinhDauMoi ? new Date(kh.ngaySinhDauMoi).toLocaleDateString("vi-VN") : ""),
+        "Lãnh đạo đơn vị": kh.danhSachLanhDao?.length ? kh.danhSachLanhDao.map((d: any) => d.hoTen).join(", ") : (kh.lanhDaoDonVi || ""),
+        "Sinh nhật lãnh đạo": kh.danhSachLanhDao?.length ? kh.danhSachLanhDao.map((d: any) => d.ngaySinh ? new Date(d.ngaySinh).toLocaleDateString("vi-VN") : "").filter(Boolean).join(", ") : (kh.ngaySinhLanhDao ? new Date(kh.ngaySinhLanhDao).toLocaleDateString("vi-VN") : ""),
         "Ngày kỷ niệm": kh.ngayKyNiem
           ? new Date(kh.ngayKyNiem).toLocaleDateString("vi-VN")
           : "",
@@ -717,6 +744,15 @@ export function CSKHClient({ data, leaders }: CSKHClientProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Projects Modal */}
+      <CustomerProjectsModal
+        open={projectsModalOpen}
+        onOpenChange={setProjectsModalOpen}
+        customerId={projectsModalKH?.id || null}
+        customerName={projectsModalKH?.ten || ""}
+        type={projectsModalType}
+      />
     </div>
   );
 }

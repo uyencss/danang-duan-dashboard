@@ -8,11 +8,20 @@ import { syncReplica } from "@/lib/utils/sync";
 import { requireAuth, requireRole } from "@/lib/auth-utils";
 import { cacheInvalidate } from "@/lib/cache";
 
+const ContactSchema = z.object({
+  hoTen: z.string().optional().or(z.literal("")),
+  chucVu: z.string().optional().or(z.literal("")),
+  soDienThoai: z.string().optional().or(z.literal("")),
+  ngaySinh: z.string().optional().or(z.literal("")),
+});
+
 // Zod Schema for Validation
 const KhachHangSchema = z.object({
   ten: z.string().min(2, "Tên khách hàng tối thiểu 2 ký tự"),
   phanLoai: z.nativeEnum(PhanLoaiKH),
   diaChi: z.string().optional().or(z.literal("")),
+  danhSachDauMoi: z.array(ContactSchema).optional(),
+  danhSachLanhDao: z.array(ContactSchema).optional(),
   dauMoiTiepCan: z.string().optional().or(z.literal("")),
   soDienThoaiDauMoi: z.string().optional().or(z.literal("")),
   ngaySinhDauMoi: z.string().optional().or(z.literal("")),
@@ -74,14 +83,29 @@ export async function createKhachHang(data: any) {
     await requireRole("ADMIN", "USER", "AM", "CV");
     const validated = KhachHangSchema.parse(data);
     
-    // Convert date strings to Date objects safely
+    // Build Prisma data explicitly to avoid unknown field errors
     const dataToSave: any = {
-      ...validated,
+      ten: validated.ten,
+      phanLoai: validated.phanLoai,
+      diaChi: validated.diaChi || null,
+      dauMoiTiepCan: validated.dauMoiTiepCan || null,
+      soDienThoaiDauMoi: validated.soDienThoaiDauMoi || null,
       ngaySinhDauMoi: toSafeDate(validated.ngaySinhDauMoi),
+      lanhDaoDonVi: validated.lanhDaoDonVi || null,
+      soDienThoaiLanhDao: validated.soDienThoaiLanhDao || null,
       ngaySinhLanhDao: toSafeDate(validated.ngaySinhLanhDao),
       ngayThanhLap: toSafeDate(validated.ngayThanhLap),
       ngayKyNiem: toSafeDate(validated.ngayKyNiem),
+      ghiChu: validated.ghiChu || null,
     };
+
+    // JSON array fields for multiple contacts
+    if (validated.danhSachDauMoi !== undefined) {
+      dataToSave.danhSachDauMoi = validated.danhSachDauMoi;
+    }
+    if (validated.danhSachLanhDao !== undefined) {
+      dataToSave.danhSachLanhDao = validated.danhSachLanhDao;
+    }
     
     await prisma.khachHang.create({
       data: dataToSave,
@@ -105,13 +129,29 @@ export async function updateKhachHang(id: number, data: any) {
     await requireRole("ADMIN", "USER", "AM", "CV");
     const validated = KhachHangSchema.parse(data);
     
+    // Build Prisma data explicitly to avoid unknown field errors
     const dataToUpdate: any = {
-      ...validated,
+      ten: validated.ten,
+      phanLoai: validated.phanLoai,
+      diaChi: validated.diaChi || null,
+      dauMoiTiepCan: validated.dauMoiTiepCan || null,
+      soDienThoaiDauMoi: validated.soDienThoaiDauMoi || null,
       ngaySinhDauMoi: toSafeDate(validated.ngaySinhDauMoi),
+      lanhDaoDonVi: validated.lanhDaoDonVi || null,
+      soDienThoaiLanhDao: validated.soDienThoaiLanhDao || null,
       ngaySinhLanhDao: toSafeDate(validated.ngaySinhLanhDao),
       ngayThanhLap: toSafeDate(validated.ngayThanhLap),
       ngayKyNiem: toSafeDate(validated.ngayKyNiem),
+      ghiChu: validated.ghiChu || null,
     };
+
+    // JSON array fields for multiple contacts
+    if (validated.danhSachDauMoi !== undefined) {
+      dataToUpdate.danhSachDauMoi = validated.danhSachDauMoi;
+    }
+    if (validated.danhSachLanhDao !== undefined) {
+      dataToUpdate.danhSachLanhDao = validated.danhSachLanhDao;
+    }
     
     await prisma.khachHang.update({
       where: { id },

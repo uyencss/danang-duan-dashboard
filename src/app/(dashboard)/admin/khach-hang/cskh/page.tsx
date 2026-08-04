@@ -1,5 +1,5 @@
 import { requireAuth } from "@/lib/auth-utils";
-import { getCSKHData, getLeaderOptions } from "./cskh-actions";
+import { getCSKHData, getLeaderOptions, getCvCskhOptions } from "./cskh-actions";
 import { CSKHClient } from "./cskh-client";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { HeartHandshake } from "lucide-react";
@@ -13,13 +13,15 @@ export const dynamic = "force-dynamic";
 export default async function CSKHPage() {
   await requireAuth();
 
-  const [cskhResult, leaderResult] = await Promise.all([
+  const [cskhResult, leaderResult, cvCskhResult] = await Promise.all([
     getCSKHData(),
     getLeaderOptions(),
+    getCvCskhOptions(),
   ]);
 
   const data = cskhResult?.data ?? [];
   const leaders = leaderResult?.data ?? [];
+  const cvCskhOptions = cvCskhResult?.data ?? [];
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
@@ -50,7 +52,7 @@ export default async function CSKHPage() {
           ⚠️ {cskhResult.error}
         </div>
       ) : (
-        <CSKHClient data={data} leaders={leaders} />
+        <CSKHClient data={data} leaders={leaders} cvCskhOptions={cvCskhOptions} />
       )}
     </div>
   );

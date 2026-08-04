@@ -1,5 +1,5 @@
 import { requireAuth } from "@/lib/auth-utils";
-import { getCSKHData, getLeaderOptions, syncPhanLoaiFromDuAn } from "./cskh/cskh-actions";
+import { getCSKHData, getLeaderOptions, getCvCskhOptions, syncPhanLoaiFromDuAn } from "./cskh/cskh-actions";
 import { CSKHClient } from "./cskh/cskh-client";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { HeartHandshake } from "lucide-react";
@@ -13,16 +13,18 @@ export const dynamic = "force-dynamic";
 export default async function KhachHangPage() {
   await requireAuth();
 
-  // Auto-sync phanLoai from DuAn.linhVuc (fixes any drift)
-  await syncPhanLoaiFromDuAn().catch(() => {});
+  // Note: syncPhanLoaiFromDuAn removed from page load — it was overwriting
+  // user's manual phanLoai edits. Sync only happens during data import now.
 
-  const [cskhResult, leaderResult] = await Promise.all([
+  const [cskhResult, leaderResult, cvCskhResult] = await Promise.all([
     getCSKHData(),
     getLeaderOptions(),
+    getCvCskhOptions(),
   ]);
 
   const data = cskhResult?.data ?? [];
   const leaders = leaderResult?.data ?? [];
+  const cvCskhOptions = cvCskhResult?.data ?? [];
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
@@ -52,7 +54,7 @@ export default async function KhachHangPage() {
           ⚠️ {cskhResult.error}
         </div>
       ) : (
-        <CSKHClient data={data} leaders={leaders} />
+        <CSKHClient data={data} leaders={leaders} cvCskhOptions={cvCskhOptions} />
       )}
     </div>
   );

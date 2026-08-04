@@ -35,6 +35,7 @@ model User {
   sessions           Session[]
   tinNhan            TinNhan[]
   khachHangTheoDoi   KhachHang[]      @relation("LanhDaoTheoDoiKH")
+  khachHangCskh      KhachHang[]      @relation("CVCskhKH")
 
   @@index([email])
   @@index([role])
@@ -96,20 +97,25 @@ model KhachHang {
   lanhDaoDonVi       String?
   soDienThoaiLanhDao String?
   ngaySinhLanhDao    DateTime?
+  danhSachDauMoi     Json? // [{ hoTen, chucVu, sdt, ngaySinh }]
+  danhSachLanhDao    Json? // [{ hoTen, chucVu, sdt, ngaySinh }]
   ngayThanhLap       DateTime?
   ngayKyNiem         DateTime?
   ghiChu             String?
   lanhDaoTheoDoiId   String?
+  cvCskhId           String?
   isActive           Boolean    @default(true)
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   duAns              DuAn[]
   lanhDaoTheoDoi     User?      @relation("LanhDaoTheoDoiKH", fields: [lanhDaoTheoDoiId], references: [id])
+  cvCskh             User?      @relation("CVCskhKH", fields: [cvCskhId], references: [id])
 
   @@index([phanLoai])
   @@index([ten])
   @@index([updatedAt])
   @@index([lanhDaoTheoDoiId])
+  @@index([cvCskhId])
 }
 
 model SanPham {

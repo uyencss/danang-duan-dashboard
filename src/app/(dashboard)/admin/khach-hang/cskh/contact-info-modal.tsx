@@ -29,9 +29,11 @@ interface ContactInfoModalProps {
     dauMoiTiepCan: string | null;
     soDienThoaiDauMoi: string | null;
     ngaySinhDauMoi: string | null;
+    danhSachDauMoi?: any;
     lanhDaoDonVi: string | null;
     soDienThoaiLanhDao: string | null;
     ngaySinhLanhDao: string | null;
+    danhSachLanhDao?: any;
     ngayKyNiem: string | null;
   } | null;
   onEdit: () => void;
@@ -60,38 +62,75 @@ export function ContactInfoModal({
 }: ContactInfoModalProps) {
   if (!customer) return null;
 
-  const entries = [
-    {
+  const entries: any[] = [];
+  
+  if (customer.danhSachDauMoi && Array.isArray(customer.danhSachDauMoi) && customer.danhSachDauMoi.length > 0) {
+    customer.danhSachDauMoi.forEach((d: any, idx: number) => {
+      entries.push({
+        key: `daumoi-${idx}`,
+        icon: Cake,
+        label: "Đầu mối" + (d.chucVu ? ` - ${d.chucVu}` : ""),
+        subLabel: d.hoTen,
+        phone: d.soDienThoai,
+        date: d.ngaySinh,
+        color: "text-rose-600",
+        bgColor: "bg-rose-50",
+        borderColor: "border-rose-200",
+      });
+    });
+  } else if (customer.dauMoiTiepCan) {
+    entries.push({
+      key: "daumoi-legacy",
       icon: Cake,
-      label: "Sinh nhật Đầu mối",
+      label: "Đầu mối",
       subLabel: customer.dauMoiTiepCan,
       phone: customer.soDienThoaiDauMoi,
       date: customer.ngaySinhDauMoi,
       color: "text-rose-600",
       bgColor: "bg-rose-50",
       borderColor: "border-rose-200",
-    },
-    {
+    });
+  }
+
+  if (customer.danhSachLanhDao && Array.isArray(customer.danhSachLanhDao) && customer.danhSachLanhDao.length > 0) {
+    customer.danhSachLanhDao.forEach((d: any, idx: number) => {
+      entries.push({
+        key: `lanhdao-${idx}`,
+        icon: Crown,
+        label: "Lãnh đạo" + (d.chucVu ? ` - ${d.chucVu}` : ""),
+        subLabel: d.hoTen,
+        phone: d.soDienThoai,
+        date: d.ngaySinh,
+        color: "text-purple-600",
+        bgColor: "bg-purple-50",
+        borderColor: "border-purple-200",
+      });
+    });
+  } else if (customer.lanhDaoDonVi) {
+    entries.push({
+      key: "lanhdao-legacy",
       icon: Crown,
-      label: "Sinh nhật Lãnh đạo",
+      label: "Lãnh đạo",
       subLabel: customer.lanhDaoDonVi,
       phone: customer.soDienThoaiLanhDao,
       date: customer.ngaySinhLanhDao,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
       borderColor: "border-purple-200",
-    },
-    {
-      icon: CalendarHeart,
-      label: "Ngày kỷ niệm",
-      subLabel: null,
-      phone: null,
-      date: customer.ngayKyNiem,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      borderColor: "border-blue-200",
-    },
-  ];
+    });
+  }
+
+  entries.push({
+    key: "kyniem",
+    icon: CalendarHeart,
+    label: "Ngày kỷ niệm",
+    subLabel: null,
+    phone: null,
+    date: customer.ngayKyNiem,
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-200",
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -103,7 +142,7 @@ export function ContactInfoModal({
             </div>
             <div>
               <DialogTitle className="text-lg font-bold text-[#191c1e]">
-                Thông tin Đầu mối
+                Thông tin Liên hệ
               </DialogTitle>
               <DialogDescription className="text-sm text-gray-500 mt-0.5">
                 Khách hàng:{" "}
@@ -113,13 +152,13 @@ export function ContactInfoModal({
           </div>
         </DialogHeader>
 
-        <div className="p-6 space-y-3">
+        <div className="max-h-[60vh] overflow-y-auto p-6 space-y-3">
           {entries.map((entry) => {
             const hot = isHeat(entry.date);
             const Icon = entry.icon;
             return (
               <div
-                key={entry.label}
+                key={entry.key}
                 className={cn(
                   "flex items-start gap-3 p-3 rounded-xl border transition-colors",
                   hot

@@ -17,6 +17,8 @@ export interface CSKHRow {
   ngayKyNiem: string | null;
   dauMoiTiepCan: string | null;
   lanhDaoDonVi: string | null;
+  danhSachDauMoi: any;
+  danhSachLanhDao: any;
   // Full data for edit form
   diaChi: string | null;
   soDienThoai: string | null;
@@ -29,6 +31,9 @@ export interface CSKHRow {
   // Leader assignment
   lanhDaoTheoDoiId: string | null;
   lanhDaoTheoDoiName: string | null;
+  // CV CSKH assignment
+  cvCskhId: string | null;
+  cvCskhName: string | null;
   // Derived from projects
   chuyenVienChuTri: string | null; // "Nguyễn Văn A - Tổ 1"
   chuyenVienChuTriId: string | null;
@@ -59,6 +64,9 @@ export async function getCSKHData(phanLoai?: string) {
       where: whereClause,
       include: {
         lanhDaoTheoDoi: {
+          select: { id: true, name: true },
+        },
+        cvCskh: {
           select: { id: true, name: true },
         },
         duAns: {
@@ -111,6 +119,8 @@ export async function getCSKHData(phanLoai?: string) {
         ngayKyNiem: kh.ngayKyNiem?.toISOString() ?? null,
         dauMoiTiepCan: kh.dauMoiTiepCan,
         lanhDaoDonVi: kh.lanhDaoDonVi,
+        danhSachDauMoi: kh.danhSachDauMoi,
+        danhSachLanhDao: kh.danhSachLanhDao,
         diaChi: kh.diaChi,
         soDienThoai: kh.soDienThoai,
         email: kh.email,
@@ -121,6 +131,8 @@ export async function getCSKHData(phanLoai?: string) {
         isActive: kh.isActive,
         lanhDaoTheoDoiId: kh.lanhDaoTheoDoiId,
         lanhDaoTheoDoiName: kh.lanhDaoTheoDoi?.name ?? null,
+        cvCskhId: kh.cvCskhId,
+        cvCskhName: kh.cvCskh?.name ?? null,
         chuyenVienChuTri,
         chuyenVienChuTriId: cv?.id ?? null,
         duAnDangTheoDoi: activeDuAns.length,
@@ -186,6 +198,56 @@ export async function updateLanhDaoTheoDoi(
   }
 }
 
+// ─── CV CSKH options for dropdown ─────────────────────────────────
+export async function getCvCskhOptions(): Promise<{ data: LeaderOption[] }> {
+  await requireRole("ADMIN", "USER", "AM", "CV", "LEADER");
+
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        role: { notIn: ["LEADER", "ADMIN"] },
+        isActive: true,
+        banned: false,
+      },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        diaBan: true,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    return { data: users };
+  } catch (error) {
+    console.error("[CSKH] CV CSKH options error:", error);
+    return { data: [] };
+  }
+}
+
+// ─── Update CV CSKH assignment ────────────────────────────────────
+export async function updateCvCskh(
+  khachHangId: number,
+  userId: string | null
+) {
+  await requireRole("ADMIN", "USER");
+
+  try {
+    await prisma.khachHang.update({
+      where: { id: khachHangId },
+      data: { cvCskhId: userId },
+    });
+
+    await cacheInvalidate("options:khachhang");
+    revalidatePath("/admin/khach-hang/cskh");
+    revalidatePath("/admin/khach-hang");
+    return { success: true };
+  } catch (error) {
+    console.error("[CSKH] Update CV CSKH error:", error);
+    return { error: "Lỗi khi cập nhật CV CSKH" };
+  }
+}
+
 // ─── Sync phanLoai from DuAn.linhVuc back to KhachHang ──────────
 export async function syncPhanLoaiFromDuAn() {
   await requireRole("ADMIN");
@@ -225,5 +287,52 @@ export async function syncPhanLoaiFromDuAn() {
   } catch (error) {
     console.error("[Sync phanLoai] Error:", error);
     return { error: "Lỗi khi đồng bộ phân loại" };
+  }
+}
+
+// ─── Fetch projects for a specific customer by status ──────────────
+export async function getCustomerProjectsDetails(
+  customerId: number,
+  type: "DANG_THEO_DOI" | "TRONG_DIEM" | "DA_KY"
+) {
+  await requireRole("ADMIN", "USER", "AM", "CV", "LEADER");
+
+  try {
+    const projects = await prisma.duAn.findMany({
+      where: {
+        customerId,
+        isPendingDelete: false,
+        ...(type === "DANG_THEO_DOI" && {
+          trangThaiHienTai: { notIn: ["DA_KY_HOP_DONG", "THAT_BAI"] },
+        }),
+        ...(type === "TRONG_DIEM" && {
+          isTrongDiem: true,
+        }),
+        ...(type === "DA_KY" && {
+          trangThaiHienTai: "DA_KY_HOP_DONG",
+        }),
+      },
+      select: {
+        id: true,
+        tenDuAn: true,
+        isTrongDiem: true,
+        isKyVong: true,
+        linhVuc: true,
+        trangThaiHienTai: true,
+        tongDoanhThuDuKien: true,
+        doanhThuTheoThang: true,
+        hienTaiBuoc: true,
+        khachHang: { select: { ten: true } },
+        sanPham: { select: { tenChiTiet: true } },
+        am: { select: { name: true } },
+        chuyenVien: { select: { name: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    return { success: true, data: projects };
+  } catch (error) {
+    console.error("[getCustomerProjectsDetails] Error:", error);
+    return { success: false, error: "Lỗi khi lấy danh sách dự án" };
   }
 }
