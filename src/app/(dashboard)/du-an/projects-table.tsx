@@ -55,12 +55,14 @@ const LINH_VUC_COLORS: Record<string, string> = {
   CHINH_PHU: "bg-blue-50 text-blue-600 border-blue-100",
   DOANH_NGHIEP: "bg-slate-50 text-slate-600 border-slate-100",
   CONG_AN: "bg-orange-50 text-orange-600 border-orange-100",
+  PHUONG_XA: "bg-teal-50 text-teal-600 border-teal-100",
 };
 
 const LINH_VUC_LABELS: Record<string, string> = {
   CHINH_PHU: "Chính phủ",
   DOANH_NGHIEP: "Doanh nghiệp",
   CONG_AN: "Công an",
+  PHUONG_XA: "Phường xã",
 };
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {

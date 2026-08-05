@@ -20,7 +20,7 @@ import {
 
 // Define option constants for validation
 const TIEU_CHI_YES_NO = ["Có", "Không"];
-const PHAN_LOAI_KH = ["Chính phủ/Sở ban ngành", "Doanh nghiệp", "Công an"];
+const PHAN_LOAI_KH = ["Chính phủ/Sở ban ngành", "Doanh nghiệp", "Công an", "Phường xã"];
 const NHOM_SP = ["Cloud DC", "An ninh mạng", "Giải pháp CNTT", "Dự án CĐS KHCP, KHDN lớn", "CNS trong lĩnh vực an ninh"];
 const TRANG_THAI = ["Mới", "Đang làm việc", "Đã demo", "Đã gửi báo giá", "Đã ký hợp đồng", "Thất bại"];
 
@@ -41,7 +41,7 @@ export function ExcelUploadButton({ users }: { users: UserOption[] }) {
   const handleDownloadSample = () => {
     const notes = [
       ["* LƯU Ý KHI ĐIỀN DỮ LIỆU:"],
-      ["- Phân loại khách hàng: Chọn 1 trong số: [Chính phủ/Sở ban ngành, Doanh nghiệp, Công an]"],
+      ["- Phân loại khách hàng: Chọn 1 trong số: [Chính phủ/Sở ban ngành, Doanh nghiệp, Công an, Phường xã]"],
       ["- Nhóm sản phẩm: Chọn 1 trong số: [Cloud DC, An ninh mạng, Giải pháp CNTT, Dự án CĐS KHCP, KHDN lớn, CNS trong lĩnh vực an ninh]"],
       ["- Trạng thái khởi tạo: Chọn 1 trong số: [Mới, Đang làm việc, Đã demo, Đã gửi báo giá, Đã ký hợp đồng, Thất bại]"],
       ["- Trọng điểm / Kỳ vọng: Điền [Có] hoặc [Không]"],

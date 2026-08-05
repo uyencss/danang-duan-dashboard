@@ -65,15 +65,24 @@ const CreateDuAnSchema = z.object({
 
 // ── Legacy schema for update (keeping backward compatibility) ───────
 const DuAnSchema = z.object({
-  customerId: z.number().min(1, "Vui lòng chọn khách hàng"),
-  productId: z.number().min(1, "Vui lòng chọn sản phẩm"),
+  customerId: z.number().optional(),
+  productId: z.number().optional(),
+  // Inline new customer fields
+  newCustomerName: z.string().optional(),
+  newCustomerPhanLoai: z.nativeEnum(PhanLoaiKH).optional(),
+  newCustomerDiaChi: z.string().optional(),
+  // Inline new product fields
+  newProductTenChiTiet: z.string().optional(),
+  newProductNhom: z.string().optional(),
+  newProductMoTa: z.string().optional(),
+
   amId: z.string().optional().or(z.literal("")),
   amHoTroId: z.string().optional().or(z.literal("")),
   chuyenVienId: z.string().optional().or(z.literal("")),
   cvHoTro1Id: z.string().optional().or(z.literal("")),
   cvHoTro2Id: z.string().optional().or(z.literal("")),
   tenDuAn: z.string().min(5, "Tên dự án tối thiểu 5 ký tự"),
-  linhVuc: z.enum(["CHINH_PHU", "DOANH_NGHIEP", "CONG_AN", "B2B_B2G", "B2A"]),
+  linhVuc: z.nativeEnum(LinhVuc),
   tongDoanhThuDuKien: z.coerce.number().min(0, "Doanh thu không được âm"),
   doanhThuTheoThang: z.coerce.number().optional().default(0),
   maHopDong: z.string().optional().or(z.literal("")),
@@ -233,7 +242,7 @@ export async function createDuAn(data: any) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// UPDATE – legacy flow (select from existing)
+// UPDATE – supports both existing selection and inline creation
 // ═══════════════════════════════════════════════════════════════════
 export async function updateDuAn(id: number, data: any) {
     try {
@@ -241,16 +250,57 @@ export async function updateDuAn(id: number, data: any) {
         const validated = DuAnSchema.parse(data);
         const { tuan, thang, quy, nam } = extractTimeFields(validated.ngayBatDau);
 
+        // ── Resolve customerId: use existing or create new ──
+        let resolvedCustomerId = validated.customerId;
+        if (!resolvedCustomerId && validated.newCustomerName?.trim()) {
+            const newKH = await prisma.khachHang.create({
+                data: {
+                    ten: validated.newCustomerName.trim(),
+                    phanLoai: validated.newCustomerPhanLoai || (validated.linhVuc as unknown as PhanLoaiKH),
+                    diaChi: validated.newCustomerDiaChi || null,
+                },
+            });
+            resolvedCustomerId = newKH.id;
+            console.log(`[updateDuAn] Created new KH "${validated.newCustomerName}" → #${newKH.id}`);
+        }
+        if (!resolvedCustomerId) {
+            return { error: "Vui lòng chọn hoặc tạo mới khách hàng" };
+        }
+
+        // ── Resolve productId: use existing or create new ──
+        let resolvedProductId = validated.productId;
+        if (!resolvedProductId && validated.newProductTenChiTiet?.trim() && validated.newProductNhom?.trim()) {
+            const newSP = await prisma.sanPham.create({
+                data: {
+                    tenChiTiet: validated.newProductTenChiTiet.trim(),
+                    nhom: validated.newProductNhom.trim(),
+                    moTa: validated.newProductMoTa || null,
+                },
+            });
+            resolvedProductId = newSP.id;
+            console.log(`[updateDuAn] Created new SP "${validated.newProductTenChiTiet}" → #${newSP.id}`);
+        }
+        if (!resolvedProductId) {
+            return { error: "Vui lòng chọn hoặc tạo mới sản phẩm" };
+        }
+
         // Read old linhVuc BEFORE updating to detect changes
         const oldProject = await prisma.duAn.findUnique({
             where: { id },
             select: { linhVuc: true, customerId: true },
         });
 
+        // Strip inline-only fields before passing to prisma
+        const { newCustomerName, newCustomerPhanLoai, newCustomerDiaChi,
+                newProductTenChiTiet, newProductNhom, newProductMoTa,
+                customerId: _cid, productId: _pid, ...restValidated } = validated;
+
         await prisma.duAn.update({
             where: { id },
             data: {
-                ...validated,
+                ...restValidated,
+                customerId: resolvedCustomerId,
+                productId: resolvedProductId,
                 tongDoanhThuDuKien: validated.tongDoanhThuDuKien,
                 doanhThuTheoThang: validated.doanhThuTheoThang || 0,
                 amId: validated.amId || null,
@@ -273,19 +323,19 @@ export async function updateDuAn(id: number, data: any) {
         // ── Sync KhachHang.phanLoai when linhVuc changes ──
         // LinhVuc and PhanLoaiKH share the same enum values
         const linhVucChanged = oldProject && oldProject.linhVuc !== validated.linhVuc;
-        if (linhVucChanged && oldProject.customerId) {
+        if (linhVucChanged && resolvedCustomerId) {
             // Update the parent KhachHang record
             await prisma.khachHang.update({
-                where: { id: oldProject.customerId },
+                where: { id: resolvedCustomerId },
                 data: { phanLoai: validated.linhVuc as unknown as PhanLoaiKH },
             });
             // Also update all sibling DuAn under the same customer
             await prisma.duAn.updateMany({
-                where: { customerId: oldProject.customerId, id: { not: id } },
+                where: { customerId: resolvedCustomerId, id: { not: id } },
                 data: { linhVuc: validated.linhVuc as unknown as LinhVuc },
             });
             console.log(
-                `[updateDuAn] Synced phanLoai for KH #${oldProject.customerId}: ${oldProject.linhVuc} → ${validated.linhVuc}`
+                `[updateDuAn] Synced phanLoai for KH #${resolvedCustomerId}: ${oldProject.linhVuc} → ${validated.linhVuc}`
             );
         }
 

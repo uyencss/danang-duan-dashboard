@@ -22,14 +22,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { CreatableSelect } from "@/components/ui/creatable-select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { LinhVuc, TrangThaiDuAn } from "@prisma/client";
-import { useState, useEffect } from "react";
+import { LinhVuc, PhanLoaiKH, TrangThaiDuAn } from "@prisma/client";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import {
   updateDuAn,
@@ -54,8 +55,17 @@ interface FormValues {
   doanhThuTheoThang: number;
   maHopDong: string;
   ngayBatDau: string;
-  customerId: number;
-  productId: number;
+  customerId?: number;
+  productId?: number;
+  // Inline new customer
+  newCustomerName?: string;
+  newCustomerPhanLoai?: PhanLoaiKH;
+  newCustomerDiaChi?: string;
+  // Inline new product
+  newProductTenChiTiet?: string;
+  newProductNhom?: string;
+  newProductMoTa?: string;
+
   amId: string;
   amHoTroId: string;
   chuyenVienId: string;
@@ -76,9 +86,30 @@ const STATUS_LABELS: Record<string, string> = {
   THAT_BAI: "Thất bại",
 };
 
+const PHAN_LOAI_KH_LABELS: Record<string, string> = {
+  CHINH_PHU: "Chính phủ/ Sở ban ngành",
+  DOANH_NGHIEP: "Doanh nghiệp",
+  CONG_AN: "Công an",
+  PHUONG_XA: "Phường xã",
+};
+
+const PRODUCT_GROUP_OPTIONS = [
+  { value: "Cloud DC", label: "Cloud DC" },
+  { value: "An ninh mạng", label: "An ninh mạng" },
+  { value: "Giải pháp CNTT", label: "Giải pháp CNTT" },
+  { value: "Dự án CĐS KHCP, KHDN lớn", label: "Dự án CĐS KHCP, KHDN lớn" },
+  { value: "CNS trong lĩnh vực an ninh", label: "CNS trong lĩnh vực an ninh" },
+];
+
 const formSchema = z.object({
-  customerId: z.number().min(1, "Vui lòng chọn khách hàng"),
-  productId: z.number().min(1, "Vui lòng chọn sản phẩm"),
+  customerId: z.number().optional(),
+  productId: z.number().optional(),
+  newCustomerName: z.string().optional(),
+  newCustomerPhanLoai: z.nativeEnum(PhanLoaiKH).optional(),
+  newCustomerDiaChi: z.string().optional(),
+  newProductTenChiTiet: z.string().optional(),
+  newProductNhom: z.string().optional(),
+  newProductMoTa: z.string().optional(),
   amId: z.string(),
   amHoTroId: z.string(),
   chuyenVienId: z.string(),
@@ -126,9 +157,15 @@ interface ProjectFormDialogProps {
 
 export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [khOptions, setKhOptions] = useState<Array<{ id: number; ten: string; phanLoai: string }>>([]);
-  const [spOptions, setSpOptions] = useState<Array<{ id: number; nhom: string; tenChiTiet: string }>>([]);
+  const [khOptions, setKhOptions] = useState<Array<{ id: number; ten: string; phanLoai: string; diaChi?: string | null }>>([]);
+  const [spOptions, setSpOptions] = useState<Array<{ id: number; nhom: string; tenChiTiet: string; moTa?: string | null }>>([]);
   const [userOptions, setUserOptions] = useState<Array<{ id: string; name: string | null; role: string }>>([]);
+
+  // ── Mode tracking for inline creation ──
+  const [customerMode, setCustomerMode] = useState<"existing" | "new">("existing");
+  const [productMode, setProductMode] = useState<"existing" | "new">("existing");
+  const [customerDisplayName, setCustomerDisplayName] = useState("");
+  const [productDisplayName, setProductDisplayName] = useState("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -139,8 +176,14 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
       doanhThuTheoThang: 0,
       maHopDong: "",
       ngayBatDau: new Date().toISOString().split("T")[0],
-      customerId: 0,
-      productId: 0,
+      customerId: undefined,
+      productId: undefined,
+      newCustomerName: "",
+      newCustomerPhanLoai: PhanLoaiKH.DOANH_NGHIEP,
+      newCustomerDiaChi: "",
+      newProductTenChiTiet: "",
+      newProductNhom: "",
+      newProductMoTa: "",
       amId: "",
       amHoTroId: "",
       chuyenVienId: "",
@@ -178,15 +221,65 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
   const amSearchOptions = [{ value: "", label: "--- Trống ---" }, ...amOptions];
   const cvSearchOptions = [{ value: "", label: "--- Trống ---" }, ...cvOptions];
 
-  const khSearchOptions = khOptions.map((kh) => ({
+  const khSearchOptions = useMemo(() => khOptions.map((kh) => ({
     value: String(kh.id),
     label: kh.ten,
-  }));
+  })), [khOptions]);
 
-  const spSearchOptions = spOptions.map((sp) => ({
+  const spSearchOptions = useMemo(() => spOptions.map((sp) => ({
     value: String(sp.id),
     label: `[${sp.nhom}] ${sp.tenChiTiet}`,
-  }));
+  })), [spOptions]);
+
+  const phanLoaiKHOptions = useMemo(
+    () => Object.entries(PHAN_LOAI_KH_LABELS).map(([value, label]) => ({ value, label })),
+    []
+  );
+
+  // ── Handlers for switching between existing / new ──
+  const handleSelectExistingCustomer = useCallback((val: string) => {
+    const id = Number(val);
+    form.setValue("customerId", id);
+    form.setValue("newCustomerName", "");
+    setCustomerMode("existing");
+    const selected = khOptions.find((k) => k.id === id);
+    if (selected) {
+      setCustomerDisplayName(selected.ten);
+      form.setValue("newCustomerPhanLoai", selected.phanLoai as PhanLoaiKH);
+      form.setValue("newCustomerDiaChi", selected.diaChi || "");
+    }
+  }, [form, khOptions]);
+
+  const handleCreateNewCustomer = useCallback((name: string) => {
+    form.setValue("customerId", undefined);
+    form.setValue("newCustomerName", name);
+    setCustomerDisplayName(name);
+    setCustomerMode("new");
+    form.setValue("newCustomerPhanLoai", PhanLoaiKH.DOANH_NGHIEP);
+    form.setValue("newCustomerDiaChi", "");
+  }, [form]);
+
+  const handleSelectExistingProduct = useCallback((val: string) => {
+    const id = Number(val);
+    form.setValue("productId", id);
+    form.setValue("newProductTenChiTiet", "");
+    setProductMode("existing");
+    const selected = spOptions.find((sp) => sp.id === id);
+    if (selected) {
+      setProductDisplayName(`[${selected.nhom}] ${selected.tenChiTiet}`);
+      form.setValue("newProductNhom", selected.nhom || "");
+      form.setValue("newProductMoTa", selected.moTa || "");
+    }
+  }, [form, spOptions]);
+
+  const handleCreateNewProduct = useCallback((name: string) => {
+    form.setValue("productId", undefined);
+    form.setValue("newProductTenChiTiet", name);
+    setProductDisplayName(name);
+    setProductMode("new");
+    form.setValue("newProductNhom", "");
+    form.setValue("newProductMoTa", "");
+  }, [form]);
 
   useEffect(() => {
     if (project && open) {
@@ -199,6 +292,12 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
         ngayBatDau: new Date(project.ngayBatDau).toISOString().split("T")[0],
         customerId: project.customerId,
         productId: project.productId,
+        newCustomerName: "",
+        newCustomerPhanLoai: PhanLoaiKH.DOANH_NGHIEP,
+        newCustomerDiaChi: "",
+        newProductTenChiTiet: "",
+        newProductNhom: "",
+        newProductMoTa: "",
         amId: project.amId || "",
         amHoTroId: project.amHoTroId || "",
         chuyenVienId: project.chuyenVienId || "",
@@ -209,10 +308,25 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
         isTrongDiem: project.isTrongDiem || false,
         isKyVong: project.isKyVong || false,
       });
+      // Reset modes to "existing" when dialog opens with existing project
+      setCustomerMode("existing");
+      setProductMode("existing");
+      setCustomerDisplayName(project.khachHang?.ten || "");
+      setProductDisplayName("");
     }
   }, [project, open, form]);
 
   const onSubmit = async (values: FormValues) => {
+    // Validate: must have either existing customer or new customer name
+    if (!values.customerId && !values.newCustomerName?.trim()) {
+      toast.error("Vui lòng chọn hoặc tạo mới khách hàng");
+      return;
+    }
+    // Validate: must have either existing product or new product
+    if (!values.productId && (!values.newProductTenChiTiet?.trim() || !values.newProductNhom?.trim())) {
+      toast.error("Vui lòng chọn sản phẩm hoặc nhập đầy đủ nhóm SP và tên SP chi tiết");
+      return;
+    }
     setLoading(true);
     const result = await updateDuAn(project.id, values);
     if (result.success) {
@@ -314,7 +428,8 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                             <SelectValue placeholder="Chọn lĩnh vực">
                               {field.value === LinhVuc.CHINH_PHU ? "Chính phủ/ Sở ban ngành" : 
                                field.value === LinhVuc.DOANH_NGHIEP ? "Doanh nghiệp" : 
-                               field.value === LinhVuc.CONG_AN ? "Công an" : field.value}
+                               field.value === LinhVuc.CONG_AN ? "Công an" :
+                               field.value === LinhVuc.PHUONG_XA ? "Phường xã" : field.value}
                             </SelectValue>
                           </SelectTrigger>
                         </FormControl>
@@ -322,6 +437,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                           <SelectItem value={LinhVuc.CHINH_PHU}>Chính phủ/ Sở ban ngành</SelectItem>
                           <SelectItem value={LinhVuc.DOANH_NGHIEP}>Doanh nghiệp</SelectItem>
                           <SelectItem value={LinhVuc.CONG_AN}>Công an</SelectItem>
+                          <SelectItem value={LinhVuc.PHUONG_XA}>Phường xã</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -357,15 +473,26 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                 <FormField
                   control={form.control}
                   name="customerId"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
-                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Khách hàng *</FormLabel>
-                      <SearchableSelect
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        Khách hàng *
+                        {customerMode === "new" && (
+                          <span className="float-right text-[9px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md font-black ml-2">
+                            ✨ Mới
+                          </span>
+                        )}
+                      </FormLabel>
+                      <CreatableSelect
                         options={khSearchOptions}
-                        value={String(field.value)}
-                        onValueChange={(v) => field.onChange(Number(v))}
-                        placeholder="Chọn khách hàng..."
-                        searchPlaceholder="Tìm khách hàng..."
+                        value={customerMode === "existing" ? String(form.getValues("customerId") || "") : ""}
+                        displayValue={customerDisplayName}
+                        onValueChange={handleSelectExistingCustomer}
+                        onCreateNew={handleCreateNewCustomer}
+                        placeholder="Tìm & chọn hoặc nhập tên KH mới..."
+                        searchPlaceholder="Gõ tên khách hàng..."
+                        createText="Tạo khách hàng mới"
+                        allowCreate={true}
                       />
                       <FormMessage />
                     </FormItem>
@@ -375,15 +502,26 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                 <FormField
                   control={form.control}
                   name="productId"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
-                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sản phẩm *</FormLabel>
-                      <SearchableSelect
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        Sản phẩm *
+                        {productMode === "new" && (
+                          <span className="float-right text-[9px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md font-black ml-2">
+                            ✨ Mới
+                          </span>
+                        )}
+                      </FormLabel>
+                      <CreatableSelect
                         options={spSearchOptions}
-                        value={String(field.value)}
-                        onValueChange={(v) => field.onChange(Number(v))}
-                        placeholder="Chọn sản phẩm..."
-                        searchPlaceholder="Tìm sản phẩm..."
+                        value={productMode === "existing" ? String(form.getValues("productId") || "") : ""}
+                        displayValue={productDisplayName}
+                        onValueChange={handleSelectExistingProduct}
+                        onCreateNew={handleCreateNewProduct}
+                        placeholder="Tìm & chọn hoặc nhập tên SP mới..."
+                        searchPlaceholder="Gõ tên sản phẩm..."
+                        createText="Tạo sản phẩm mới"
+                        allowCreate={true}
                       />
                       <FormMessage />
                     </FormItem>
@@ -391,6 +529,92 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
                 />
 
               </div>
+
+              {/* ── Inline new customer fields ── */}
+              {customerMode === "new" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 pb-2 px-4 bg-emerald-50/30 rounded-2xl border border-emerald-100 mt-2">
+                  <div className="col-span-1 md:col-span-2">
+                    <p className="text-[10px] font-black uppercase text-emerald-700 flex items-center gap-1.5">
+                      ✨ Thông tin khách hàng mới: <span className="text-emerald-900">{customerDisplayName}</span>
+                    </p>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="newCustomerPhanLoai"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Phân loại khách hàng</FormLabel>
+                        <SearchableSelect
+                          options={phanLoaiKHOptions}
+                          value={field.value ? String(field.value) : "DOANH_NGHIEP"}
+                          onValueChange={field.onChange}
+                          placeholder="Chọn phân loại..."
+                          searchPlaceholder="Tìm phân loại..."
+                        />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="newCustomerDiaChi"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Địa chỉ</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="VD: 103 Hùng Vương, Hải Châu..."
+                            className="rounded-xl h-10 border-slate-200"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* ── Inline new product fields ── */}
+              {productMode === "new" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 pb-2 px-4 bg-emerald-50/30 rounded-2xl border border-emerald-100 mt-2">
+                  <div className="col-span-1 md:col-span-2">
+                    <p className="text-[10px] font-black uppercase text-emerald-700 flex items-center gap-1.5">
+                      ✨ Thông tin sản phẩm mới: <span className="text-emerald-900">{productDisplayName}</span>
+                    </p>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="newProductNhom"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Nhóm sản phẩm *</FormLabel>
+                        <SearchableSelect
+                          options={PRODUCT_GROUP_OPTIONS}
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                          placeholder="Chọn nhóm sản phẩm..."
+                          searchPlaceholder="Tìm nhóm..."
+                        />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="newProductMoTa"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold text-slate-500 uppercase">Mô tả sản phẩm</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Mô tả chi tiết sản phẩm..."
+                            className="rounded-xl h-10 border-slate-200"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-100">
                  <h4 className="col-span-1 md:col-span-3 text-[10px] font-black uppercase text-[#0058bc]">Nhân sự phụ trách</h4>

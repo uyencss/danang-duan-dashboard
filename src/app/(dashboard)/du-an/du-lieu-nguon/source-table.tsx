@@ -45,6 +45,7 @@ const PHAN_LOAI_LABELS: Record<string, string> = {
   CHINH_PHU: "Chính phủ",
   DOANH_NGHIEP: "Doanh nghiệp",
   CONG_AN: "Công an",
+  PHUONG_XA: "Phường xã",
 };
 
 const SOURCE_LABELS: Record<string, { label: string; className: string }> = {

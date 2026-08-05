@@ -385,6 +385,7 @@ enum PhanLoaiKH {
   CHINH_PHU
   DOANH_NGHIEP
   CONG_AN
+  PHUONG_XA
 }
 
 enum TrangThaiDuAn {
@@ -400,6 +401,7 @@ enum LinhVuc {
   CHINH_PHU
   DOANH_NGHIEP
   CONG_AN
+  PHUONG_XA
 }
 
 enum LoaiTinNhan {

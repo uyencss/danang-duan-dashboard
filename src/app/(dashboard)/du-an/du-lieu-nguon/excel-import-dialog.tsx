@@ -282,10 +282,10 @@ export function ExcelImportDialog({
       if (!plKhTrimmed) {
         validationErrors.push(`Dòng ${idx + 2}: Thiếu Phân loại khách hàng`);
       } else {
-        const allowedPL = ["Chính phủ/Sở ban ngành", "Doanh nghiệp", "Công an"];
+        const allowedPL = ["Chính phủ/Sở ban ngành", "Doanh nghiệp", "Công an", "Phường xã"];
         if (!allowedPL.includes(plKhTrimmed)) {
           validationErrors.push(
-            `Dòng ${idx + 2}: Phân loại khách hàng không hợp lệ (phải chọn Chính phủ/Sở ban ngành, Doanh nghiệp, hoặc Công an)`
+            `Dòng ${idx + 2}: Phân loại khách hàng không hợp lệ (phải chọn Chính phủ/Sở ban ngành, Doanh nghiệp, Công an, hoặc Phường xã)`
           );
         }
       }
@@ -564,7 +564,7 @@ export function ExcelImportDialog({
           <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
             <p className="text-[11px] text-amber-700 font-medium">
               * LƯU Ý KHI ĐIỀN DỮ LIỆU: Phân loại khách hàng: Chọn 1
-              trong số: [Chính phủ/Sở ban ngành, Doanh nghiệp, Công an].
+              trong số: [Chính phủ/Sở ban ngành, Doanh nghiệp, Công an, Phường xã].
               Tất cả ngày tháng sử dụng định dạng DD/MM/YYYY.
             </p>
           </div>

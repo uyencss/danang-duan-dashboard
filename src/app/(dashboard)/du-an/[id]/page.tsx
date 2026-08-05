@@ -139,7 +139,7 @@ export default async function ProjectDetailPage({
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Khách hàng</p>
             <p className="font-bold text-[#191c1e] text-sm leading-tight">{project.khachHang.ten}</p>
             <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-              {project.khachHang.phanLoai === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : project.khachHang.phanLoai === "CONG_AN" ? "Công an" : "Doanh nghiệp"}
+              {project.khachHang.phanLoai === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : project.khachHang.phanLoai === "CONG_AN" ? "Công an" : project.khachHang.phanLoai === "PHUONG_XA" ? "Phường xã" : "Doanh nghiệp"}
             </p>
           </div>
         </div>
@@ -265,7 +265,7 @@ export default async function ProjectDetailPage({
                     </div>
                     <div className="space-y-2">
                       <span className="bg-[#0058bc]/10 text-[#0058bc] text-[10px] font-black uppercase px-2.5 py-1 rounded-full tracking-widest">
-                        {project.khachHang.phanLoai === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : project.khachHang.phanLoai === "CONG_AN" ? "Công an" : "Doanh nghiệp"}
+                        {project.khachHang.phanLoai === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : project.khachHang.phanLoai === "CONG_AN" ? "Công an" : project.khachHang.phanLoai === "PHUONG_XA" ? "Phường xã" : "Doanh nghiệp"}
                       </span>
                       <div className="flex items-center gap-2 text-xl font-black text-[#0058bc]">
                         <DollarSign className="size-4 text-green-600" />

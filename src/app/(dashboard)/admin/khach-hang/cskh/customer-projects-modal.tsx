@@ -17,6 +17,7 @@ const LINH_VUC_LABELS: Record<string, string> = {
   CHINH_PHU: "Chính phủ",
   DOANH_NGHIEP: "Doanh nghiệp",
   CONG_AN: "Công an",
+  PHUONG_XA: "Phường xã",
 };
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {

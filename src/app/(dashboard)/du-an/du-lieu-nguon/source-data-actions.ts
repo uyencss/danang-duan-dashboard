@@ -473,6 +473,7 @@ export async function importSourceExcel(
       "Chính phủ/Sở ban ngành": PhanLoaiKH.CHINH_PHU,
       "Doanh nghiệp": PhanLoaiKH.DOANH_NGHIEP,
       "Công an": PhanLoaiKH.CONG_AN,
+      "Phường xã": PhanLoaiKH.PHUONG_XA,
     };
 
     const normalizeStr = (val: any) => {

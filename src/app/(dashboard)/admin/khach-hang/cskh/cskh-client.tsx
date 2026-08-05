@@ -174,6 +174,7 @@ const CATEGORY_OPTIONS = [
   { value: "CHINH_PHU", label: "Chính phủ/Sở ban ngành" },
   { value: "DOANH_NGHIEP", label: "Doanh nghiệp" },
   { value: "CONG_AN", label: "Công an" },
+  { value: "PHUONG_XA", label: "Phường xã" },
 ] as const;
 
 interface CSKHClientProps {
@@ -511,6 +512,8 @@ export function CSKHClient({ data, leaders, cvCskhOptions }: CSKHClientProps) {
             ? "Chính phủ/Sở ban ngành"
             : kh.phanLoai === "CONG_AN"
             ? "Công an"
+            : kh.phanLoai === "PHUONG_XA"
+            ? "Phường xã"
             : "Doanh nghiệp",
         "Lãnh đạo theo dõi": kh.lanhDaoTheoDoiName || "",
         "CV CSKH": kh.cvCskhName || "",

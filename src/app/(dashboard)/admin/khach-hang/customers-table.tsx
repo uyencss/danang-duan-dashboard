@@ -127,10 +127,11 @@ export function CustomersTable({ data }: { data: any[] }) {
             className={
               type === "CHINH_PHU" ? "bg-blue-50 text-blue-700 border-blue-200" :
                 type === "CONG_AN" ? "bg-red-50 text-red-700 border-red-200" :
-                  "bg-green-50 text-green-700 border-green-200"
+                  type === "PHUONG_XA" ? "bg-teal-50 text-teal-700 border-teal-200" :
+                    "bg-green-50 text-green-700 border-green-200"
             }
           >
-            {type === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : type === "CONG_AN" ? "Công an" : "Doanh nghiệp"}
+            {type === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : type === "CONG_AN" ? "Công an" : type === "PHUONG_XA" ? "Phường xã" : "Doanh nghiệp"}
           </Badge>
         );
       },
@@ -312,7 +313,7 @@ export function CustomersTable({ data }: { data: any[] }) {
       const kh = row.original as any;
       return {
         "Tên Khách hàng": kh.ten,
-        "Phân loại": kh.phanLoai === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : kh.phanLoai === "CONG_AN" ? "Công an" : "Doanh nghiệp",
+        "Phân loại": kh.phanLoai === "CHINH_PHU" ? "Chính phủ/ Sở ban ngành" : kh.phanLoai === "CONG_AN" ? "Công an" : kh.phanLoai === "PHUONG_XA" ? "Phường xã" : "Doanh nghiệp",
         "Địa chỉ": kh.diaChi || "",
         "Số điện thoại": kh.soDienThoai || "",
         "Email": kh.email || "",

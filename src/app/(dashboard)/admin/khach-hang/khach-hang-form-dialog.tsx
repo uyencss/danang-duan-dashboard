@@ -211,7 +211,8 @@ export function KhachHangFormDialog({ open, setOpen, data }: KhachHangFormDialog
                                 <SelectValue placeholder="Chọn phân loại">
                                   {field.value === PhanLoaiKH.CHINH_PHU ? "Chính phủ/ Sở ban ngành" : 
                                    field.value === PhanLoaiKH.DOANH_NGHIEP ? "Doanh nghiệp" : 
-                                   field.value === PhanLoaiKH.CONG_AN ? "Công an" : field.value}
+                                   field.value === PhanLoaiKH.CONG_AN ? "Công an" :
+                                   field.value === PhanLoaiKH.PHUONG_XA ? "Phường xã" : field.value}
                                 </SelectValue>
                               </SelectTrigger>
                             </FormControl>
@@ -219,6 +220,7 @@ export function KhachHangFormDialog({ open, setOpen, data }: KhachHangFormDialog
                               <SelectItem value={PhanLoaiKH.CHINH_PHU}>Chính phủ/ Sở ban ngành</SelectItem>
                               <SelectItem value={PhanLoaiKH.DOANH_NGHIEP}>Doanh nghiệp</SelectItem>
                               <SelectItem value={PhanLoaiKH.CONG_AN}>Công an</SelectItem>
+                              <SelectItem value={PhanLoaiKH.PHUONG_XA}>Phường xã</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

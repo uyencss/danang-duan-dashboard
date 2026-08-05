@@ -36,6 +36,7 @@ const PHAN_LOAI_KH_LABELS: Record<string, string> = {
   CHINH_PHU: "Chính phủ / Sở ban ngành",
   DOANH_NGHIEP: "Doanh nghiệp",
   CONG_AN: "Công an",
+  PHUONG_XA: "Phường xã",
 };
 
 const TRANG_THAI_LABELS: Record<string, string> = {
