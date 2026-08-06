@@ -140,14 +140,24 @@ export async function getAMPerformance(selectedMonth?: number) {
         });
 
         // 3. Get deduped MasterRevenue slices for this month
-        //    (Same source of truth as Board Overview — getBoardOverview)
         const slices = await getDeduplicatedMasterRevenue(currentYear, currentMonth);
 
-        // Build map: projectId -> total monthly revenue from MasterRevenue
-        const projectMonthRevenue = new Map<number, number>();
+        // ── Build revenue map by MasterRevenue.amId (matches Excel source) ──
+        // Revenue is attributed to the PRIMARY AM (amId on MasterRevenue),
+        // NOT to amHoTroId — this matches how the source Excel aggregates.
+        const revenueByAmId = new Map<string, { total: number; projectIds: Set<number> }>();
         for (const s of slices) {
-            const prev = projectMonthRevenue.get(s.projectId) || 0;
-            projectMonthRevenue.set(s.projectId, prev + s.doanhThu);
+            if (!s.amId) continue;
+            const existing = revenueByAmId.get(s.amId);
+            if (existing) {
+                existing.total += s.doanhThu;
+                existing.projectIds.add(s.projectId);
+            } else {
+                revenueByAmId.set(s.amId, {
+                    total: s.doanhThu,
+                    projectIds: new Set([s.projectId]),
+                });
+            }
         }
 
         // 4. Calculate metrics for each AM
@@ -157,32 +167,23 @@ export async function getAMPerformance(selectedMonth?: number) {
             // ── Filter projects active in the selected month (date range overlap) ──
             const activeInMonth = myProjects.filter(p => {
                 const start = new Date(p.ngayBatDau);
-                if (start > monthEnd) return false; // starts after this month
+                if (start > monthEnd) return false;
                 if (p.ngayKetThuc) {
                     const end = new Date(p.ngayKetThuc);
-                    if (end < monthStart) return false; // ended before this month
+                    if (end < monthStart) return false;
                 }
                 return true;
             });
 
-            // Metric 1: soLuongTiepCan — projects active in selected month
+            // Metric 1: soLuongTiepCan — projects active in selected month (primary + support)
             const soLuongTiepCan = activeInMonth.length;
 
-            // Metric 2 & 3: Based on MasterRevenue (NOT activeInMonth date filter)
-            // ngayKetThuc on DuAn may not align with MasterRevenue month range
-            // (e.g. soKy=6 from Feb → revenue through Jul, but ngayKetThuc=Jun 30)
-            const allSignedProjects = myProjects.filter(p =>
-                p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG
-            );
-            const signedWithRevenue = allSignedProjects.filter(p =>
-                projectMonthRevenue.has(p.id)
-            );
-            const soHopDongDaKy = signedWithRevenue.length;
+            // Metric 2: soHopDongDaKy — signed contracts with revenue (by MasterRevenue.amId)
+            const amRevenue = revenueByAmId.get(am.id);
+            const soHopDongDaKy = amRevenue?.projectIds.size || 0;
 
-            // Metric 3: doanhThuDaKy — from MasterRevenue (consistent with Board Overview)
-            const doanhThuDaKy = signedWithRevenue.reduce((sum, p) => {
-                return sum + (projectMonthRevenue.get(p.id) || 0);
-            }, 0);
+            // Metric 3: doanhThuDaKy — directly from MasterRevenue.amId (no amHoTroId double-count)
+            const doanhThuDaKy = amRevenue?.total || 0;
 
             // Metric 4: doanhThuKyVong — expectation projects targeted for this month
             const kyVongProjects = activeInMonth.filter(p => 
