@@ -168,9 +168,13 @@ export async function getAMPerformance(selectedMonth?: number) {
             // Metric 1: soLuongTiepCan — projects active in selected month
             const soLuongTiepCan = activeInMonth.length;
 
-            // Metric 2: soHopDongDaKy — signed projects with revenue in selected month
-            const signedWithRevenue = activeInMonth.filter(p =>
-                p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG &&
+            // Metric 2 & 3: Based on MasterRevenue (NOT activeInMonth date filter)
+            // ngayKetThuc on DuAn may not align with MasterRevenue month range
+            // (e.g. soKy=6 from Feb → revenue through Jul, but ngayKetThuc=Jun 30)
+            const allSignedProjects = myProjects.filter(p =>
+                p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG
+            );
+            const signedWithRevenue = allSignedProjects.filter(p =>
                 projectMonthRevenue.has(p.id)
             );
             const soHopDongDaKy = signedWithRevenue.length;
