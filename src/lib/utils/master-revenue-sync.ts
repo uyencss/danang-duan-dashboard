@@ -485,10 +485,12 @@ export async function getDeduplicatedMasterRevenue(
   for (const row of consolidated.values()) {
     const spName = row.duAn?.sanPham?.tenChiTiet?.trim().toLowerCase() || "";
     const startDate = row.duAn?.ngayBatDau ? new Date(row.duAn.ngayBatDau).getTime() : "";
-    const contractKey = row.maHopDong
-      ? `src:${row.sourceType}:hd:${row.maHopDong}:dt:${row.duAn?.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
+    // Cross-source key must NOT include sourceType —
+    // otherwise same maHopDong from different sources would never be deduplicated
+    const crossSourceKey = row.maHopDong
+      ? `hd:${row.maHopDong}:dt:${row.duAn?.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
       : `pid:${row.projectId}`;
-    const dedupeKey = `${contractKey}:${row.thang}`;
+    const dedupeKey = `${crossSourceKey}:${row.thang}`;
 
     const existing = deduped.get(dedupeKey);
     if (!existing) {
