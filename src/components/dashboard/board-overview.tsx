@@ -12,7 +12,12 @@ import {
   Layers,
   CalendarDays,
   CalendarCheck,
+  Loader2,
 } from "lucide-react";
+import { useState, useTransition } from "react";
+import { getBoardOverview } from "@/app/(dashboard)/dashboard-actions";
+import { AnimatedNumber } from "@/components/ui/animated-number";
+
 
 interface BoardOverviewProps {
   data: any;
@@ -122,6 +127,7 @@ function DualRevenueCard({
   expectedPerc,
   expectedColor,
   formatCurrency,
+  filterElement,
 }: any) {
   return (
     <div className="relative rounded-2xl bg-white/[0.07] backdrop-blur-xl border border-white/[0.08] p-5 flex flex-col justify-between gap-4 overflow-hidden group hover:bg-white/[0.10] transition-colors duration-300">
@@ -133,18 +139,25 @@ function DualRevenueCard({
 
       {/* Signed row */}
       <div className="relative z-10">
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="p-2.5 rounded-xl" style={{ background: `${signedColor}22` }}>
-            <Icon className="size-5" style={{ color: signedColor }} />
+        <div className="flex items-center justify-between gap-2.5 mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 rounded-xl" style={{ background: `${signedColor}22` }}>
+              <Icon className="size-5" style={{ color: signedColor }} />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-100/90">
+              {signedLabel}
+            </span>
           </div>
-          <span className="text-xs font-bold uppercase tracking-wider text-blue-100/90">
-            {signedLabel}
-          </span>
+          {filterElement && (
+            <div className="flex-shrink-0">
+              {filterElement}
+            </div>
+          )}
         </div>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-3xl font-black text-white leading-none">
-              {formatCurrency(signedValue)}
+              <AnimatedNumber value={signedValue} isCurrency />
             </p>
             <p className="text-xs text-blue-100/80 font-medium mt-1">Triệu đồng</p>
           </div>
@@ -168,7 +181,7 @@ function DualRevenueCard({
         <div className="flex items-center justify-between">
           <div>
             <p className="text-3xl font-black text-white leading-none">
-              {formatCurrency(expectedValue)}
+              <AnimatedNumber value={expectedValue} isCurrency />
             </p>
             <p className="text-xs text-blue-100/80 font-medium mt-1">Triệu đồng</p>
           </div>
@@ -180,18 +193,23 @@ function DualRevenueCard({
 }
 
 export function BoardOverview({ data }: BoardOverviewProps) {
-  if (!data || data.error) {
+  const [boardData, setBoardData] = useState<any>(data);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedQuarter, setSelectedQuarter] = useState(Math.ceil((new Date().getMonth() + 1) / 3));
+  const [isPending, startTransition] = useTransition();
+
+  if (!boardData || boardData.error) {
     return (
       <div className="p-8 text-center text-red-400 bg-red-950/30 rounded-2xl border border-red-500/20">
         <AlertTriangle className="size-10 mx-auto mb-2" />
         <p className="font-bold">
-          {data?.error || "Không có dữ liệu cho Dashboard"}
+          {boardData?.error || "Không có dữ liệu cho Dashboard"}
         </p>
       </div>
     );
   }
 
-  const { revenueMetrics, projectMetrics } = data;
+  const { revenueMetrics, projectMetrics } = boardData;
 
   const formatCurrency = (val: number) => {
     return Math.round(val).toLocaleString("vi-VN");
@@ -215,6 +233,24 @@ export function BoardOverview({ data }: BoardOverviewProps) {
     DA_KY_HOP_DONG: "Đã ký HĐ",
     THAT_BAI: "Thất bại",
   };
+
+  const handleMonthChange = (month: number) => {
+    setSelectedMonth(month);
+    startTransition(async () => {
+      const res = await getBoardOverview(month, selectedQuarter);
+      if (!res.error) setBoardData(res);
+    });
+  };
+
+  const handleQuarterChange = (quarter: number) => {
+    setSelectedQuarter(quarter);
+    startTransition(async () => {
+      const res = await getBoardOverview(selectedMonth, quarter);
+      if (!res.error) setBoardData(res);
+    });
+  };
+
+  const currentYear = new Date().getFullYear();
 
   return (
     <div className="relative p-6 lg:p-8 rounded-3xl overflow-hidden">
@@ -250,7 +286,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
 
               <div>
                 <p className="text-4xl font-black text-white leading-none tracking-tight">
-                  {formatCurrency(revenueMetrics.dtTongDuAn)}
+                  <AnimatedNumber value={revenueMetrics.dtTongDuAn} isCurrency />
                 </p>
                 <p className="text-xs text-blue-100/80 font-medium mt-1">
                   Triệu đồng
@@ -269,7 +305,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                   </span>
                 </div>
                 <p className="text-3xl font-black text-white">
-                  {projectMetrics.tongSoDuAn}
+                  <AnimatedNumber value={projectMetrics.tongSoDuAn} />
                 </p>
               </div>
             </div>
@@ -287,6 +323,21 @@ export function BoardOverview({ data }: BoardOverviewProps) {
             expectedPerc={revenueMetrics.dtDuKienThangPerc}
             expectedColor="#38bdf8"
             formatCurrency={formatCurrency}
+            filterElement={
+              <div className="flex items-center gap-1 bg-white/10 rounded-md p-0.5">
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => handleMonthChange(Number(e.target.value))}
+                  disabled={isPending}
+                  className="bg-transparent text-xs text-white font-medium outline-none cursor-pointer p-1 [&>option]:text-black"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <option key={m} value={m}>T{m}/{currentYear}</option>
+                  ))}
+                </select>
+                {isPending && <Loader2 className="size-3 animate-spin text-white/50" />}
+              </div>
+            }
           />
 
           {/* Ô 3: DT Quý */}
@@ -301,6 +352,21 @@ export function BoardOverview({ data }: BoardOverviewProps) {
             expectedPerc={revenueMetrics.dtDuKienQuyPerc}
             expectedColor="#a78bfa"
             formatCurrency={formatCurrency}
+            filterElement={
+              <div className="flex items-center gap-1 bg-white/10 rounded-md p-0.5">
+                <select
+                  value={selectedQuarter}
+                  onChange={(e) => handleQuarterChange(Number(e.target.value))}
+                  disabled={isPending}
+                  className="bg-transparent text-xs text-white font-medium outline-none cursor-pointer p-1 [&>option]:text-black"
+                >
+                  {[1, 2, 3, 4].map((q) => (
+                    <option key={q} value={q}>Q{q}/{currentYear}</option>
+                  ))}
+                </select>
+                {isPending && <Loader2 className="size-3 animate-spin text-white/50" />}
+              </div>
+            }
           />
 
           {/* Ô 4: DT Năm */}
@@ -337,7 +403,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                 </div>
                 <div className="flex items-end gap-2">
                   <p className="text-4xl font-black text-white leading-none">
-                    {projectMetrics.duAnTrongDiem}
+                    <AnimatedNumber value={projectMetrics.duAnTrongDiem} />
                   </p>
                   <span className="text-sm text-amber-300 font-bold mb-0.5">
                     dự án
@@ -359,7 +425,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                 </div>
                 <div className="flex items-end gap-2">
                   <p className="text-4xl font-black text-white leading-none">
-                    {projectMetrics.duAnKyVong}
+                    <AnimatedNumber value={projectMetrics.duAnKyVong} />
                   </p>
                   <span className="text-sm text-blue-300 font-bold mb-0.5">
                     dự án
@@ -400,7 +466,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                       className="text-base font-black tabular-nums"
                       style={{ color }}
                     >
-                      {s.count}
+                      <AnimatedNumber value={s.count} />
                     </span>
                   </div>
                 );
@@ -449,7 +515,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                       className="text-base font-black tabular-nums"
                       style={{ color }}
                     >
-                      {b.count}
+                      <AnimatedNumber value={b.count} />
                     </span>
                   </div>
                 );
@@ -486,7 +552,7 @@ export function BoardOverview({ data }: BoardOverviewProps) {
                       {t.label}
                     </span>
                     <span className="text-2xl font-black text-red-400 leading-none mt-2">
-                      {t.count}
+                      <AnimatedNumber value={t.count} />
                     </span>
                   </div>
                 ))}

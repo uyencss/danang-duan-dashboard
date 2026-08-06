@@ -102,11 +102,11 @@ export async function getDashboardOverview() {
     return _getDashboardOverview(user.id, user.role);
 }
 
-export async function getAMPerformance() {
+export async function getAMPerformance(selectedMonth?: number) {
     try {
         const now = new Date();
         const currentYear = now.getUTCFullYear();
-        const currentMonth = now.getUTCMonth() + 1;
+        const currentMonth = selectedMonth || now.getUTCMonth() + 1;
         const monthStart = new Date(Date.UTC(currentYear, currentMonth - 1, 1));
         const monthEnd = new Date(Date.UTC(currentYear, currentMonth, 0, 23, 59, 59));
 
@@ -573,12 +573,14 @@ function calculateEffectiveRevenue_Utility(p: {
     return 0;
 }
 
-export async function getBoardOverview() {
+export async function getBoardOverview(selectedMonth?: number, selectedQuarter?: number) {
     try {
         const now = new Date();
         const currentYear = now.getUTCFullYear();
-        const currentMonth = now.getUTCMonth() + 1;
-        const currentQuarter = Math.ceil(currentMonth / 3);
+        const actualCurrentMonth = now.getUTCMonth() + 1;
+        
+        const currentMonth = selectedMonth || actualCurrentMonth;
+        const currentQuarter = selectedQuarter || Math.ceil(actualCurrentMonth / 3);
 
         const excludeActive = {
             AND: [

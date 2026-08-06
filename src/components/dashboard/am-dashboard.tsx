@@ -13,14 +13,30 @@ import {
 } from "recharts";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Medal, Flame, TrendingUp, Users2, Target, CreditCard, ChevronUp, ChevronDown } from "lucide-react";
+import { Medal, Flame, TrendingUp, Users2, Target, CreditCard, ChevronUp, ChevronDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnimatedNumber } from "@/components/ui/animated-number";
+import { useState, useTransition } from "react";
+import { getAMPerformance } from "@/app/(dashboard)/dashboard-actions";
 
 interface AMPerformanceTabProps {
   amPerf: any[];
 }
 
-export function AMPerformanceTab({ amPerf }: AMPerformanceTabProps) {
+export function AMPerformanceTab({ amPerf: initialData }: AMPerformanceTabProps) {
+  const [amPerf, setAmPerf] = useState(initialData);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [isPending, startTransition] = useTransition();
+  const currentYear = new Date().getFullYear();
+
+  const handleMonthChange = (month: number) => {
+    setSelectedMonth(month);
+    startTransition(async () => {
+      const res = await getAMPerformance(month);
+      if (Array.isArray(res)) setAmPerf(res);
+    });
+  };
+
   if (!amPerf || amPerf.length === 0) {
     return (
       <div className="text-center py-20 bg-white rounded-[2rem] border border-[#eceef0]">
@@ -51,7 +67,23 @@ export function AMPerformanceTab({ amPerf }: AMPerformanceTabProps) {
               DASHBOARD AM
               <Users2 className="size-6 text-[#0058bc]" />
             </h4>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-4">Tháng {String(new Date().getMonth() + 1).padStart(2, '0')}/{new Date().getFullYear()} • Doanh thu dự kiến & Lượt tiếp cận</p>
+            <div className="flex items-center gap-2 pl-4 mt-1">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tháng</span>
+              <div className="flex items-center gap-1 bg-[#f2f4f6] rounded-md p-0.5 border border-[#eceef0]">
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => handleMonthChange(Number(e.target.value))}
+                  disabled={isPending}
+                  className="bg-transparent text-xs text-[#0058bc] font-black outline-none cursor-pointer p-1"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <option key={m} value={m}>Tháng {m}/{currentYear}</option>
+                  ))}
+                </select>
+                {isPending && <Loader2 className="size-3 animate-spin text-[#0058bc]" />}
+              </div>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">• Doanh thu dự kiến & Lượt tiếp cận</span>
+            </div>
           </div>
         </div>
 
@@ -206,14 +238,14 @@ function AMRankCard({ am, rank, isTop, maxVal, valKey }: { am: any, rank: number
           <div>
             <p className="text-sm font-black text-[#191c1e]">{am.name}</p>
             <div className="flex items-center gap-3 mt-0.5 text-[10px] font-bold text-slate-400 uppercase">
-              <span className="flex items-center gap-1"><Target className="size-3" /> {am.soLuongTiepCan} Tiếp cận</span>
-              <span className="flex items-center gap-1"><CreditCard className="size-3" /> {am.soHopDongDaKy} HĐ</span>
+              <span className="flex items-center gap-1"><Target className="size-3" /> <AnimatedNumber value={am.soLuongTiepCan} /> Tiếp cận</span>
+              <span className="flex items-center gap-1"><CreditCard className="size-3" /> <AnimatedNumber value={am.soHopDongDaKy} /> HĐ</span>
             </div>
           </div>
         </div>
         <div className="text-right">
           <p className={cn("text-base font-black", isTop ? "text-blue-600" : "text-red-600")}>
-            {Math.round(value).toLocaleString('vi-VN')}
+            <AnimatedNumber value={Math.round(value)} isCurrency />
           </p>
           <p className="text-[9px] font-black uppercase text-slate-300">Tr.đ / Tháng</p>
         </div>
