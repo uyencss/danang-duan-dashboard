@@ -480,17 +480,18 @@ export async function getDeduplicatedMasterRevenue(
   }
 
   // 2. Cross-source deduplication: keep only the highest priority source for each contract/project-month
+  // NOTE: CLOUD_DISTRIBUTE and ECONTRACT_INVOICE are INDEPENDENT revenue —
+  // same maHopDong from different sources must both be kept and summed.
+  // The key includes sourceType intentionally to preserve independent sources.
   const deduped = new Map<string, typeof allRows[0]>();
 
   for (const row of consolidated.values()) {
     const spName = row.duAn?.sanPham?.tenChiTiet?.trim().toLowerCase() || "";
     const startDate = row.duAn?.ngayBatDau ? new Date(row.duAn.ngayBatDau).getTime() : "";
-    // Cross-source key must NOT include sourceType —
-    // otherwise same maHopDong from different sources would never be deduplicated
-    const crossSourceKey = row.maHopDong
-      ? `hd:${row.maHopDong}:dt:${row.duAn?.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
+    const contractKey = row.maHopDong
+      ? `src:${row.sourceType}:hd:${row.maHopDong}:dt:${row.duAn?.tongDoanhThuDuKien}:sp:${spName}:bd:${startDate}`
       : `pid:${row.projectId}`;
-    const dedupeKey = `${crossSourceKey}:${row.thang}`;
+    const dedupeKey = `${contractKey}:${row.thang}`;
 
     const existing = deduped.get(dedupeKey);
     if (!existing) {
