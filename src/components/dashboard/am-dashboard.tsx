@@ -124,7 +124,7 @@ export function AMPerformanceTab({ amPerf: initialData }: AMPerformanceTabProps)
                 yAxisId="left" 
                 dataKey="doanhThuDaKy" 
                 name="Doanh thu đã ký (Tr.đ)" 
-                fill="#10b981" 
+                fill="#3b82f6" 
                 stackId="revenue"
                 barSize={40} 
               />
@@ -132,7 +132,7 @@ export function AMPerformanceTab({ amPerf: initialData }: AMPerformanceTabProps)
                 yAxisId="left" 
                 dataKey="doanhThuKyVong" 
                 name="Doanh thu kỳ vọng (Tr.đ)" 
-                fill="#38bdf8" 
+                fill="#10b981" 
                 stackId="revenue"
                 radius={[6, 6, 0, 0]} 
                 barSize={40} 
@@ -152,9 +152,9 @@ export function AMPerformanceTab({ amPerf: initialData }: AMPerformanceTabProps)
                 type="monotone" 
                 dataKey="soHopDongDaKy" 
                 name="Hợp đồng đã ký" 
-                stroke="#10b981" 
+                stroke="#3b82f6" 
                 strokeWidth={3} 
-                dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+                dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
                 activeDot={{ r: 6 }}
               />
             </ComposedChart>
