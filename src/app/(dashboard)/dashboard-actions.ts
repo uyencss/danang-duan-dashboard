@@ -116,14 +116,16 @@ export async function getAMPerformance(selectedMonth?: number) {
             select: { id: true, name: true }
         });
 
-        // 2. Fetch all projects where these AMs are involved (Main or Support)
+        // 2. Fetch all non-THAT_BAI projects with fields needed for revenue calc
+        //    Include invoiceRecords for ECONTRACT_INVOICE revenue.
         const projects = await prisma.duAn.findMany({
             where: {
                 OR: [
                     { amId: { in: amUsers.map(u => u.id) } },
                     { amHoTroId: { in: amUsers.map(u => u.id) } }
                 ],
-                trangThaiHienTai: { not: TrangThaiDuAn.THAT_BAI }
+                trangThaiHienTai: { not: TrangThaiDuAn.THAT_BAI },
+                isPendingDelete: { not: true },
             },
             select: {
                 id: true,
@@ -132,30 +134,81 @@ export async function getAMPerformance(selectedMonth?: number) {
                 trangThaiHienTai: true,
                 isKyVong: true,
                 tongDoanhThuDuKien: true,
+                doanhThuTheoThang: true,
+                soKy1GoiCuoc: true,
                 nam: true,
                 thang: true,
                 ngayBatDau: true,
                 ngayKetThuc: true,
+                sourceType: true,
+                invoiceRecords: {
+                    select: {
+                        thangGhiNhan: true,
+                        namGhiNhan: true,
+                        doanhThuTheoThang: true,
+                    }
+                },
             }
         });
 
-        // 3. Get deduped MasterRevenue slices for this month
-        const slices = await getDeduplicatedMasterRevenue(currentYear, currentMonth);
+        // ── Compute month revenue per project directly from DuAn ──
+        // Same formulas as source-revenue-engine.ts (matches Excel exactly)
+        const computeProjectMonthRevenue = (p: typeof projects[0]): number => {
+            if (p.sourceType === "CLOUD_DISTRIBUTE") {
+                const dt = p.doanhThuTheoThang || 0;
+                const soKy = p.soKy1GoiCuoc || 0;
+                const tongDT = p.tongDoanhThuDuKien || 0;
+                if (dt <= 0 || soKy <= 0) return 0;
 
-        // ── Build revenue map by MasterRevenue.amId (matches Excel source) ──
-        // Revenue is attributed to the PRIMARY AM (amId on MasterRevenue),
-        // NOT to amHoTroId — this matches how the source Excel aggregates.
+                const start = new Date(p.ngayBatDau);
+                const startMonth = start.getUTCMonth(); // 0-indexed
+                const startYear = start.getUTCFullYear();
+
+                for (let i = 0; i < soKy; i++) {
+                    const totalMonths = startMonth + i;
+                    const targetMonth = (totalMonths % 12) + 1; // 1-indexed
+                    const targetYear = startYear + Math.floor(totalMonths / 12);
+
+                    if (targetYear === currentYear && targetMonth === currentMonth) {
+                        // Last-month adjustment
+                        if (i === soKy - 1 && tongDT > 0) {
+                            return tongDT - dt * (soKy - 1);
+                        }
+                        return dt;
+                    }
+                }
+                return 0;
+            }
+
+            if (p.sourceType === "ECONTRACT_INVOICE") {
+                let sum = 0;
+                for (const rec of p.invoiceRecords) {
+                    if (rec.namGhiNhan === currentYear && rec.thangGhiNhan === currentMonth) {
+                        sum += rec.doanhThuTheoThang;
+                    }
+                }
+                return sum;
+            }
+
+            // PIPELINE: no monthly revenue
+            return 0;
+        };
+
+        // ── Build revenue map by amId (primary AM only — matches Excel) ──
         const revenueByAmId = new Map<string, { total: number; projectIds: Set<number> }>();
-        for (const s of slices) {
-            if (!s.amId) continue;
-            const existing = revenueByAmId.get(s.amId);
+        for (const p of projects) {
+            if (!p.amId) continue;
+            const rev = computeProjectMonthRevenue(p);
+            if (rev <= 0) continue;
+
+            const existing = revenueByAmId.get(p.amId);
             if (existing) {
-                existing.total += s.doanhThu;
-                existing.projectIds.add(s.projectId);
+                existing.total += rev;
+                existing.projectIds.add(p.id);
             } else {
-                revenueByAmId.set(s.amId, {
-                    total: s.doanhThu,
-                    projectIds: new Set([s.projectId]),
+                revenueByAmId.set(p.amId, {
+                    total: rev,
+                    projectIds: new Set([p.id]),
                 });
             }
         }
@@ -178,11 +231,11 @@ export async function getAMPerformance(selectedMonth?: number) {
             // Metric 1: soLuongTiepCan — projects active in selected month (primary + support)
             const soLuongTiepCan = activeInMonth.length;
 
-            // Metric 2: soHopDongDaKy — signed contracts with revenue (by MasterRevenue.amId)
+            // Metric 2: soHopDongDaKy — signed contracts with revenue for this AM
             const amRevenue = revenueByAmId.get(am.id);
             const soHopDongDaKy = amRevenue?.projectIds.size || 0;
 
-            // Metric 3: doanhThuDaKy — directly from MasterRevenue.amId (no amHoTroId double-count)
+            // Metric 3: doanhThuDaKy — computed directly from DuAn (matches Excel)
             const doanhThuDaKy = amRevenue?.total || 0;
 
             // Metric 4: doanhThuKyVong — expectation projects targeted for this month
