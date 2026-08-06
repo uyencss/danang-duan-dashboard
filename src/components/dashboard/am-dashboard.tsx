@@ -122,9 +122,18 @@ export function AMPerformanceTab({ amPerf: initialData }: AMPerformanceTabProps)
               <Legend verticalAlign="top" align="right" wrapperStyle={{ paddingBottom: '30px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }} />
               <Bar 
                 yAxisId="left" 
-                dataKey="doanhThuDuKienThang" 
-                name="Doanh thu dự kiến (Tr.đ)" 
-                fill="#0058bc" 
+                dataKey="doanhThuDaKy" 
+                name="Doanh thu đã ký (Tr.đ)" 
+                fill="#10b981" 
+                stackId="revenue"
+                barSize={40} 
+              />
+              <Bar 
+                yAxisId="left" 
+                dataKey="doanhThuKyVong" 
+                name="Doanh thu kỳ vọng (Tr.đ)" 
+                fill="#38bdf8" 
+                stackId="revenue"
                 radius={[6, 6, 0, 0]} 
                 barSize={40} 
               />

@@ -107,10 +107,8 @@ export async function getAMPerformance(selectedMonth?: number) {
         const now = new Date();
         const currentYear = now.getUTCFullYear();
         const currentMonth = selectedMonth || now.getUTCMonth() + 1;
-        const monthStart = new Date(Date.UTC(currentYear, currentMonth - 1, 1));
-        const monthEnd = new Date(Date.UTC(currentYear, currentMonth, 0, 23, 59, 59));
 
-        // 1. Fetch all users who are AMs to ensure they all appear in the chart
+        // 1. Fetch all AM users
         const amUsers = await prisma.user.findMany({
             where: { role: UserRole.AM, isActive: true },
             select: { id: true, name: true }
@@ -125,49 +123,59 @@ export async function getAMPerformance(selectedMonth?: number) {
                 ],
                 trangThaiHienTai: { not: TrangThaiDuAn.THAT_BAI }
             },
-            include: {
-                nhatKy: {
-                    where: {
-                        ngayGio: { gte: monthStart, lte: monthEnd }
-                        // Removed status: APPROVED to show "any activity" as approach
-                    },
-                    select: { projectId: true }
-                }
+            select: {
+                id: true,
+                amId: true,
+                amHoTroId: true,
+                trangThaiHienTai: true,
+                isKyVong: true,
+                tongDoanhThuDuKien: true,
+                nam: true,
+                thang: true,
             }
         });
 
-        // 3. Calculate metrics for each AM
+        // 3. Get deduped MasterRevenue slices for this month
+        //    (Same source of truth as Board Overview — getBoardOverview)
+        const slices = await getDeduplicatedMasterRevenue(currentYear, currentMonth);
+
+        // Build map: projectId -> total monthly revenue from MasterRevenue
+        const projectMonthRevenue = new Map<number, number>();
+        for (const s of slices) {
+            const prev = projectMonthRevenue.get(s.projectId) || 0;
+            projectMonthRevenue.set(s.projectId, prev + s.doanhThu);
+        }
+
+        // 4. Calculate metrics for each AM
         const amPerformanceData = amUsers.map(am => {
-            // Include projects where they are either primary or support AM
             const myProjects = projects.filter(p => p.amId === am.id || p.amHoTroId === am.id);
             
-            // Metric 1: soLuongTiepCan (1 Project = 1 Approach, any status except Failed)
+            // Metric 1: soLuongTiepCan
             const soLuongTiepCan = myProjects.length;
 
-            // Metric 2: soHopDongDaKy (Only Primary AM counts for signed tally?) 
-            // Usually, count all involvements.
+            // Metric 2: soHopDongDaKy
             const signedProjects = myProjects.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG);
             const soHopDongDaKy = signedProjects.length;
 
-            // Metric 3: doanhThuDaKy (Active monthly revenue for signed projects)
+            // Metric 3: doanhThuDaKy — from MasterRevenue (consistent with Board Overview)
             const doanhThuDaKy = signedProjects.reduce((sum, p) => {
-                return sum + calculateEffectiveRevenue_Utility(p, monthStart, monthEnd);
+                return sum + (projectMonthRevenue.get(p.id) || 0);
             }, 0);
 
-            // Metric 4: doanhThuKyVong (Full project value for expectation projects targeted for this month)
+            // Metric 4: doanhThuKyVong
             const kyVongProjects = myProjects.filter(p => 
                 p.isKyVong === true && 
                 p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG &&
-                p.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI && // Ensure not failed
+                p.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI &&
                 p.nam === currentYear &&
                 p.thang === currentMonth
             );
             const doanhThuKyVong = kyVongProjects.reduce((sum, p) => sum + p.tongDoanhThuDuKien, 0);
 
-            // Metric 5: doanhThuDuKienThang (Final dashboard bar value)
+            // Metric 5: doanhThuDuKienThang
             const doanhThuDuKienThang = doanhThuDaKy + doanhThuKyVong;
 
-            // ── Convert to triệu đồng (consistent with all other dashboard tabs) ──
+            // ── Convert to triệu đồng ──
             const doanhThuDaKyTrieu = Math.round(doanhThuDaKy / 1_000_000);
             const doanhThuKyVongTrieu = Math.round(doanhThuKyVong / 1_000_000);
             const doanhThuDuKienThangTrieu = Math.round(doanhThuDuKienThang / 1_000_000);
@@ -183,8 +191,6 @@ export async function getAMPerformance(selectedMonth?: number) {
             };
         });
 
-        // Sorted by name for consistent chart labels or by revenue? 
-        // User wants "Dashboard AM" to be intuitive, sorting by revenue helps see leaders.
         return amPerformanceData.sort((a, b) => b.doanhThuDuKienThang - a.doanhThuDuKienThang);
     } catch (e: any) {
         logger.error({ msg: "AM Performance Error", err: e instanceof Error ? e.message : e });
