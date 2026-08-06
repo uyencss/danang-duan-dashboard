@@ -107,6 +107,8 @@ export async function getAMPerformance(selectedMonth?: number) {
         const now = new Date();
         const currentYear = now.getUTCFullYear();
         const currentMonth = selectedMonth || now.getUTCMonth() + 1;
+        const monthStart = new Date(Date.UTC(currentYear, currentMonth - 1, 1));
+        const monthEnd = new Date(Date.UTC(currentYear, currentMonth, 0, 23, 59, 59));
 
         // 1. Fetch all AM users
         const amUsers = await prisma.user.findMany({
@@ -132,6 +134,8 @@ export async function getAMPerformance(selectedMonth?: number) {
                 tongDoanhThuDuKien: true,
                 nam: true,
                 thang: true,
+                ngayBatDau: true,
+                ngayKetThuc: true,
             }
         });
 
@@ -149,21 +153,35 @@ export async function getAMPerformance(selectedMonth?: number) {
         // 4. Calculate metrics for each AM
         const amPerformanceData = amUsers.map(am => {
             const myProjects = projects.filter(p => p.amId === am.id || p.amHoTroId === am.id);
-            
-            // Metric 1: soLuongTiepCan
-            const soLuongTiepCan = myProjects.length;
 
-            // Metric 2: soHopDongDaKy
-            const signedProjects = myProjects.filter(p => p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG);
-            const soHopDongDaKy = signedProjects.length;
+            // ── Filter projects active in the selected month (date range overlap) ──
+            const activeInMonth = myProjects.filter(p => {
+                const start = new Date(p.ngayBatDau);
+                if (start > monthEnd) return false; // starts after this month
+                if (p.ngayKetThuc) {
+                    const end = new Date(p.ngayKetThuc);
+                    if (end < monthStart) return false; // ended before this month
+                }
+                return true;
+            });
+
+            // Metric 1: soLuongTiepCan — projects active in selected month
+            const soLuongTiepCan = activeInMonth.length;
+
+            // Metric 2: soHopDongDaKy — signed projects with revenue in selected month
+            const signedWithRevenue = activeInMonth.filter(p =>
+                p.trangThaiHienTai === TrangThaiDuAn.DA_KY_HOP_DONG &&
+                projectMonthRevenue.has(p.id)
+            );
+            const soHopDongDaKy = signedWithRevenue.length;
 
             // Metric 3: doanhThuDaKy — from MasterRevenue (consistent with Board Overview)
-            const doanhThuDaKy = signedProjects.reduce((sum, p) => {
+            const doanhThuDaKy = signedWithRevenue.reduce((sum, p) => {
                 return sum + (projectMonthRevenue.get(p.id) || 0);
             }, 0);
 
-            // Metric 4: doanhThuKyVong
-            const kyVongProjects = myProjects.filter(p => 
+            // Metric 4: doanhThuKyVong — expectation projects targeted for this month
+            const kyVongProjects = activeInMonth.filter(p => 
                 p.isKyVong === true && 
                 p.trangThaiHienTai !== TrangThaiDuAn.DA_KY_HOP_DONG &&
                 p.trangThaiHienTai !== TrangThaiDuAn.THAT_BAI &&
